@@ -1,0 +1,47 @@
+@theme-color:#6ca3fc;
+@imgurl:"/static/assets/img/";
+.box-bottom {
+  box-shadow: 0 1px 6px #aeaeae;
+}
+.box-right {
+  box-shadow: -2px 0px 8px #aeaeae;
+}
+.box-bottom-right {
+  box-shadow: 0 2px 8px #aeaeae;
+}
+.mixin-border(@color;@number){
+  border: 1px solid @color;
+  border-radius: @number;
+}
+.mixin-height(@height){
+  height: @height;
+  line-height: @height;
+}
+.mixin-animation(@name;@time;@count;@mode){
+  animation-name: @name;
+  animation-duration: @time; 
+  animation-iteration-count: @count; 
+  animation-fill-mode: @mode;
+}
+.mixin-transscale(@scale){
+  -webkit-transform: scale(@scale);
+    -moz-transform: scale(@scale);
+    -o-transform: scale(@scale);
+    transform: scale(@scale);
+}
+.mixin-position(@left;@right){
+  position: absolute;
+  left: @left;
+  top: @right;
+  transform: translate(-50%,-50%);
+}
+.mixin-width(@width){
+  width: @width;
+  text-align: center;
+}
+.mixin-gradient(){
+  background: linear-gradient(top, #ecf9dd, #d0e9b4);
+  background: -o-linear-gradient(top, #ecf9dd, #d0e9b4);
+  background: -moz-linear-gradient(top, #ecf9dd, #d0e9b4);
+  background: -webkit-linear-gradient(top, #ecf9dd, #d0e9b4);
+}
