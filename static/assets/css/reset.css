@@ -1,0 +1,49 @@
+body,h1,h2,h3,h4,h5,p,dl,dd,ul,ol,form,input,textarea,th,td,select { 
+	margin: 0;
+	padding: 0;
+}
+html, body {
+	height: 100%;
+}
+em { 
+	font-style: normal;
+}
+li { 
+	list-style: none;
+}
+a:link,
+a:visited,
+a:hover,
+a:active { 
+	text-decoration: none;
+	color: #000;
+}
+i { 
+	font-style: normal;
+}
+img { 
+	border: none; 
+	vertical-align: top;
+}
+table { 
+	border-collapse: collapse
+}
+input, textarea { 
+	outline: none; 
+	border: none; 
+}
+body { 
+	font-size: 12px; 
+	font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",Arial,sans-serif;
+}
+h3 {
+	font-size: 12px;
+}
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active {
+    transition: background-color 5000s ease-in-out 0s;
+    -webkit-text-fill-color: #000;
+}
+button,
+button:active {
+	outline: none;
+}

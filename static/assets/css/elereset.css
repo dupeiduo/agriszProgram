@@ -1,0 +1,167 @@
+.tree .el-tree-node__label, .switch .el-switch__label span {
+  font-size: 12px;
+  padding: 1px;
+}
+.tooltip-content {
+  position: relative;
+  top: 10px;
+}
+.el-tooltip__popper.is-light.tips-popover {
+  width: 200px;
+  background: #f5fded;
+  color: #999;
+  line-height: 1.6; 
+}
+.we-legend .el-tooltip, .el-tooltip__rel, .left-tab .el-tooltip, .el-tooltip__rel {
+  display: flex;
+}
+.tree-input {
+  width: 190px;
+  height: 22px;
+  border: 1px #c0ccda solid;
+  position: relative;
+  left: 10px;
+  top: 10px;
+  padding: 5px;
+  color: #666;
+  font-weight: 500;
+  border-radius: 4px;
+}
+.tree {
+  position: absolute;
+  width: 200px;
+  height: 230px;
+  margin: 10px 0 10px 10px;
+  text-align: left;
+  background: #fff;
+  z-index: 1002;
+  overflow: auto;
+}
+.slider-container {
+  position: relative;
+  width: 285px;
+  height: 40px;
+  margin: 30px 0 0 10px; 
+  display: block;
+}
+.slider-container .slider {
+  float: right;
+  width: 210px;
+  margin: -4px 18px;
+}
+.slider-container .demonstration {
+  float: left;
+}
+.hm-selector .el-input__icon {
+  width: 25px;
+}
+.hm-selector .el-input--small .el-input__inner {
+  font-weight: 500;
+  font-size: 12px;
+  color: #1f2d3d;
+  height: 26px;
+  padding-right: 0;
+}
+.tb-detail table tr, .select-dropdown .el-select-dropdown__item {
+  font-size: 12px;
+  text-align: left;
+}
+.tb-detail .el-table .cell, .tb-detail .el-table th>div {
+  padding: 0 5px;
+}
+.tb-detail .el-table th .cell {
+  padding: 0 10px;
+}
+.soil .left-tab .list-menu .cf-active {
+  width: 58px;
+}
+.soil .tree-input {
+  top: 15px;
+}
+.soil .tree {
+  left: 79px;
+  margin: 15px 0;
+}
+.sel-tag .el-input__inner {
+  height: 34px;
+  font-size: 12px;
+}
+.soil .tag-tips {
+  height: 28px;
+  display: block;
+}
+.plant .map .ol-zoom {
+  left: 331px;
+  top: 324px;
+  width: 36px;
+  height: 76px;
+  box-shadow: none;
+  margin-left: 10px;
+}
+.plant .map .ol-zoom button {
+  font-size: 18px;
+  line-height: 38px;
+  width: 36px;
+  height: 38px;
+}
+@keyframes toleft {
+  0% {
+    left: 351px;
+  }
+  100% {
+    left: -36px;
+  }
+}
+.an-toleft {
+  animation-name: toleft;
+  animation-duration: .5s; 
+  animation-iteration-count: 1; 
+  animation-fill-mode: forwards;
+}
+.vertical .el-tooltip__rel {
+  width: 180px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tb-detail .el-table__body-wrapper tbody td:nth-child(2) {
+  text-align: center;
+}
+.tb-detail .el-table__body-wrapper {
+  overflow: hidden;
+}
+@keyframes toright {
+  0% {
+    left: -36px;
+  }
+  100% {
+    left: 351px;
+  }
+}
+.el-scrollbar__wrap {
+  overflow: auto;
+}
+.an-toright {
+  animation-name: toright;
+  animation-duration: .5s; 
+  animation-iteration-count: 1; 
+  animation-fill-mode: forwards; 
+} 
+.soil-table-result .el-tooltip__rel {
+  display: inline-table;
+}
+.soil-table-result .el-tooltip__rel td {
+  border-left: 1px solid transparent !important;
+  border-right: 1px solid transparent !important;
+}
+.soil-table-result .el-tooltip__rel td span {
+  position: relative;
+  top: 6px;
+  line-height: 20px;
+  width: 50px;
+  height: 20px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
