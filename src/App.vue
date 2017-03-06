@@ -2,9 +2,7 @@
   <div id="app-entrance">
     <p-header></p-header>
     <div :class="showLoginModal ? 'bj-blur' : ''">
-    <!-- <keep-alive> -->
       <router-view></router-view>
-    <!-- </keep-alive> -->
     </div>
   </div>
 </template>
