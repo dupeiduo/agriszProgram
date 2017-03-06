@@ -93,7 +93,7 @@ export default {
       }
     });
     map.addLayer(clustersLayer);
-    clustersLayer.setZIndex(6);
+    clustersLayer.setZIndex(10);
     return clustersLayer
   },
   bindEvents: function (parent, clustersLayer) {

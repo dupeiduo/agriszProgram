@@ -32,6 +32,7 @@
             <h3 class="detail-list-bg no-select pr ">
               <em>{{title}}</em>
               <span class="back-detail ps no-select"
+                v-if="!noDetail"
                 @click="changeState"
               >查看详情</span>
             </h3>
@@ -101,6 +102,10 @@
       showList: {
         type: Boolean,
         default: true
+      },
+      noDetail: {
+        type: Boolean,
+        default: false
       }
     },
     data(){
@@ -174,6 +179,9 @@
           background: #fff;
           border-radius: 4px;
           cursor: pointer;
+          &:hover {
+            background:#d1eeac;
+          }
         }
       }
     }

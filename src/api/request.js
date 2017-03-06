@@ -2,8 +2,11 @@ import cache from './cache.js'
 import confUrl from 'config/env/config.env.js'
 
 export default {
-  
-  dlPriceExcel: function(options) {
+  downLoadEnteInfo: function (options) {
+    var url = '?lon=' + options.point[0] + '&lat=' + options.point[1] + '&radius=' + options.radius + '&filename=' + options.filename; 
+    window.open(confUrl.phpUrl + 'soil_monitor/export_company_info' + url);
+  }
+  ,dlPriceExcel: function(options) {
     var url = '?farm_product_id=' + options.fpId + '&market_id=' + options.marketId + 
               '&date_type=' + options.dateType + '&filename=' + options.fileName; 
     window.open(confUrl.phpUrl + 'market/export_price_info' + url);

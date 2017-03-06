@@ -722,10 +722,217 @@ export default {
   formateEnterprise: function (data) {
     var result = []
     for (var i = 0; i < data.length; i++) {
+      result[i] = {}
       result[i].id = data[i].id
       result[i].name = data[i].name
+      result[i].address = data[i].address
       result[i].geom = data[i].geom
     }
     return result
+  },
+  formatAreas: function (data) {
+    var result = {}
+
+    var getProvince = (province) => {
+      var _province = [], _city = [], _county = []
+      for (var j = 0; j < province.length; j++) {
+        var proItem = {
+          area_id: province[j].area_id,
+          area_name: province[j].area_name,
+          bounds: this.formatBounds(province[j])
+        }
+        _province.push(proItem)
+
+        if (province[j].contain && province[j].contain.length > 0) {
+          var data = getCity(province[j].contain, province[j].area_id)
+          _city = _city.concat(data.city)
+          _county = _county.concat(data.county)
+        }
+      }
+      return {province: _province, city: _city, county: _county}
+    }
+
+    var getCity = (city, parent) => {
+      var _city = [], _county = []
+      for (var j = 0; j < city.length; j++) {
+        var cityItem = {
+          area_id: city[j].area_id,
+          area_name: city[j].area_name,
+          bounds: this.formatBounds(city[j]),
+          parent: parent
+        }
+        _city.push(cityItem)
+        if (city[j].contain && city[j].contain.length > 0) {
+          _county = _county.concat(getCounty(city[j].contain, city[j].area_id))
+        }
+        
+      }
+      return {city: _city, county: _county}
+    }
+
+    var getCounty = (county, parent) => {
+      var _county = []
+      for (var j = 0; j < county.length; j++) {
+        var couItem = {
+          area_id: county[j].area_id,
+          area_name: county[j].area_name,
+          bounds: this.formatBounds(county[j]),
+          parent: parent
+        }
+        _county.push(couItem)
+      }
+      return _county
+    }
+
+    result.province = []
+    result.city = []
+    result.county = []
+
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].grade === 1) {
+        var item = {
+          area_id: data[i].area_id,
+          area_name: "全国",
+          bounds: this.formatBounds(data[i])
+        }
+        result.province.push(item)
+
+        var _data = getProvince(data[i].contain)
+        result.province = result.province.concat(_data.province)
+        result.city = _data.city
+        result.county = _data.county
+
+      } else if (data[i].grade === 2) {
+        if (data[i].contain && data[i].contain.length > 0) {
+          var _data = getCity(data[i].contain, data[i].area_id)
+          result.city = result.city.concat(_data.city)
+          result.county = result.county.concat(_data.county)
+        }
+      } else if (data[i].grade === 3) {
+        if (data[i].contain && data[i].contain.length > 0) {
+          var _data = getCounty(data[i].contain, data[i].area_id)
+          result.county = result.county.concat(_data)
+        }
+      }
+    }
+
+    return result
+  },
+  formatMonitorPoints: function (data) {
+    var normalData = configData.soil.programs
+    var targets = configData.soil.targets
+
+    var getTimes = function (normal, actual) {
+      var times = 0
+      actual = Number(actual).toFixed(2)
+      if (typeof normal === "number") {
+        times = actual / normal - 1
+      } else if (typeof normal === "object") {
+        var maxTimes = actual / normal[0] - 1
+        times = actual / normal[1] - 1
+        
+        times = maxTimes > times ? maxTimes : times
+      }
+      return times.toFixed(2)
+    }
+
+    var getNormalLists = function (ph) {
+      var normalList = []
+      if (ph > 7.5) {
+        normalList = normalData.ph_2
+      } else if (ph>= 6.5 && ph <= 7.5) {
+        normalList = normalData.ph_1
+      } else {
+        normalList = normalData.ph_0
+      }
+      return normalList
+    }
+
+    var processData = function (data) {
+      var result = {}
+      var overproof = 0
+      var normalList = getNormalLists(data.ph)
+      var maxTimes = 0
+      var maxValue = 0
+      for(var key in data) {
+        if (normalList[key]) {
+          var normal = normalList[key]
+          var times = Number(getTimes(normal, data[key]))
+          if (times > 0) {
+            if (maxTimes < times) {
+              maxTimes =  times.toFixed(2)
+
+              result.default = {
+                times: maxTimes,
+                actual: data[key].toFixed(2),
+                name: targets[key]
+              }
+            }
+
+            overproof++
+          } else {
+            times = 0
+          }
+
+          if (data[key] > maxValue) {
+            maxValue = data[key]
+          }
+
+          result[key] = {
+            normal: normal,
+            actual: data[key].toFixed(2),
+            times: times.toFixed(2),
+            name: targets[key]
+          }
+          if (!result.default) {
+            result.default = result[key] 
+          }
+          result.maxValue = maxValue.toFixed(2)
+        }
+
+      }
+      
+      if (overproof === 0) {
+        result.desc = "无超标项"
+      } else {
+        result.desc = overproof + "项超标"
+      }
+      result.overproof = overproof
+      
+      return result
+    }
+
+    var loopData = function (data) {
+      var result = []
+      for (var i = 0; i < data.length; i++) {
+        result[i] = {}
+        result[i].id = data[i].id
+        result[i].point = [data[i].x, data[i].y]
+        result[i].ph =  data[i].ph
+        result[i].date_time =  data[i].date_time
+        result[i].geom =  data[i].geom
+        result[i].station =  data[i].station
+
+        var formated = processData(data[i])
+        result[i].as =  formated.as
+        result[i].cd =  formated.cd
+        result[i].cr =  formated.cr
+        result[i].cu =  formated.cu
+        result[i].hg =  formated.hg
+        result[i].ni =  formated.ni
+        result[i].pb =  formated.pb
+        result[i].zn =  formated.zn
+        result[i].six =  formated.six
+        result[i].ddt =  formated.ddt
+        result[i].default =  formated.default
+        result[i].desc =  formated.desc
+        result[i].overproof =  formated.overproof
+        result[i].maxValue =  formated.maxValue
+      }
+      return result
+    }
+
+    
+    return loopData(data)
   }
 }

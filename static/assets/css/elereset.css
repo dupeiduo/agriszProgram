@@ -158,10 +158,23 @@
   position: relative;
   top: 6px;
   line-height: 20px;
-  width: 50px;
+  width: 48px;
   height: 20px;
+  margin: 0 10px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   display: inline-block;
+}
+.soil-drop-menu {
+  padding: 0 !important;
+  max-height: 294px;
+  overflow: auto;
+}
+.soil-drop-menu .el-dropdown-menu__item {
+  line-height: 26px;
+}
+.soil-drop-menu .el-dropdown-menu__item:not(.is-disabled):hover {
+  background: #cceaff;
+  color: #000;
 }

@@ -192,10 +192,12 @@
     filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius=4, MakeShadow=false);
 }
 .el-icon-close {
+	font-size: 14px;
 	color: #a9a8a8;
+	cursor: pointer;
 }
 .el-icon-close:hover {
-	color: #b28850;
+	color: #367f05;
 }
 .el-tooltip__popper.is-light {
 	border: 1px solid rgba(153,153,153,.8) !important;
@@ -244,4 +246,17 @@
      padding: 0px;
      border: none;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
