@@ -17,6 +17,38 @@
 var environments = require('./environments');
 var colors = require('colors');
 
+function checkObjPropConsistency(obj1, obj2) {
+    if((!obj1 && obj2) || (obj1 && !obj2)) {
+        return false;
+    }
+
+    if(!obj1) {
+        return true;
+    }
+
+    var pl1 = [];
+    for(var k in obj1) {
+        pl1.push(k.toString());
+    }
+    pl1.sort();
+    var fp1 = '';
+    for(var k in pl1) {
+        fp1 += pl1[k];
+    }
+
+    var pl2 = [];
+    for(var k in obj2) {
+        pl2.push(k.toString());
+    }
+    pl2.sort();
+    var fp2 = '';
+    for(var k in pl2) {
+        fp2 += pl2[k];
+    }
+
+    return fp1 == fp2;
+}
+
 var envKey = process.env.BUILD_ENV;
 
 // look for default environment set if it is not set
@@ -34,7 +66,46 @@ if (!environments.CONFIG.hasOwnProperty(envKey)) {
     throw new Error(`Cannot find environment named ${envKey}!`);
 }
 
+// consistency checking
+var differentConifgs = {};
+var differentConfigNum = 0;
+
+for(var env in environments.CONFIG) {
+    var cfg = environments.CONFIG[env];
+
+    // check none
+    for(var cfgKey in cfg) {
+        if(!cfg[cfgKey]) {
+            console.error('[ERROR]'.red.inverse + '[Environment Setting] Undefined configuration '.yellow + ('\"' + cfgKey + '\"').underline.magenta.italic + ' in '.yellow + ('\"' + env + '\"').underline.magenta.italic + '.'.yellow);
+        }
+    }
+
+    // check consistence
+    var diffNum = 0;
+    for(var k in differentConifgs) {
+        if(!checkObjPropConsistency(differentConifgs[k], cfg)) {
+            diffNum += 1;
+        }
+    }
+
+    // if current configuration is different to all types known, then it's a new type 
+    // of configuration, record it
+    if(diffNum == differentConfigNum) {
+        differentConifgs[env] = cfg;
+        differentConfigNum += 1;
+    }
+}
+
+// there should be one(all configrations have the same properties) or zero(no config)
+// configuration recorded
+if(differentConfigNum > 1) {
+    console.warn('[ERROR]'.red.inverse + '[Environment Setting] There\'re different configurations for each environment, they\'re:'.yellow);
+    console.info(differentConifgs);
+}
+
+
 console.warn('[NOTICE]'.red.inverse + '[Environment Setting] Current environment is '.yellow + ('\"' + envKey + '\"').underline.magenta.italic + '.'.yellow);
+
 
 module.exports = environments.CONFIG[envKey];
 

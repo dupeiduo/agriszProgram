@@ -1,4 +1,32 @@
 export default {
+  addForecastPoint(coordinate, map, layer) {
+    var feature = new ol.Feature({
+      geometry: new ol.geom.Point(coordinate)
+    });
+
+    var source = new ol.source.Vector({
+      features: [feature]
+    });
+
+    var style = [
+      new ol.style.Style({
+          image: new ol.style.Icon({
+            anchor: [0.5, 1],
+            src: '/static/assets/img/map/altitude.png'
+          }),
+        })
+    ];
+  
+    var _altitudeLayer = new ol.layer.Vector({
+      source: source,
+      style: style
+    });
+
+    map.addLayer(_altitudeLayer);
+    _altitudeLayer.setZIndex(10)
+
+    return _altitudeLayer
+  },
   renderStations(stations, parent) {
     var features = this.initFeatures(stations.data)
     var layer = this.addPoints(features, parent.map)
@@ -112,11 +140,11 @@ export default {
               map.getView().setZoom(map.getView().getZoom() + 1);
               return;
           } else {
-            _self.stationId = feature.G.features[0].G.id;
-            if (feature.G.features[0].G.name) {
-              _self.currentStation = { hasName: true, name: feature.G.features[0].G.name };
+            _self.stationId = feature.getProperties().features[0].getProperties().id;
+            if (feature.getProperties().features[0].getProperties().name) {
+              _self.currentStation = { hasName: true, name: feature.getProperties().features[0].getProperties().name };
             } else 
-              _self.currentStation = { hasName: false, name: feature.G.features[0].G.id };
+              _self.currentStation = { hasName: false, name: feature.getProperties().features[0].getProperties().id };
             parent.$emit('clickPoint', _self);
           }
         }
@@ -134,15 +162,15 @@ export default {
         if (layer == clustersLayer && feature) {
           var length = feature.getProperties().features.length;
           if (length == 1) {
-            var body = "站点编号: " + feature.G.features[0].G.id;
-            if (feature.G.features[0].G.name) 
-              var head = feature.G.features[0].G.name + "气象站";
+            var body = "站点编号: " + feature.getProperties().features[0].getProperties().id;
+            if (feature.getProperties().features[0].getProperties().name) 
+              var head = feature.getProperties().features[0].getProperties().name + "气象站";
             else
               var head = "气象站";
 
             var _point = map.getPixelFromCoordinate(feature.getGeometry().getCoordinates());
             var left = parseInt(_point[0]) - 90;
-            var top = parseInt(_point[1]) - 15;
+            var top = parseInt(_point[1]) - 90;
             
             parent.$emit('hoverPoint', {body, head, left, top});
             return;
@@ -154,7 +182,7 @@ export default {
       if (hit) {
         map.getViewport().style.cursor = 'pointer';
       } else {
-        map.getViewport().style.cursor = '-webkit-grab';
+        map.getViewport().style.cursor = 'default';
         parent.$emit('outPoint');
       }
 

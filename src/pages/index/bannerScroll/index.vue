@@ -95,7 +95,6 @@
    .banner {
     overflow: hidden;
     width: 100%;
-    margin-top: 100px;
     span {
       font-size: 50px;
       font-weight: bold;

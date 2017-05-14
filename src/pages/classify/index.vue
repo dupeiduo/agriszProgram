@@ -3,21 +3,22 @@
     <my-map class="map" 
       @initMap="initMap" 
       :switchCtl="true"
-      background="#31c37c"
-      :top="120"
+      :top="97"
       borderRadius="4px"
       :centerCtl="{use: true, bounds: bounds}"
-      :addTileAreas="{code: code, areas: (showDcp ? dcpTree : tree)}"
-      :maxZoom="14" ref="map"></my-map>
+      :addTileAreas="{code: code, areas: (showDcp ? dcpTree : tree), extent: bounds}"
+      :maxZoom="14" ref="map"
+      :useTools="true"></my-map>
     <div class="c-left-tab" 
-      :style="{width: leftLoading ? '323px' : '0'}"
-      v-loading.body="leftLoading">
+      :style="{width: leftLoading ? '358px' : '0'}"
+      v-loading.lock="leftLoading">
       <left-tab 
         :showList="showList"
         @toggleList="toggleListStatus"
         :leftTab="[]"
         :title="title"
         :backList="backList"
+        :listTitle="'返回查看所有分布产品'"
         @changeState="switchList">
 
         <left-list slot="list" 
@@ -25,103 +26,74 @@
           :options="options"
           :curIndex="curIndex"
           @getChartData="getChartData"
+          :showNoData="!leftLoading"
           @listChange="changeIndex"></left-list>
 
-        <div v-if="haveCpDetail" slot="detail">
-          <input class="tree-input" type="text" readonly 
-            @click.stop="hidePop" 
-            @click="showTree = !showTree" 
-            :value="treeNodeName">
-          <el-tree class="tree" 
-            v-if="showTree" 
-            @click.stop="hidePop"
-            :data="tree" 
-            :props="defaultProps" 
-            @node-click="treeNodeClick">
-          </el-tree>
-          <hr class="hr-control">
-          <div class="block slider-container">
+        <div v-if="haveCpDetail" slot="detail" class="crop-product">
+          <h3 class="tree-detail-title">{{productTitle}}</h3>
+          <div class="tree-classify-con pr" @click.stop="hidePop">
+            <div>
+              <input class="tree-input class-tree-input" type="text" readonly 
+                @click="toggleTree" 
+                :value="treeNodeName">
+              <el-tree class="tree" 
+                highlight-current
+                v-if="showTree" 
+                :data="tree" 
+                :props="defaultProps" 
+                @node-click="treeNodeClick">
+              </el-tree>
+              <div v-if="showTree" class="confirm-btn-con">
+                <span @click="toggleTree" class="confirm-btn">确&nbsp;&nbsp;定</span>
+              </div>
+            </div>
+          </div>
+            
+          <div class="block slider-container pr classify-slider">
             <opacity-ctl 
               :opacity="opacity"
+              :right="'44px'"
+              :title="'分布图层透明度'"
               @changeOpacity="changeOpacity"
               ></opacity-ctl>
           </div>
-
+          <div class="classify-contrast  pr slider-container">
+            对比地图实况
+            <el-switch class="contrast-switch ps"
+              :width=56
+              v-model="showImgZoomPoints"
+              on-color="#8fc31f"
+              off-color="#95adc4"
+              on-text="显示"
+              off-text="隐藏">
+            </el-switch>
+          </div>
           <div class="detail-container">
-            <div class="tb-detail">
-              <el-table v-if="tableData.length > 0"
-                :stripe="true"
-                :data="tableData"
-                style="width: 100%">
-                <el-table-column label="作物" width="60">
-                  <template  scope="scope">
-                    <span class="iconfont" :class="icons[scope.row.id]"></span>
-                    {{scope.row.name}}
-                  </template>
-                </el-table-column>
-                <el-table-column
-                  prop="area"
-                  label="种植面积"
-                  width="150">
-                </el-table-column>
-                <el-table-column label="图例" width="60">
-                  <template  scope="scope">
-                    <span class="selcolor"
-                      @click.stop="hidePop"
-                      :style="{background: scope.row.color}"
-                      @click="changeColor($event, scope.$index)"></span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="显示" width="60">
-                  <template  scope="scope">
-                    <span class="eye-ctl iconfont" :class="scope.row.open ? ' icon-eye' : ' icon-hide'"
-                      @click="eyeCtl(scope.row)"></span>
-                  </template>
-                </el-table-column>
-              </el-table>
-              
-              <h3 class="no-data" v-else >－暂无数据－</h3>
-            </div>
-
-            <my-echart class="pie-chart" 
+            <tb-detail
+              :tableData="tableData"
+              :loading="leftLoading"
+              :layerSld="layerSld"
+              @changeUnit="changeUnit"
+              @setLayerVisible="setLayerVisible"
+              @setLayerColor="setLayerColor"></tb-detail>
+           
+            <div class="pie-chart">
+              <p class="pie-chart-title">作物分布统计图</p>
+              <my-echart
               v-if="tableData.length > 0"
-              :options="pieChart"></my-echart>
+              :options="pieChart"
+              class="pie-chart-body"
+              >
+              </my-echart>
+            </div>
           </div>
 
-          <el-select class="hm-selector"
-            popper-class="select-dropdown"
-            size="small"
-            v-if="tableData.length > 0"
-            v-model="value">
-            <el-option
-              v-for="item in areaOption"
-              :label="item.label"
-              :value="item.value"
-              @click="value = item.value">
-            </el-option>
-          </el-select>
         </div>
-        <div v-else slot="detail">
+        <div v-else-if="tableData.length == 0 && !leftLoading" slot="detail">
           <h3>－暂无数据－</h3>
         </div>
 
       </left-tab>
-    </div>
-      
-    <div class="color-picker" @click.stop="hidePop">
-      <div class="wrap">
-        <p class="triangle"></p>
-        <h3>选择图例颜色</h3>
-        <div class="clear">
-          <span  v-for="(item, index) in layerSld.normal" 
-            :style="{background: item}"
-            @click="cropColor = item">
-            <i class="iconfont icon-ok"
-              v-if="cropIndex >= 0 && tableData[cropIndex].color == item"></i>
-            <em class="classification-all-height"></em>
-          </span>
-        </div>
-      </div>
     </div>
 
     <div class="dcp-ctl" v-if="hasDcp">
@@ -137,41 +109,45 @@
         :dates="dcpDates">
       </dcp-control>
     </div>
+    <no-data :noLayer="showNoData"></no-data>
 
-    <footer-lite></footer-lite>
+    <pop-message :popTitle="popTitle" ref="popMessage"></pop-message>
+    <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi>
+    <my-photozoom  
+      :showPhoto="showImgZoomComponent"
+      :imageDate="imgDate"
+      :imageUrl="imgUrl" 
+      @hidePhotoZoom="showImgZoomComponent = false"></my-photozoom>
   </div>
 </template>
 
 <script>
 import leftTab from 'components/leftTab';
 import leftList from './list';
+import tbDetail from './tbdetail';
 import dcpControl from './dcp';
 import request from 'api/request.js'
 import model from 'api/model.js'
 import echart from './echart/index.js'
 import configData from '../../config/data.js'
 import config from 'config/env/config.env.js'
-import footerLite from 'components/footerlite'
+import noData from 'components/noData';
+import imgLayerCtl from 'agrisz-lib-piccluster'
+
 
 export default{
   data(){
     return {
-      areaOption: [{
-        value: 'm',
-        label: '万亩'
-      }, {
-        value: 'h',
-        label: '千公顷'
-      }],
-      value: 'm',
+      map: null,
       curIndex: -1,
       bounds: [],
       title: '',
       backList: false,
-      leftLoading: false,
+      leftLoading: true,
       haveCpDetail: false,
       list: [],
       tableData: [],
+      showNoData: false, 
       pieChart: null,
       options: null,
       showTree: false,
@@ -182,14 +158,14 @@ export default{
         label: 'area_name'
       },
       code: null,
-      opacity: 100,
+      opacity: 90,
       layerName: '',
       cpLayer: null,
       dcpLayers: [],
       layerSld: {},
       cropColor: '',
       cropIndex: -1,
-      popTarg: null,
+      popTop: '0px',
       loadedDcp: false,
       hasDcp: false,
       showDcp: false,
@@ -200,16 +176,28 @@ export default{
       dcpTree: [],
       showList: true,
       cpCacheData: {},
-      icons: {
-        "201": 'icon-hetao-',
-        "135": 'icon-shuidao-',
-        "117": 'icon-ganzhe-',
-        "134": 'icon-yumi-'
-      }
+      productTitle: '',
+      
+      popTitle: '',
+
+      imgType: 1,
+
+      showImgZoomPoints: false,
+
+      imgList: [],
+      imgDate: '',
+      imgUrl: '',
+      showImgZoomComponent: false,
+
+      showPhoto: false
+    }
+  },
+  filters: {
+    formatDatetime(value) {
+      return value.replace(/-/g, "/")
     }
   },
   mounted() {
-    this.popTarg = document.getElementsByClassName('color-picker')[0]
     this.layerSld.normal = configData.sld.cfLayerColors
     this.layerSld.selected = configData.sld.cfSelLayerColors
     this.leftLoading = true
@@ -229,8 +217,53 @@ export default{
     initMap (map) {
       this.map = map;
     },
+    fetchPictureList(code) {
+      var data = {
+        // area_codes: -1,
+        area_codes: [code],
+        img_type: this.imgType
+      }
+      request.geoImageList(data).then((response) => {
+        if (response && response.status === 200 && response.data.status === 0) {
+          this.imgList  = response.data.data
+        }
+      })
+    },
+    addImgLayer(imgList) {
+
+      const  pictureClickCb = ({index, pid}) => {
+        this.loadImgZoomComponent(index, imgList)
+      }
+
+      if (imgList && imgList.length > 0) {
+        
+        imgLayerCtl.setDistance(50) 
+        imgLayerCtl.setRootAssertUrl(config.sharedAssetServer)
+        imgLayerCtl.addPicturesLayer(this.map, imgList, pictureClickCb)
+      }
+    },
+    loadImgZoomComponent(index, imgList) {
+      var image = this.getImgDetail(index, imgList)
+      
+      this.imgDate = image.date
+      this.imgUrl = image.url
+      this.showImgZoomComponent = true
+    },
+    getImgDetail(index, imgList) {
+      var detail = {}
+      detail.date = imgList[index].img_date.toString().split(' ')[0]
+      detail.url = `${config.sharedAssetServer}/${imgList[index].img_file}`
+      
+      return detail
+    },
+    setCenter() {
+      this.$refs['map'].setCenter()
+    },
     toggleListStatus(isShow) {
       this.showList = isShow;
+      if (!isShow) {
+        this.showImgZoomPoints = false
+      }
     },
     changeOpacity(value) {
       this.opacity = value
@@ -241,41 +274,70 @@ export default{
       }
       this.backList = !this.backList; 
       if (!this.backList) {
-        this.title = "选择产品"
+        this.title = "分布产品列表"
+        this.showImgZoomPoints = false
+
       } else {
         this.title = this.list[this.curIndex].title;
       }
     },
     hidePop() {
       this.showTree = false
-      this.popTarg.style.display = 'none'
     },
     treeNodeClick(data) {
       this.bounds = model.formatBounds(data)
       this.code = data.area_id
       this.treeNodeName = data.area_name
     },
+    toggleTree() {
+      event.stopPropagation()
+      this.showTree = !this.showTree
+    },
     changeIndex(index) {
       this.backList = true
       this.curIndex = index
+      this.productTitle = this.list[this.curIndex].title
     },
-    eyeCtl(row) {
-      row.open = !row.open
-      var opacity = row.open ? 1 : 0,
-        curSld = this.getSld(row.id, null, opacity, this.layerName)
+    setLayerVisible({id, open, name}) {
+      var index = this.getIndexById(id)
+      this.tableData[index].open = open
+      
+      this.$refs['popMessage'].showDialog()
+      this.popTitle = open ? `已显示${name}分布图层` : `已隐藏${name}分布图层`
+      
+      var opacity = open ? 1 : 0,
+        curSld = this.getSld(id, null, opacity, this.layerName)
 
       this.updateSld(curSld, this.cpLayer);
     },
-    changeColor(ev, index) {
-      var oEvent = ev|| window.event;
-      var y = oEvent.clientY - 24
-      this.popTarg.style.top = `${y}px`
-      this.popTarg.style.display = 'block'
-      this.cropIndex = index
+    getIndexById(id) {
+      var index = -1
+      for (var i = 0; i < this.tableData.length; i++) {
+        if (this.tableData[i].id === id) {
+
+          index = i
+          break
+        }
+      }
+      return index
     },
-    getCpData(id, callback) {
+    setLayerColor({id, color}) {
+      this.cropIndex = this.getIndexById(id)
+
+      var curSld = this.getSld(id, color, 1, this.layerName)
+
+      this.tableData[this.cropIndex].color = color
+      this.tableData[this.cropIndex].open = true
+      this.updateSld(curSld, this.cpLayer);
+      
+      this.freshChartColor()
+    },
+    getCpData(id, callback, unchangeColor) {
       if (this.cpCacheData[id]) {
-        this.setSldAttr(this.cpCacheData[id].cp, id)
+        if (!unchangeColor) {
+          this.setSldAttr(this.cpCacheData[id].cp, id)
+        }
+        
         callback(this.cpCacheData[id])
       } else {
         request.distributeById(id).then((response) => {
@@ -286,11 +348,14 @@ export default{
             var formated = model.formatCpData(response.data, id, this.code)
             if (!formated) {
               this.options = {noData: true}
+              this.tableData = []
+              this.showNoData = true
               callback(null)
             } else {
               this.cpCacheData[id] = formated
               this.setSldAttr(formated.cp, id)
               callback(formated)
+              this.showNoData = false
             }
           }
         })
@@ -304,8 +369,9 @@ export default{
         if (!formated) {
           this.options = {noData: true}
         } else {
+          this.tableData = this.getCpCrops(formated)
           var chartData = this.getPieData(formated.cp, id)
-          this.options = echart.getPie(chartData, title, 60, true);
+          this.options = echart.getPie(chartData, title, 60, true); 
         }
       })
     },
@@ -376,24 +442,9 @@ export default{
       return this.appendSld(sld, layerName);
     },
     appendSld (sldBody, layerName) {
-      return `<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd">
-                <NamedLayer>
-                  <Name>${layerName}</Name>
-                  <UserStyle>
-                    <Title>SLD Cook Book: Discrete colors</Title>
-                    <FeatureTypeStyle>
-                      <Rule>
-                        <RasterSymbolizer>
-                          <ColorMap type="values">
-                            <ColorMapEntry color="#000000" quantity="0" label="no-data" opacity="0" />
-                            ${sldBody}
-                          </ColorMap>
-                        </RasterSymbolizer>
-                      </Rule>
-                    </FeatureTypeStyle>
-                  </UserStyle>
-                </NamedLayer>
-              </StyledLayerDescriptor>`;
+      return `<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd"><NamedLayer>
+        <Name>${layerName}</Name><UserStyle><Title>SLD Cook Book: Discrete colors</Title><FeatureTypeStyle><Rule><RasterSymbolizer><ColorMap type="values"><ColorMapEntry color="#000000" quantity="0" label="no-data" opacity="0" />
+        ${sldBody}</ColorMap></RasterSymbolizer></Rule></FeatureTypeStyle></UserStyle></NamedLayer></StyledLayerDescriptor>`;
     },
     updateSld(sld, layer) {
       layer.getSource().updateParams({SLD_BODY: sld});
@@ -442,12 +493,15 @@ export default{
     },
     addAllLayers(layerInfoList) {
       this.removeAllLayers();
-      for(var i = 0; i < layerInfoList.length; i++) {
-        for (var j = 0; j < layerInfoList[i].length; j++) {
-          if (layerInfoList[i][j].code == this.code) {
-            var layerName = "map:" + layerInfoList[i][j].id;
-            var layer = this.addDcpLayer(layerName);
-            this.dcpLayers.push(layer);
+      
+      if (layerInfoList && layerInfoList.length > 0) {
+        for(var i = 0; i < layerInfoList.length; i++) {
+          for (var j = 0; j < layerInfoList[i].length; j++) {
+            if (layerInfoList[i][j].code == this.code) {
+              var layerName = "map:" + layerInfoList[i][j].id;
+              var layer = this.addDcpLayer(layerName);
+              this.dcpLayers.push(layer);
+            }
           }
         }
       }
@@ -496,6 +550,7 @@ export default{
       this.getCpData(id, (formated) => {
         if (!formated) {
           this.options = {noData: true}
+          this.haveCpDetail = false
         } else {
           this.tableData = this.getCpCrops(formated)
           var chartData = this.getPieData(formated.cp, id)
@@ -512,6 +567,29 @@ export default{
         }
         this.leftLoading = false
       })
+    },
+    freshChartColor() {
+      var cpId = this.list[this.curIndex].only_result
+
+      this.getCpData(cpId, (formated) => {
+        if (!formated) {
+          this.pieChart = {noData: true}
+        } else {
+          var chartData = this.getPieData(formated.cp, cpId)
+          this.pieChart = echart.getPie(chartData, '', 50, false);
+        }
+      }, true)
+    },
+    changeUnit(value) {
+      if (value === 'm') {
+        for (let i = 0; i < this.tableData.length; i++) {
+          this.tableData[i].area = (Number(this.tableData[i].a) / 10000 / 10000 * 15).toFixed(2);
+        }
+      } else {
+        for (let i = 0; i < this.tableData.length; i++) {
+          this.tableData[i].area = (Number(this.tableData[i].a) / 10000 / 10000 * 10).toFixed(2);
+        }
+      }
     }
   },
   watch: {
@@ -520,7 +598,8 @@ export default{
         return
       }
       this.backList = true
-      this.title = this.list[index].title;
+      this.title = this.list[index].title
+      this.productTitle = this.title
 
       var id = this.list[index].only_result
       this.renderCpDetail(id)
@@ -535,6 +614,8 @@ export default{
       } else {
         this.addAllLayers(this.dcpData.layerArr)
       }
+
+      code && this.fetchPictureList(code)
     },
     cropColor: function (color) {
       var id = this.tableData[this.cropIndex].id
@@ -542,9 +623,9 @@ export default{
       var curSld = this.getSld(id, color, 1, this.layerName)
       this.updateSld(curSld, this.cpLayer);
       // change chart color
-      var id = this.list[this.curIndex].only_result
+      var cpId = this.list[this.curIndex].only_result
 
-      this.getCpData(id, (formated) => {
+      this.getCpData(cpId, (formated) => {
         if (!formated) {
           this.pieChart = {noData: true}
         } else {
@@ -552,17 +633,6 @@ export default{
           this.pieChart = echart.getPie(chartData, '', 50, false);
         }
       })
-    },
-    value: function (value) {
-      if (value === 'm') {
-        for (let i = 0; i < this.tableData.length; i++) {
-          this.tableData[i].area = (Number(this.tableData[i].a) / 10000 / 10000 * 15).toFixed(2);
-        }
-      } else {
-        for (let i = 0; i < this.tableData.length; i++) {
-          this.tableData[i].area = (Number(this.tableData[i].a) / 10000 / 10000 * 10).toFixed(2);
-        }
-      }
     },
     showDcp: function (showDcp) {
       if (this.showDcp && this.dcpData && this.dcpDates.length === 0) {
@@ -581,151 +651,77 @@ export default{
         }
       }
       this.cpLayer.setOpacity(opacity/100);
+    },
+    imgList(list) {
+      this.showImgZoomPoints && this.addImgLayer(list) 
+    },
+    showImgZoomPoints(show) {
+      if (show) {
+        this.addImgLayer(this.imgList)  
+      } else {
+        this.showImgZoomComponent = false
+        imgLayerCtl.removeLayer()
+      } 
     }
   },
   beforeDestroy(){
     this.removeCPLayer()
+    imgLayerCtl.destroy()
   },
   components: {
     leftTab,
     leftList,
+    tbDetail,
     dcpControl,
-    footerLite
+    noData
   }
 }
 </script>
 <style lang="less" rel="stylesheet/less" scoped>
-  .c-left-tab {
+@import '../../assets/style/reset';
+.c-left-tab {
     position: fixed;
-    min-height: 600px;
+    min-height: 580px;
     left: 10px;
-    top: 70px;
-  }
-  .hr-control {
-    position: absolute;
-    top: 90px;
-    width: 100%;
-    border-top: 0.1px #d2d2d2 solid;
-  }
+    top: 58px;
+
+}
   .detail-container {
-    position: absolute;
-    background: #fff;
-    width: 318px;
-    top: 160px;
-    box-shadow: 0 2px 8px #aeaeae;
-    border-radius: 3px;
-
-    .tb-detail {
-      background: #fff;
-      table {
-        width: 100%;
-        padding-left: 5px;
-        tr {
-          height: 34px;
-          text-align: center;
-          color: #484848;
-          font-size: 12px;
-          td:nth-child(1) {
-            text-align: center !important;
-          }
-        }
-      }
-      .no-data {
-        text-align: center;
-      }
-    }
-
-    .pie-chart {
-      width: 298px;
-      height: 170px;
-      margin: 10px 8px;
-      border: 1px #d3d3d3 solid;
-    }
-  }
-  .selcolor {
-    display: inline-block;
-    width:  10px;
-    height: 10px;
-  }
-  .icon-hetao- {
-    color: #896320;
-  }
-  .icon-ganzhe- {
-    color: #66052D;
-  }
-  .icon-shuidao- {
-    color: #87BF19;
-  }
-  .icon-yumi- {
-    color: #F2CD14;
-  }
-  .eye-ctl {
-    font-size: 14px;
-    color: #8bbcf9;
-  }
-  .eye-ctl, .selcolor {
-    left: 7px;
     position: relative;
-    cursor: pointer;
-  }
-  .color-picker {
-    position: absolute;
-    display: none;
-    left: 348px;
-    border: 1px solid #d3d3d3;
     background: #fff;
-    box-shadow: 2px 1px 8px #8a8a89;
-    padding-left: 8px;
-    .wrap {
+    width: 358px;
+    padding-bottom: 10px;
+    .mixin-border-radius-bottom();
+  }
+
+  .pie-chart {
+    width: 330px;
+    height: 230px;
+    margin: 10px auto;
+    border: 1px #d6d6d6 solid;
+    background: #f9f9f9;
+    .mixin-common-border();
+    .pie-chart-title {
       position: relative;
-      width: 157px;
-
-      span {
-        line-height: 20px;
-        position: relative;
-        display: block;
-        float: left;
-        width: 30px;
-        height: 20px;
-        margin-bottom: 5px;
-        text-align: center;
-
-        i {
-          display: inline;
-          color: #fff;
-        }
-        em {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 100%;
-          height: 5px;
-          background: rgba(255,255,255,.4);
-        }
+      line-height: 36px;
+      padding-left: 20px;
+      &:before {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        width: 4px;
+        height: 15px;
+        content: '';
+        display: inline-block;
+        background: #9ed132;
       }
     }
-    .triangle {
-      position: absolute;
-      top: 14px;
-      left: -28px;
-      width: 20px;
-      height: 20px;
-      background: url(/static/assets/img/common/class-triangle.png) no-repeat;
-    }
-    h3 {
-      font-size: 14px;
-      font-weight: normal;
-      line-height: 26px;
-      text-align: left;
-      color: #474747;
+    .pie-chart-body {
+      width: 330px;
+      height: 170px;
     }
   }
-  .hm-selector {
-    position: absolute;
-    top: 165px;
-    width: 72px;
-    left: 125px;
-  }
+  
   .dcp-toggle {
     position: absolute;
     height: 30px;
@@ -746,5 +742,45 @@ export default{
     position: fixed;
     bottom: 30px;
     width: 100%;
+  }
+  .crop-product {
+    background: #f3fbeb;
+    .mixin-border-radius-bottom();
+    .tree-detail-title {
+      line-height: 40px;
+      background: #9ed132;
+      padding-left: 12px;
+      font-size: 16px;
+      color: #fff;
+    }
+    .class-tree-input {
+      margin: 18px 12px 0;
+    }
+    .confirm-btn-con {
+      position: absolute;
+      width: 328px;
+      height: 50px;
+      background: #fff;
+      top: 222px;
+      left: 13px;
+      z-index: 10002;
+      
+      .mixin-boxshadow();
+    }
+    .slider-container {
+      margin: 0 12px;
+    }
+  }
+  .classify-contrast {
+     width: 96%;
+     position: relative;
+     left: -10px;
+     border-top: 1px solid #d8d8d8;
+     padding-left: 10px;
+    .contrast-switch {
+      position: absolute;
+      right: 14px;
+      top: 10px;
+    }
   }
 </style>

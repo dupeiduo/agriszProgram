@@ -1,12 +1,10 @@
 <template>
   <div class="left-tab">
-    <div>
-
+    <div class="pr">
         <div  v-if="onlyList" 
           :class="!showList ? 'fadeout-left' : 'fadein-left'"
           class="only-list">
           <h3 class="detail-list-bg no-select pr ">
-            <em>{{title}}</em>
           </h3>
           <slot name="list"></slot>
         </div>
@@ -16,13 +14,12 @@
             v-show="backList"
             :class="{'addlist-animate' : backList,'removelist-animate' : !backList}"
             >
-            <h3 class="detail-list-bg no-select pr ">
-              <el-tooltip :content="title"  placement="bottom" effect="light" :disabled="title.length<16">
-                  <em>{{title}}</em>
-              </el-tooltip>
-              <span class="back-detail ps no-select"
-                @click="changeState"
-              >返回列表</span>
+            <h3 class="detail-list-product no-select pr ">
+              <span class="back-detail ps no-select back-detail-color"
+                @click="changeState">
+                <i class="back-list-icon iconfont icon-icon_retractsvg"></i>
+                <span class="back-list-title">{{listTitle}}</span>
+              </span>
             </h3>
             <slot name="detail"></slot>
           </div>
@@ -30,21 +27,18 @@
                v-show="!backList"
                :class="{'addlist-animate' : !backList,'removelist-animate' : backList}">
             <h3 class="detail-list-bg no-select pr ">
-              <em>{{title}}</em>
-              <span class="back-detail ps no-select"
+              <span class="back-detail ps no-select product-title"
                 v-if="!noDetail"
-                @click="changeState"
-              >查看详情</span>
+              >{{title}}</span>
             </h3>
             <slot name="list"></slot>
           </div>
         </div>
 
-      <div class="list-menu ps" :class="showList ? 'to-right' : 'to-left'">
-        <em class="iconfont cf-back" :class="!showList ? 'icon-jiantou' : 'icon-33'" 
-        @click="toggleList"></em>
+      <div class="list-menu ps" :class="showList ? 'to-right' : 'to-left'" @click="toggleList">
+        <em class="cf-back" :class="!showList ? 'el-icon-arrow-right' : 'el-icon-arrow-left'"></em>
 
-        <div v-show="leftTab.length > 0">
+        <div v-show="leftTab.length > 0" class="list-ctl">
           <div 
             v-if="leftTab[0].tip && leftTab[0].tip !== ''" 
             v-for="(item, key) in leftTab">
@@ -85,7 +79,7 @@
       },
       title: {
         type: String,
-        default: {}
+        default: ''
       },
       backList: {
         type: Boolean,
@@ -106,6 +100,10 @@
       noDetail: {
         type: Boolean,
         default: false
+      },
+      listTitle: {
+        type: String,
+        default: '返回列表'
       }
     },
     data(){
@@ -138,158 +136,174 @@
     lang="less" 
     rel="stylesheet/less" 
     scoped>
+    @import '../../assets/style/reset';
   .left-tab {
     position: fixed;
-    top: 80px;
+    top: 57px;
     left: 10px;
-    /*width: 363px;*/
     z-index: 1;
+
+    .back-list {
+      /*border-radius: 4px 0 4px 4px;
+      overflow-x: hidden;*/
+    }
+
     .detail-list, .only-list {
       font-size: 12px;
       line-height: 32px;
       position: relative;
-      width: 318px;
+      width: 358px;
       background: #fff;
-      border: 1px solid #ededed;
-      border-radius: 0 0 4px 4px;
-      box-shadow: -4px 2px 8px #aeaeae;
+      border-radius: 4px 0 4px 4px;
+      /*overflow-x: hidden;*/
+      .mixin-boxshadow();
+      
       .detail-list-bg {
-        line-height: 40px;
         height: 40px;
-        width: 300px;
         padding-left: 18px;
-        border-bottom: 1px solid #ededed;
-        background: #f1f4f4;
-        em {
-          font-size: 14px;
-          width: 200px;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-          display: inherit;
-        }
+        border-radius: 4px 0 0 0;
+        overflow: hidden;
         .back-detail {
-          line-height: 20px;
           top: 8px;
-          right: 6px;
-          width: 68px;
-          height: 20px;
-          text-align: center;
-          border: 1px solid #cdd0d0;
-          background: #fff;
-          border-radius: 4px;
+          left: 14px;
+          cursor: default;
+          .mixin-height(32px);
+        }
+        .product-title {
+          left: 0;
+          top: 0;
+          font-size: 16px;
+          width: 344px;
+          padding-left: 14px;
+          background: #9fd032;
+          color: #fff;
+          .mixin-height(40px);
+        }
+      }
+      .detail-list-product {
+        height: 32px;
+        width: 342px;
+        padding-left: 12px;
+        font-weight: normal;
+        .back-list-icon {
+          color: #989898;
+          font-size: 14px;
+          padding-right: 5px;
+          vertical-align: middle;
+        }
+        span {
           cursor: pointer;
-          &:hover {
-            background:#d1eeac;
-          }
+          vertical-align: middle;
+        }
+      }
+    }
+    .back-detail-color {
+      &:hover {
+        .back-list-title {
+          color: #77843f;
+          text-decoration: underline;
         }
       }
     }
     .list-menu {
       top: 0px;
-      left: 320px;
-      width: 39px;
+      left: 358px;
+      width: 32px;
+      height: 32px;
       background: #fff;
-      box-shadow: 1px 2px 4px #a7a7a7;
+      border-radius: 0px 4px 4px 0;
+      cursor: pointer;
+      .mixin-boxshadow();
+        &:hover{
+           .cf-back{
+            color: #778f31;
+           }
+        }
+      .list-ctl {
+        .mixin-boxshadow();
+      }
       .cf-back {
         display: block;
-        line-height: 40px;
-        font-size: 20px;
-        height: 36px;
-        text-align: center;
+        font-size: 16px;
+        width: 18px;
+        margin: 8px auto;
         cursor: pointer;
-        box-shadow: 1px 0 4px #edecec inset;
-      }
-      .icon-jiantou {
-        line-height: 36px;
+        color: #8391a5;
       }
       .cf-active {
         color: #fff;
-        background: #55b101;
-        box-shadow: 1px 0 4px #689df3 inset;
+        background: #9fd032;
       }
       span {
-        font-size: 14px;
-        width: 30px;
         background: #fff;
-        line-height: 36px;
         display: block;
-        padding: 0 5px;
-        height: 36px;
-        overflow: hidden;
         cursor: pointer;
-        border-top: 1px solid #e5e5e5;
-        box-shadow: 1px 0 4px #edecec inset;
+        .mixin-height(32px);
+        .mixin-width(32px);
       }
     }
   }
 
   @keyframes fadein {
     0% {
-      left: -328px;
+      left: -368px;
       width: 0px;
     }
     1%{
-      width: 318px;
+      width: 358px;
     }
     100% {
       left: 0px;
     }
   }
-  .fadein-left {    
-    animation-name: fadein;
-    animation-duration: .5s; 
-    animation-iteration-count: 1; 
-    animation-fill-mode: forwards;
+  .fadein-left {
+    .mixin-animation(fadein;.55s;1;forwards);    
   }
-
   @keyframes fadeout {
     0% {
-      left: 0px;
+      left: -10px;
     }
     99% {
-      width: 318px;
+      width: 358px;
     }
     100% {
-      left: -328px;
+      left: -368px;
       width: 0px;
     }
   }
   .fadeout-left {
-    animation-name: fadeout;
-    animation-duration: .5s; 
-    animation-iteration-count: 1; 
-    animation-fill-mode: forwards;
+    .mixin-animation(fadeout;.55s;1;forwards);
   }
 
   @keyframes toleft {
     0% {
-      left: 320px;
+      left: 350px;
     }
     100% {
-      left: -8px;
+      left: -10px;
     }
   }
-  .to-left {
-    animation-name: toleft;
-    animation-duration: .5s; 
-    animation-iteration-count: 1; 
-    animation-fill-mode: forwards;
+  .left-tab .to-left {
+    width: 40px;
+    height: 40px;
+    .cf-back {
+      margin: 12px auto;
+      font-size: 20px;
+      transition: all .4s ease;
+    }
+    .mixin-animation(toleft;.4s;1;forwards);
   }
   
   @keyframes toright {
     0% {
-      left: -8px;
+      left: -10px;
     }
     100% {
-      left: 320px;
+      left: 358px;
     }
   }
-  .to-right {
-    animation-name: toright;
-    animation-duration: .5s; 
-    animation-iteration-count: 1; 
-    animation-fill-mode: forwards;  //  停留在最后一帧
+  .left-tab .to-right {
+    .mixin-animation(toright;.4s;1;forwards);
   }
   
 </style>

@@ -1,8 +1,7 @@
 <template>
-    <div class="left-container fl">
-    <ul class="report-type"
-      :style="{height: clientH + 'px'}" 
-      v-show="leftList.length > 0">
+    <div class="left-container fl"  :style="{height: clientH + 'px'}" v-loading.lock="loading">
+    <ul class="report-type" 
+      v-if="leftList.length > 0">
       <li class="special-report" 
           v-for="(item,index) in leftList" 
           :class="index == curIndex ? 'on' : ''"
@@ -10,15 +9,14 @@
           >
         <a>{{item.topic_name}}</a>
         <span class="report-common">
-          <em :class="item.report_class">{{item.report_label}}</em>
-          <i class="iconfont icon-xiangyou"></i>
+          <i class="iconfont " :class="index == curIndex ? 'icon-xiangyou' : 'icon-NOTEPAD'"></i>
         </span>
       </li>
     </ul>
     <div class="none-data" 
-          v-show="leftList.length === 0"
-          :style="{height: clientH + 'px'}" 
-          >暂无数据</div>
+      v-else-if="!loading"
+      :style="{height: clientH + 'px'}" 
+      >暂无数据</div>
   </div>
 </template>
 
@@ -28,6 +26,10 @@
       leftList: {
         type: Array,
         default: []
+      },
+      loading: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
@@ -37,14 +39,14 @@
       }
     },
     mounted() {
-      this.clientH = document.documentElement.clientHeight - 70 || document.body.clientHeight - 70
+      this.clientH = document.documentElement.clientHeight - 50 || document.body.clientHeight - 50
     },
     computed: {},
     methods: {},
     components: {},
     watch: {
       leftList: function(leftList) {
-        if (leftList.length > 0) {
+        if (leftList && leftList.length > 0) {
           this.curIndex = 0;
         }
 
@@ -60,34 +62,31 @@
     lang="less"
     rel="stylesheet/less"
     scoped>
+    @import '../../../assets/style/reset';
     .left-container {
       z-index: 1;
+      height: 800px;
       position: fixed;
-      top: 68px;
+      top: @top;
       width: 176px;
+      background: #ebf7e0;
       border-right: 1px solid #d0d0d0;
         .report-type {
           width: 176px;
-          background: url(/static/assets/img/common/report-left.png) no-repeat;
-          background-size: cover;
-            .on {
-                background: #42e495;
+          padding-top: 10px;
+
+            .on,.on:hover {
+              .mixin-gradient-bg(#beea6a;#a0d13d);
                     a {
                       font-size: 14px;
                       text-decoration: none;
                       color: #fff;
                     }
                     i {
-                    opacity: 1;
+                      color: #fff;
                 }
             }
-            li:hover {
-              border: 1px solid #a6aba9;
-                i {
-                  opacity: 1;
-                  color: #555;
-              }
-            }
+            
             li {
               position: relative;
               height: 42px;
@@ -97,41 +96,39 @@
               border-bottom: 1px solid #e5e5e5;
               border-left: 1px solid transparent;
               cursor: pointer;
+
+              &:nth-child(1) {
+                border-top: 1px solid #e5e5e5;
+              }
                 a {
                   line-height: 42px;
                   display: inline-block;
-                  overflow: hidden;
-                  width: 96px;
-                  white-space: nowrap;
-                  text-overflow: ellipsis;
                   color: #545252;
-              }
+                  .mixin-ellipsis(96px);
+                }
               span {
                 position: absolute;
-                right: 2px;
+                right: 12px;
                 clear: both;
                 overflow: hidden;
                 margin-top: 12px;
-                  em {
-                    line-height: 18px;
+                  i {
+                    font-size: 14px;
                     float: left;
-                    width: 18px;
-                    height: 18px;
-                    margin-right: 10px;
-                    text-align: center;
-                    color: #fff;
-                    border-radius: 50%;
+                    width: 14px;
+                    height: 14px;
+                    color: #a0ac91;
                 }
-                i {
-                  font-size: 14px;
-                  float: left;
-                  width: 14px;
-                  height: 14px;
-                  opacity: 0;
-                  color: #fff;
               }
-            }
+            &:hover {
+                 background: #f8fef1;
+              }
           }
+      }
+
+      .none-data {
+        position: relative;
+        top: 30px;
       }
   }
 </style>

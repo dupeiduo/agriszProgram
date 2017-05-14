@@ -1,7 +1,7 @@
 <template>
   <div id="app-entrance">
     <p-header></p-header>
-    <div :class="showLoginModal ? 'bj-blur' : ''">
+    <div :class="showBlur ? 'bj-blur' : ''">
       <router-view></router-view>
     </div>
   </div>
@@ -18,8 +18,8 @@ export default {
   },
   computed: {
     ...mapState({
-      showLoginModal: function (state) {
-        return state.user.showLoginModal
+      showBlur: function (state) {
+        return state.showBlur
       }
     })
   }

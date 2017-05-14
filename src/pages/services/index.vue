@@ -31,6 +31,6 @@
     height: 100%;
   }
   .service {
-    margin-top: 100px;
+    margin-top: 64px;
   }
 </style>

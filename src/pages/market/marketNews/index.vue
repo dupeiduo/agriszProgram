@@ -73,10 +73,12 @@
     border-bottom: 2px solid #e0e0e0;
     border-left: 1px solid #e0e0e0;
     box-shadow: 0 1px 2px #e7e7e7;
+    cursor: pointer;
       img {
         width: 110px;
         height: 104px;
         margin-right: 8px;
+        background: #eef3f0;
     }
     .new-container {
         cursor: pointer;

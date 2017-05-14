@@ -6,18 +6,24 @@
         <div class="al-filter-date clear pr">
           <div class="tree-container clear ps">
             <span class="select-tree-txt fl">选择市级</span>
-            <div class="analyze-tree fl">
-              <input class="tree-input" type="text" readonly 
-                  @click.stop="hideTree" 
-                  @click="showTree = !showTree" 
-                  :value="treeNodeName">
+            <div class="analyze-tree fl pr">
+              <div>
+                <input class="tree-input" type="text" readonly 
+                    @click.stop="hideTree" 
+                    @click="showTree = !showTree" 
+                    :value="treeNodeName">
                 <el-tree class="tree" 
                   v-if="showTree" 
+                  highlight-current
                   @click.stop="hideTree"
                   :data="tree" 
                   :props="defaultProps"
                   @node-click="treeNodeClick">
                 </el-tree>
+                <div v-if="showTree" class="confirm-btn-con">
+                  <span @click="showTree = !showTree" class="confirm-btn">确&nbsp;&nbsp;定</span>
+                </div>
+              </div>
             </div>
           </div>
             <el-date-picker
@@ -25,8 +31,8 @@
               v-model="timeValue"
               align="right"
               type="daterange"
-              format="yyyy-MM-dd"
-              placeholder="2014-02-14-2015-03-03"
+              format="yyyy/MM/dd"
+              placeholder="2014/02/14-2015/03/03"
               :picker-options="pickerOptions"
               @change="changTime"
               >
@@ -44,10 +50,12 @@
                 </span>
               </div>
             </div>
-            <analyzetab v-loading.body="loading"
+            <analyzetab v-loading.lock="loading"
             :tabData="tabData" 
             :options="options" 
-            :type="type"></analyzetab>
+            :type="type"
+            :showNoData="!loading"
+            ></analyzetab>
             <el-pagination
             class="pages"
             layout="prev, pager, next"
@@ -102,7 +110,7 @@
         code: null,
         tabTitle:'',
         options: null,
-        loading: false,
+        loading: true,
         clientH: 0,
         clientW: 200,
         pickerOptions: {
@@ -218,6 +226,8 @@
     lang="less"
     rel="stylesheet/less"
     scoped>
+
+    @import '../../assets/style/reset';
   .map {
     position: absolute;
     width: 100%;
@@ -229,7 +239,7 @@
     height: 100%;
 }
 .el-date-editor--daterange.el-input {
-    left: 360px;
+    left: 446px;
 }
 .al-content {
     width: 100%;
@@ -237,7 +247,7 @@
       .al-filter {
           z-index: 1;
           position: fixed;
-          top: 100px;
+          top: 80px;
           left: 210px;
           width: 85%;
           border-bottom: 1px solid #eee;
@@ -248,6 +258,7 @@
               width: 100%;
               padding: 15px;
               border-bottom: 1px solid #eee;
+              
                 span {
                     margin: 0 6px 0 14px;
                     color: #666;
@@ -261,13 +272,27 @@
                     .tree-input {
                       top: 0px;
                     }
+                    .confirm-btn-con {
+                      position: absolute;
+                      width: 328px;
+                      height: 50px;
+                      background: #fff;
+                      top: 204px;
+                      left: 1px;
+                      z-index: 10002;
+                      .mixin-boxshadow();
+                      
+                      .confirm-btn {
+                        right: 7px;
+                      }
+                    }
                 }
             }
       }
 }
 .analyze-content-all {
   position: absolute;
-  top: 200px;
+  top: 175px;
   left: 210px;
   background: #fff;
   z-index: 0;
@@ -309,8 +334,5 @@
   bottom: 2%;
   width: 100%;
   text-align: center;
-}
-.footer-width {
-  
 }
 </style>

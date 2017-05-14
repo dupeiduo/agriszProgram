@@ -57,12 +57,12 @@
     lang="less"
     rel="stylesheet/less"
     scoped>
+    @import '../../../assets/style/reset';
   .al-list {
     z-index: 2;
     position: fixed;
-    top: 68px;
+    top: @top;
     width: 176px;
-    height: 100%;
     border-right: 1px solid #d0d0d0;
       .al-list-ul {
         width: 176px;

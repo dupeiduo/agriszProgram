@@ -6,6 +6,7 @@ var merge = require('webpack-merge')
 var baseWebpackConfig = require('./webpack.base.conf')
 var ExtractTextPlugin = require('extract-text-webpack-plugin')
 var HtmlWebpackPlugin = require('html-webpack-plugin')
+var CopyWebpackPlugin = require('copy-webpack-plugin')
 var env = config.build.env
 var option = require('./build-commander');
 
@@ -28,10 +29,11 @@ var entries = fs.readdirSync(pagesPath).reduce((entries, dir) => {
 Object.assign(entries, {
         'front': [path.join(pagesPath, '/main.js')],
         'commonComponents': [commonComponentsPath],
+        'vue-strap': 'babel-polyfill'
     }
 )
 
-console.log(entries)
+console.log(`Command Line Param: -E ${option.env} -R ${option.robots}`)
 
 var webpackConfig = merge(baseWebpackConfig, {
   entry: entries,
@@ -82,7 +84,7 @@ var webpackConfig = merge(baseWebpackConfig, {
       },
       // necessary to consistently work with multiple chunks via CommonsChunkPlugin
       chunksSortMode: 'dependency',
-      chunks:['manifest','vendor','commonComponents','front']
+      chunks:['manifest','vendor','commonComponents','front', "vue-strap"]
     }),
     
     // split vendor js into its own file
@@ -124,5 +126,23 @@ if (config.build.productionGzip) {
     })
   )
 }
+
+// copy robots.txt
+console.log("Configurating robot.txt... [option.robots]="+option.robots);
+
+var robotSurfix = option.robots;
+if (robotSurfix && robotSurfix.length != 0) {
+    console.log("Using robot.txt <"+ robotSurfix +">.");
+    var robotsFile = '../exten/robots-txts/robots.template.' + robotSurfix;
+
+    webpackConfig.plugins.push(
+        new CopyWebpackPlugin( [{
+            from: path.resolve(__dirname, robotsFile),
+            to: path.resolve(config.build.assetsRoot, 'robots.txt')
+        }] ) 
+    )
+}
+
+
 
 module.exports = webpackConfig

@@ -144,6 +144,27 @@ const dateUtil = {
     return period;
   },
 
+  formatDateToPeriodZH: function(date) {
+    if (!(date instanceof Date)) {
+      console.log('incorrect input, correct format is Date.');
+      return -1;
+    }
+    var month = ((date.getMonth() + 1) < 10) ? ('0' + (date.getMonth() + 1)) : (date.getMonth() + 1);
+    var day = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
+    var period
+    if ( day <= 10) {
+      period = '上旬';
+    }
+    else if (day <= 20) {
+      period = '中旬';
+    }
+    else {
+      period = '下旬';
+    }
+    return date.getFullYear() + "-"
+      + month + "-"
+      + period;
+  },
   formatDateToSecond: function(date) {
     if (!(date instanceof Date)) {
       console.log('incorrect input, correct format is Date.');
@@ -484,6 +505,7 @@ const elementUtil = {
     a.href = filePath;
     a.target = '_blank';
     a.id = 'download_file';
+    a.setAttribute("download", "")
     document.body.appendChild(a);
     var alink = document.getElementById('download_file');
     alink.click();

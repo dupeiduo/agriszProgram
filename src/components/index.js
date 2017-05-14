@@ -2,6 +2,8 @@ import Vue from 'vue'
 import config from 'config/env/config.env.js'
 import configData from '../config/data.js'
 import request from '../api/request.js'
+import store from '../store'
+window.vueBus = new Vue()
 
 import header from './header'
 import opacity from 'agrisz-opactl'
@@ -14,9 +16,14 @@ import popmsg from 'agrisz-popmsg'
 import 'agrisz-popmsg/index.less'
 var mypopmsg = Vue.component(popmsg().name, popmsg().prop)
 
+import weather from 'agrisz-weather'
+import 'agrisz-weather/index.less'
+var _weather = weather(request, vueBus)
+var myweather = Vue.component(_weather.name, _weather.prop)
+
 import map from 'agrisz-map'
 import 'agrisz-map/index.less'
-var _map = map(config, configData)
+var _map = map(config, configData, request, vueBus)
 var mymap = Vue.component(_map.name, _map.prop)
 
 import button from 'agrisz-button'
@@ -32,4 +39,8 @@ import 'agrisz-searchpoi/index.less'
 var _searchpoi = searchpoi(request)
 var mysearchpoi = Vue.component(_searchpoi.name, _searchpoi.prop)
 
-export default {myechart, header, mymap, mybutton, mydialog, mysearchpoi}
+import photozoom from 'agrisz-photozoom'
+import 'agrisz-photozoom/index.less'
+var myphotozoom = Vue.component(photozoom().name, photozoom().prop)
+
+export default {myechart, header, myweather, mymap, mybutton, mydialog, mysearchpoi,myphotozoom}

@@ -1,16 +1,17 @@
 <template>
-  <div class="date-line" :class="expand ? 'dl-expand' : 'dl-shrink'">
+  <div class="date-line">
+    <span class="pre el-icon-arrow-left fl" 
+      @click="changePeriod(-1)"></span>
     <div class="dl-header">
-      <i>{{curYear}}</i><span></span>
+      <i>{{curYear}}</i>
     </div>
     <t-line class="dl-body"
       :curIndex="curIndex"
       :dlData="dateLineData"
-      @change="change"></t-line>
-    <div class="dl-footer" @click="expand = !expand">
-      <span class="iconfont" 
-        :class="expand ? 'icon-xiangzuo' : 'icon-xiangyou'"></span>
-    </div>
+      @change="change"
+      @setCurYear="setCurYear"></t-line>
+    <span class="next el-icon-arrow-right fr"
+       @click="changePeriod(1)"></span>
   </div>
 </template>
 
@@ -55,6 +56,29 @@ import tLine from './tline'
       },
       expandCtl(expand) {
         this.expand = expand
+      },
+      changePeriod(step) {
+        var period = dateUtil.dateToPeriod(this.date)
+        var year = this.date.getFullYear()
+        if (parseInt(period) === 1 && step === -1) {
+          year -= 1
+          period = 36
+        } else if (parseInt(period) === 36 && step === 1) {
+          year += 1
+          period = 1
+        } else {
+          period = parseInt(period) + step
+        }
+        period = year.toString() + period
+        var date = dateUtil.periodToDate(period)
+
+        var end = new Date(this.end.getFullYear() + '-12-21')
+        if (end.getTime() >= date.getTime() && this.start.getTime() <= date.getTime()) {
+          this.$emit('changeDate', date)
+        }
+      },
+      setCurYear(year) {
+        this.curYear = year
       }
     },
     watch: {
@@ -89,37 +113,28 @@ scoped>
 .date-line {
   position: relative;
   overflow: hidden;
-  height: 102px;
+  height: 42px;
 
   .dl-header {
     position: absolute;
     background: #fff;
-    width: 45px;
-    height: 98px;
-    color: #539ef9;
-    left: 222px;
+    height: 42px;
+    padding: 0 9px;
+    color: #000;
+    left: 20px;
     font-size: 14px;
     text-align: center;
     z-index: 3;
-    margin-top: 1px;
+    box-shadow: 2px 3px 4px #b1b4b4;
     i {
       position: relative;
-      top: 20px;
-    }
-    span {
-      position: absolute;
-      width: 5px;
-      height: 50px;
-      top: 36px;
-      left: 25px;
-      border-left: 1px solid #a0a0a0;
+      top: 14px;
     }
   }
   .dl-body {
     background: #fff;
     z-index: 0;
-    height: 100px;
-    margin-left: 220px;
+    height: 42px;
     position: absolute;
     left: 0;
     background-color: #fff;
@@ -131,8 +146,8 @@ scoped>
     right: 0;
     top: 0;
     width: 20px;
-    height: 101px;
-    line-height: 100px;
+    height: 42px;
+    line-height: 42px;
     text-align: center;
     font-size: 20px;
     color: #949494;
@@ -141,28 +156,19 @@ scoped>
     background: -webkit-linear-gradient(top,#ffffff,#e6e5e5);
     z-index: 20;
   }
-}
-@keyframes shrink {
-  0% {
-    width: 100%;
+  span {
+    font-size: 14px;
+    z-index: 20;
+    position: relative;
+    width: 20px;
+    height: 42px;
+    line-height: 42px;
+    background: #d6d6d3;
+    cursor: pointer;
+    text-align: center;
+    &:hover {
+      background: #c4e48a;
+    }
   }
-  100% {
-    width: 240px;
-  }
-}
-.dl-shrink {
-  .mixin-animation(shrink;.5s;1;forwards);
-}
-
-@keyframes expand {
-  0% {
-    width: 240px;
-  }
-  100% {
-    width: 100%;
-  }
-}
-.dl-expand {
-  .mixin-animation(expand;.5s;1;forwards)
 }
 </style>

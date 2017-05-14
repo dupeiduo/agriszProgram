@@ -3,7 +3,7 @@
   	<table class="market-table market-change">
   		<tbody>
   			<tr v-for="(item,index) in tableData" @click="changeEchart(index)">
-  				<td class="market-td-bg" width="20%">
+  				<td width="20%">
   					<p class="market-big-title">{{item.market_name}}</p>
   				</td>
   				<td width="15%">
@@ -28,7 +28,7 @@
 			</tr>
 		</tbody>
 	</table>
-	<div class="none-data" v-show="tableData.length == 0">-暂无数据-</div>
+	<div class="none-data" v-show="tableData.length == 0 && showNoData" >-暂无数据-</div>
   </div>
 </template>
 
@@ -41,6 +41,10 @@
   		},
   		changeEchart: {
   			type: Function
+  		},
+  		showNoData: {
+  			type: Boolean,
+  			default: true
   		}
   	},
     data(){
@@ -62,24 +66,19 @@
   scoped>
   .market-table-wrap {
   	width: 100%;
-  	margin-top: 15px;
+  	min-height: 80px;
+  	margin: 14px 0;
   	overflow: hidden;
     border-radius: 4px;
+       .none-data {
+       	line-height: 30px;
+       }
     	.market-table {
 		    width: 100%;
 		    	tr {
 				    position: relative;
 				    cursor: pointer;
-				    border: 1px solid #d7d7d7;
-				    	.market-td-bg {
-						    padding-right: 20px;
-						    padding-left: 20px;
-						    text-align: left;
-						    background: #f9f7f7;
-						    	.market-big-title {
-								    font-size: 14px;
-								}
-						}
+				    border-bottom: 1px dotted #d7d7d7;
 						.market-table-compare {
 						    text-align: left;
 						    padding-left: 60px;
@@ -101,14 +100,14 @@
 						}
 						.market-check-detail {
 							position: relative;
-						    text-align: right;
 						    opacity: 0;
 						    	a {
 								    position: absolute;
 								    top: 0;
-								    left: -60px;
-								    padding: 2px 6px;
-								    background: #c6d698;
+								    right: 0px;
+								    width: 60px;
+								    padding: 6px 10px;
+								    background: #9fd233;
 								}
 						}
 						td {
@@ -123,17 +122,24 @@
 										}
 						    	}
 						    }
+						    .market-big-title {
+						        text-align: left;
+						        margin-left: 10%;
+						     }
+						}
+						&:nth-child(2n) {
+							background: #f3f9eb;
 						}
 				}
 				tr:hover {
 					position: relative;
 				    z-index: 2;
-				    background: #e8faec;
+				    background: #eafcd5;
 				    	.market-check-detail {
 						    opacity: 1;
 						}
 				    	td {
-				    		background: #e8faec;
+				    		background: #eafcd5;
 				    	}
 				}
 		}

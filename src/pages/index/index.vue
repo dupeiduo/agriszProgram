@@ -36,7 +36,7 @@
           <li @click="goMonitor(2)">
             <a class="drought-link" href="javascript:void(0)">
               <span>
-                <h3 class="function-icon iconfont icon-hanqing-"></h3>
+                <h3 class="function-icon iconfont icon-weibiaoti-"></h3>
                 <h3>区域旱情</h3>
               </span>
               <p>依据高时间分辨率遥感数据提供动态监测区域干旱状况</p>
@@ -174,6 +174,7 @@
                 font-size: 52px;
                 margin-top: 12px;
                 color: #ba8c2f;
+                font-weight: normal;
               }           
             }
             span:hover {

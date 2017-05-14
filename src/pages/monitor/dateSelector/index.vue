@@ -1,11 +1,11 @@
 <template>
   <div>
-    <date-slider
+    <!-- <date-slider
       :date="date"
       :start="start"
       :end="end"
       @changeDate="changeDate"
-      ></date-slider>
+      ></date-slider> -->
     <date-line
       :date="date"
       :dlData="dlData"

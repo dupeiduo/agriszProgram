@@ -1,4 +1,17 @@
 export default {
+  "headerAnimate": {
+    "openeDely": 360,
+    "closeDelay": 100,
+    "leaveDelay": 0
+  },
+  "NDVI": {
+    "areaName": "nengjiangnongchang",
+    "satelLite": "landsat8",
+    "landDate": "2011-01-01",
+    "zoomLevel": 11,
+    "coordinates": [13957050, 6246870],
+    "extent": [13942880.17,6228147.10,13974762.56,6260774.10]
+  },
   "productLegendConf" :
   {
     "NDVI": {
@@ -655,8 +668,8 @@ export default {
         "hg": [0.3, 0.25], 
         "as": [40, 30], 
         "pb": [80, 50], 
-        "cr": [150, 250], 
-        "cu": [50, 150], 
+        "cr": [250, 150], 
+        "cu": [150, 50], 
         "six": 0.1, 
         "ddt": 0.1, 
         "zn": 200, 
@@ -667,8 +680,8 @@ export default {
         "hg": [0.5, 0.3], 
         "as": [30, 25], 
         "pb": [80, 50], 
-        "cr": [200, 300], 
-        "cu": [100, 200], 
+        "cr": [300, 200], 
+        "cu": [200, 100], 
         "six": 0.1, 
         "ddt": 0.1, 
         "zn": 250, 
@@ -679,13 +692,21 @@ export default {
         "hg": [1.0, 0.35], 
         "as": [25, 20], 
         "pb": [80, 50], 
-        "cr": [250, 350], 
-        "cu": [100, 200], 
+        "cr": [350, 250], 
+        "cu": [200, 100], 
         "six": 0.1, 
         "ddt": 0.1, 
         "zn": 300, 
         "ni": 60
       }
     }
+  },
+  "cropIcons": {
+    "201": "icon-hetao-",
+    "135": "icon-shuidao-",
+    "117": "icon-ganzhe-",
+    "134": "icon-yumi-",
+    "210": "icon-mangguo-",
+    "136": "icon-chaye",
   }
 }

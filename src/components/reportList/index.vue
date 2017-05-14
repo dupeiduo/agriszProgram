@@ -1,5 +1,5 @@
 <template>
-  <div :style="{'height':clientH + 'px'}"  v-scroll="onScroll" class="report-list">
+  <div :style="{'height':clientH + 'px',paddingTop: '14px'}"  v-scroll="onScroll" class="report-list">
     <ul v-show ="reportContent.length > 0"
       >
       <li class="report-single" 
@@ -18,9 +18,9 @@
         <div class="report-content">
           <p class="report-h3">
             <span class="report-title font14">
-              <el-tooltip :content="item.title"  placement="bottom" effect="light" :disabled="styleCtl === ''">
+              <!-- <el-tooltip :content="item.title"  placement="bottom" effect="light" v-if="styleCtl === ''"> -->
                 {{item.title}}
-              </el-tooltip>
+              <!-- </el-tooltip> -->
             </span>
             <span class="report-date ps">{{item.time}}</span>
           </p>
@@ -92,10 +92,7 @@ import config from 'config/env/config.env.js';
         var clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
         var scrollTop = position.scrollTop;
         var scrollHeight = document.getElementsByClassName('report-list')[0].scrollHeight
-        
-        if (scrollHeight <= scrollTop + clientHeight) {
-          this.$emit('scrollToBottom');
-        }
+        this.$emit('scrollToBottom', (scrollHeight <= scrollTop + clientHeight), scrollTop);
       }
     },
     components: {}
@@ -105,15 +102,13 @@ import config from 'config/env/config.env.js';
     lang="less"
     rel="stylesheet/less"
     scoped>
+    @import '../../assets/style/reset';
+
   .report-list {
     overflow-x: hidden;
     padding: 0px 14px 14px;
     margin: 0 auto;
     background: #fff;
-    .none-data {
-      position: relative;
-      top: -60px;
-    }
     .none-words {
       display: block;
       font-size: 14px;
@@ -133,7 +128,8 @@ import config from 'config/env/config.env.js';
         border-right: 1px solid #e0e0e0;
         border-bottom: 2px solid #e0e0e0;
         border-left: 1px solid #e0e0e0;
-        box-shadow: 0 1px 2px #e7e7e7;
+        .mixin-boxshadow();
+
           #down-animated {
              -webkit-animation-duration: .34s;
              cursor: pointer;
@@ -142,11 +138,12 @@ import config from 'config/env/config.env.js';
             position: relative;
             float: left;
             overflow: hidden;
-            width: 120px;
+            width: 102px;
             height: 106px;
+            background: #eef3f0;
               img {
-                width: 192px;
-                height: 170px;
+                width: 102px;
+                height: 106px;
                 margin-right: 8px;
             }
               .re-orange {
@@ -295,8 +292,6 @@ import config from 'config/env/config.env.js';
               width: 1088px;
           }
           .report-list {
-              -webkit-box-shadow: 1px 4px 13px #d0d0d0;
-              -moz-box-shadow: 1px 4px 13px #d0d0d0;
               box-shadow: 1px 4px 13px #d0d0d0;
           }
           .reports {

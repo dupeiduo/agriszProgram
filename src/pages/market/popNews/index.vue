@@ -1,9 +1,9 @@
 <template>
-    <div class="news-popup w100per">
-          <div class="news-popup-container">
+    <div class="news-popup" :style="{'min-height':client - 150 + 'px'}">
+          <div class="news-popup-container" :style="{'min-height':client - 170 + 'px'}">
             <hr class="hr-con">
             <h4 class="news-popup-title clear">
-              <p class="fl">{{popNewsData.title}}</p>
+              <p class="news-popup-title-p fl">{{popNewsData.title}}</p>
               <p class="fl news-popup-crop clear">
                 <span v-for="item in label">{{item}}</span>
               </p>
@@ -39,10 +39,13 @@
     data(){
       return {
         label: [],
-        main_body: ''
+        main_body: '',
+        client: null
       }
     },
-    mounted(){},
+    mounted(){
+      this.client = document.documentElement.clientHeight || document.body.clientHeight;
+    },
     computed: {
 
     },
@@ -66,14 +69,13 @@
   scoped>
   .news-popup {
       z-index: 2;
-      display: none;
       overflow-x: hidden;
       min-height: 500px;
       background: #e6e6e6;
         .news-popup-container {
           width: 800px;
           min-height: 500px;
-          margin: 0 auto;
+          margin: 25px auto;
           background: #fff;
            .container-title {
               line-height: 44px;
@@ -95,6 +97,11 @@
            .news-popup-title {
               font-size: 20px;
               margin-left: 50px;
+
+              .news-popup-title-p {
+                margin-top: 5px;
+              }
+
                 span {
                   font-size: 12px;
                   float: left;
@@ -107,6 +114,8 @@
               }
           }
           .news-popup-time {
+            margin-top: 8px;
+
             span {
               display: inline-block;
               margin-left: 50px;

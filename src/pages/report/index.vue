@@ -1,25 +1,28 @@
 <template>
   <div class="report clear">
-    <v-leftList :leftList="leftList" @changeTopic="changeState"></v-leftList>
+    <v-leftList
+      :leftList="leftList" 
+      :loading="leftLoading"
+      @changeTopic="changeState"></v-leftList>
     <div class="right-container">
       <div class="reports">
-        <div class="style-ctl">
+        <div class="style-ctl" :class="className">
           <div class="right-svg">
             <span class="iconfont icon-liebiao-copy1"
               :class="styleCtl == 'vertical' ? 'active' : ''"
               @click="styleCtl = 'vertical'"
-            ></span>
+            >书架模式</span>
             <span class="iconfont icon-reorder pr set-top"
               :class="styleCtl == '' ? 'active' : ''"
               @click="styleCtl = ''"
-            ></span>
+            >列表模式</span>
           </div>
         </div>
         <reportList v-if="styleCtl ===''"
             :reportContent="reportContent" 
             @scrollToBottom="scrollToBottom"
             :styleCtl="styleCtl"
-            :clientH="clientH"
+            :clientH="clientH + 20"
             :noMore="noMore"
             class="report-bottom"
             >
@@ -28,11 +31,10 @@
             :reportObject="reportVContent" 
             @scrollToBottom="scrollToBottom"
             :styleCtl="styleCtl"
-            :clientH="clientH"
+            :clientH="clientH + 30"
             :noMore="noMore"
             class="report-bottom"
         ></v-list>
-        <footerlite></footerlite>
       </div>
     </div> 
   </div>
@@ -43,13 +45,14 @@
   import request from 'api/request.js';
   import format from 'api/model.js';
   import reportList from 'components/reportList/';
-  import footerlite from 'components/footerlite/';
   import vList from 'pages/report/vList/';
   export default {
     data() {
         return {
+          leftLoading: false,
           leftList: [],
           reportContent: [],
+          reportData: [],
           reportVContent: null,
           perPage: 20,
           topicId: null,
@@ -57,16 +60,17 @@
           total: -1,
           styleCtl:'vertical',
           clientH: -1,
-          noMore: false
+          noMore: false,
+          className: ''
         }
       },
       mounted() {
-       
-          this.clientH = document.documentElement.clientHeight - 90 || document.body.clientHeight - 90;
-        var formatedType = format.formatRepType,
-          _this = this;
-        request.reportType().then(function(requestData) {
-          _this.leftList = formatedType(requestData.data);
+        this.clientH = document.documentElement.clientHeight - 153 || document.body.clientHeight - 153;
+        var formatedType = format.formatRepType
+        this.leftLoading = true
+        request.reportType().then((requestData)=> {
+          this.leftList = formatedType(requestData.data);
+          this.leftLoading = false
         })
       },
       methods: {
@@ -93,20 +97,29 @@
               }
             } else {
               if (curPage == 1) {
-                this.reportVContent = format.formatReportVList(requestData.data.data);
+                this.reportData = format.formatReportVList(requestData.data.data);
+                this.reportVContent = this.reportData.datastore
               } else {
-                this.reportVContent = format.formatReportVList(requestData.data.data, this.reportVContent)
+                this.reportData = format.formatReportVList(requestData.data.data, this.reportData);
+                this.reportVContent = this.reportData.datastore
               }
             }
           })
         },
-        scrollToBottom() {
-          if (this.total && this.total <= this.perPage * this.curPage) {
-            this.noMore = true
-            return
+        scrollToBottom(toBottom, scrollTop) {
+          if (scrollTop !== 0) {
+            this.className = 'bottom-show'
+          } else {
+            this.className = ''
           }
-          this.curPage += 1;
-          this.getReportList(this.curPage, this.perPage, this.topicId)
+          if (toBottom) {
+            if (this.total && this.total <= this.perPage * this.curPage) {
+              this.noMore = true
+              return
+            }
+            this.curPage += 1;
+            this.getReportList(this.curPage, this.perPage, this.topicId)
+          }
         }
       },
       watch: {
@@ -118,7 +131,6 @@
       components: {
         vLeftList,
         reportList,
-        footerlite,
         vList
       }
   }
@@ -127,74 +139,64 @@
     lang="less"
     rel="stylesheet/less"
     scoped>
+    @import '../../assets/style/reset';
     .report {
       position: relative;
-      overflow: hidden;
     }
     .right-container {
       margin-left: 176px;
       .reports {
         position: relative;
-        top: 68px;
-        background: #dfdddd;
+        top: @top;
+        background: #f0f0f0;
       }
     }
+    .bottom-show {
+      box-shadow: 0px 2px 7px #b5b5b5;
+    }
     .style-ctl {
-          line-height: 54px;
-          position: relative;
-          width: 100%;
-          height: 54px;
-          margin: 0 auto;
-          padding: 0 14px;
-          background: #fff;
-      }
-    .style-ctl {
+        position: relative;
+        margin: 0 auto;
+        padding: 0 14px;
+        background: #fff;
+        .mixin-height(54px);
           .right-svg {
             position: absolute;
             right: 38px;
-              .active {
-                  color: #fdbe9a;
+              .active,.active:hover {
+                  color: #498d3d;
+                  cursor: default;
+                  text-decoration: none;
               }
               span {
-                font-size: 20px;
+                font-size: 16px;
                 margin-left: 15px;
-                cursor: pointer;
+                cursor: default;
                 color: #90a2a9;
+                &:hover {
+                  cursor: pointer;
+                  color: #6cbc35;
+                  text-decoration: underline;
+                }
               }
           }
+       @media screen and ( min-width: 1440px) {
+        width: 1088px;
+       }
+      @media screen and ( max-width: 1062px) {
+        width: 632px;
+      }
+      @media screen and ( max-width: 840px) {
+         width: 615px;
+      }
+      @media screen and ( max-width: 820px) {
+         width: 590px;
+      }
      }
-    @media screen and ( min-width: 1440px) {
-        .right-container {
-          .style-ctl {
-              width: 1088px;
-          }
-        }
-    }
     @media screen and ( max-width: 1256px) {
       .right-container {
         .report-list {
             width: 858px;
-        }
-      }
-    }
-    @media screen and ( max-width: 1062px) {
-      .right-container {
-        .style-ctl {
-            width: 632px;
-        }
-      }
-    }
-    @media screen and ( max-width: 840px) {
-      .right-container {
-        .style-ctl {
-            width: 615px;
-        }
-      }
-    }
-    @media screen and ( max-width: 820px) {
-      .right-container {
-        .style-ctl {
-            width: 590px;
         }
       }
     }

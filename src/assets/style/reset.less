@@ -1,21 +1,102 @@
 @theme-color:#6ca3fc;
 @imgurl:"/static/assets/img/";
-.box-bottom {
-  box-shadow: 0 1px 6px #aeaeae;
-}
-.box-right {
-  box-shadow: -2px 0px 8px #aeaeae;
-}
-.box-bottom-right {
-  box-shadow: 0 2px 8px #aeaeae;
-}
+@top: 47px;
+
+
+/* ======== border ======== */ 
+
 .mixin-border(@color;@number){
   border: 1px solid @color;
   border-radius: @number;
 }
+.mixin-borderline(@top;@left;@bottom;@right){
+  border-top: @top solid #dcdcdc;
+  border-left: @left solid #dcdcdc;
+  border-bottom: @bottom solid #dcdcdc;
+  border-right: @right solid #dcdcdc;
+}
+.mixin-common-border(){
+  border-radius: 4px;
+}
+.mixin-border-radius-bottom() {
+  border-radius: 0 0 4px 4px;
+}
+
+/* ======== height ======== */
 .mixin-height(@height){
   height: @height;
   line-height: @height;
+}
+
+/* ======== scale ======== */
+.mixin-transscale(@scale){
+    -webkit-transform: scale(@scale);
+    -moz-transform: scale(@scale);
+    -o-transform: scale(@scale);
+    transform: scale(@scale);
+}
+
+/* ======== position ======== */
+.mixin-position(@left;@right){
+  position: absolute;
+  left: @left;
+  top: @right;
+  transform: translate(-50%,-50%);
+}
+
+/* ======== width ======== */
+.mixin-width(@width){
+  width: @width;
+  text-align: center;
+}
+
+/* ======== bgcolor ======== */
+.mixin-gradient(){
+  background: linear-gradient(top, #effdd7, #e3f8bc);
+  background: -o-linear-gradient(top, #effdd7, #e3f8bc);
+  background: -moz-linear-gradient(top, #effdd7, #e3f8bc);
+  background: -webkit-linear-gradient(top, #effdd7, #e3f8bc);
+}
+.mixin-gradient-bg(@topcolor;@bottomcolor){
+  background: linear-gradient(top, @topcolor, @bottomcolor);
+  background: -o-linear-gradient(top, @topcolor, @bottomcolor);
+  background: -moz-linear-gradient(top, @topcolor, @bottomcolor);
+  background: -webkit-linear-gradient(top, @topcolor, @bottomcolor);
+}
+.mixin-content-title-bg(){
+  background: #f3f9eb;
+}
+
+/* ======== ellipsis ======== */
+.mixin-ellipsis(@width){
+  width: @width;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ======== boxshadow ======== */
+.mixin-boxshadow (@x:0;@y:2px;@blur:4px;@color:rgba(0,0,0,.4)){
+  box-shadow: @x @y @blur @color;
+}
+.mixin-boxshadow-soft (@x:0;@y:2px;@blur:4px;@color:rgba(0,0,0,.2)){
+  box-shadow: @x @y @blur @color;
+}
+.mixin-boxshadow-hard (@x:0;@y:2px;@blur:4px;@color:rgba(0,0,0,.6)){
+  box-shadow: @x @y @blur @color;
+}
+.box-bottom {
+  box-shadow: 0 1px 6px #aeaeae;
+}
+
+/* ======== animation ======== */
+.mixin-animation-function(@time: linear){
+  animation-timing-function: @time;
+  -webkit-animation-timing-function: @time;
+}
+.mixin-animation-duration(@time: .35s){
+   animation-duration: @time;
+   -webkit-animation-duration: @time;
 }
 .mixin-animation(@name;@time;@count;@mode){
   animation-name: @name;
@@ -23,25 +104,15 @@
   animation-iteration-count: @count; 
   animation-fill-mode: @mode;
 }
-.mixin-transscale(@scale){
-  -webkit-transform: scale(@scale);
-    -moz-transform: scale(@scale);
-    -o-transform: scale(@scale);
-    transform: scale(@scale);
-}
-.mixin-position(@left;@right){
-  position: absolute;
-  left: @left;
-  top: @right;
-  transform: translate(-50%,-50%);
-}
-.mixin-width(@width){
-  width: @width;
-  text-align: center;
-}
-.mixin-gradient(){
-  background: linear-gradient(top, #ecf9dd, #d0e9b4);
-  background: -o-linear-gradient(top, #ecf9dd, #d0e9b4);
-  background: -moz-linear-gradient(top, #ecf9dd, #d0e9b4);
-  background: -webkit-linear-gradient(top, #ecf9dd, #d0e9b4);
+
+/* ======== afterborder ======== */
+.mixin-aferborder(@height;@bgcolor){
+    position: absolute;
+    right: 0;
+    content: "";
+    width: 1px;
+    height: @height;
+    background: @bgcolor;
+    vertical-align: middle;
+    display: inline-block;
 }

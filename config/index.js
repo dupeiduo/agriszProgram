@@ -1,5 +1,6 @@
 // see http://vuejs-templates.github.io/webpack for documentation.
 var path = require('path')
+var proxy  = require('../mock/index.js')
 
 module.exports = {
   build: {
@@ -21,15 +22,7 @@ module.exports = {
     port: 8123,
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
-    proxyTable: {
-        '/php/': {
-            target: 'http://data.agrisz.com.cn/php', 
-            changeOrigin: true,
-            pathRewrite: {
-                '^/php' : '/'
-            }
-        }
-    },
+    proxyTable: proxy,
     // CSS Sourcemaps off by default because relative paths are "buggy"
     // with this option, according to the CSS-Loader README
     // (https://github.com/webpack/css-loader#sourcemaps)

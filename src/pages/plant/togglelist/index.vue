@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="toggle-container-bg">
     <ul class="toggle-container" v-show="list.length > 0">
       <li v-for="(p, index) in list">
         <p @click="toggle(p.open, index)">
@@ -58,19 +58,22 @@
 </script>
 
 <style lang="less">
+.toggle-container-bg {
+  padding-bottom: 2px;
+}
   .toggle-container {
     max-height: 370px;
     overflow-x: hidden;
     margin: 10px;
     border: 1px solid #b5b5b5;
     border-radius: 6px;
+    padding-top: 4px;
 
     li {
       cursor: pointer;
-      width: 250px;
-      margin: 0 10px;
+      width: 290px;
       p {
-        line-height: 46px;
+        line-height: 32px;
         width: 100%;
         padding: 0 18px;
 
@@ -94,15 +97,16 @@
         }
       }
       ul {
-        margin: 5px 10px;
+        margin: 5px 0px;
         background: #eee;
-        width: 270px;
+        width: 350px;
         padding: 8px 0px 0px;
-        border-radius: 5px;
 
         li {
+          margin-left: 38px;
           .switch {
             float: right;
+            margin-right: 14px;
           }
         }
       }

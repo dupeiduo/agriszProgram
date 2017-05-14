@@ -16,13 +16,13 @@
                 <td>{{item.compare}}<span class="iconfont" :class="item.className"></span></td>
                 <td class="show-pie" >
                   <span class="iconfont icon-bingtu compare-all"
-                        @mouseover="showEchart(index)"
+                        @mouseover="showEchart($event,index)"
                         @mouseout="hideEchart"
                   ></span>
                 </td>
             </tr>
           </tbody>
-          <tbody v-show="tabData.length == 0" class="al-nonedata none-data" >暂无数据</tbody>
+          <tbody v-show="tabData.length == 0 && showNoData" class="al-nonedata none-data" >暂无数据</tbody>
     </table>
     <div class="statistics" id="statistics">
         <my-echart class="analyze-statistics pr" :options="option"></my-echart>
@@ -46,6 +46,10 @@
       type: {
         type: String,
         default: ''
+      },
+      showNoData: {
+        type: Boolean,
+        default: true
       }
     },
     data() {
@@ -58,7 +62,8 @@
        this.statistics = document.getElementById('statistics');
       },
       methods: {
-        showEchart(index){
+        showEchart(event,index){
+          event = event || window.event;
           var y = event.clientY
           var x = event.clientX - 280
           this.statistics.style.top = `${y}px`

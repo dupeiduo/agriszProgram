@@ -31,6 +31,6 @@
     height: 100%;
   }
   .occupation {
-    margin-top: 100px;
+    margin-top: 64px;
   }
 </style>

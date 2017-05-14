@@ -1,11 +1,13 @@
 <template>
-	<div>
-		 <div class="shadow-cover" v-show="showReport"></div>
-	   <div  @click="showEventHandler" class="check-report">{{reportName}}</div>
-	   <div class="report-alllist" id="report-alllist" v-show="showReport">
-	    	<span class="report-close">
-          <i @click="showReport=false" class="el-icon-close"></i>  
+	<div v-if="showReport">
+		 <div class="shadow-cover"></div>
+	   <div class="report-alllist">
+      <p class="report-section pr">
+        <span class="report-alllist-title font14" v-if="showReportTitle">{{reportTitle}}</span>
+        <span class="report-close">
+          <i @click="closePopReport" class="el-icon-close"></i>  
         </span>
+      </p>
         <div class="scroll-container">
           <slot name="reportList"></slot>
         </div>
@@ -18,18 +20,28 @@
       reportName:{
         type: String,
         default: ''
+      },
+      showReport: {
+        type: Boolean,
+        default: false
+      },
+      showReportTitle: {
+        type: Boolean,
+        default: false
+      },
+      reportTitle: {
+        type: String,
+        default: '11'
       }
     },
 		data(){
 			return {
-				showReport: false
 			}
 		},
 		methods:{
-      showEventHandler(){
-        this.showReport = true;
-        this.$emit('loadReport');
-      },
+      closePopReport() {
+        this.$emit('closePopReport')
+      }
 		},
     watch: {
 
@@ -38,19 +50,6 @@
 	}
 </script>
 <style lang="less" scoped>
-      .check-report {
-        line-height: 28px;
-        position: fixed;
-        z-index: 1;
-        top: 77px;
-        right: 80px;
-        width: 126px;
-        height: 28px;
-        padding-left: 40px;
-        cursor: pointer;
-        color: #fff;
-        background: url(/static/assets/img/common/product-check.png) no-repeat;
-    }
   .shadow-cover {
       position: absolute;
       z-index: 3;
@@ -71,7 +70,15 @@
       background: #fff;
       overflow: hidden;
       padding-bottom: 60px;
-
+      .report-section {
+        height: 30px;
+        width: 100%;
+      }
+      .report-alllist-title {
+        position: absolute;
+        left: 14px;
+        top: 10px;
+      }
       .scroll-container {
         position: relative;
         width: 700px;
@@ -79,13 +86,9 @@
       }
   }
   .report-close {
-    line-height: 30px;
-    display: block;
-    z-index: 2;
-    width: 98%;
-    margin-top: 12px;
+    position: absolute;
+    right: 14px;
+    top: 10px;
     cursor: pointer;
-    text-align: right;
-    background: #fff;
 }
     </style>

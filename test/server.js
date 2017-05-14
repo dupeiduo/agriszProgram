@@ -1,9 +1,12 @@
 var path = require('path')
 var fs = require('fs')
 var express = require('express')
+var proxyMiddleware = require('http-proxy-middleware')
+var opn = require('opn')
+var config = require('../config')
 
 // default port where dev server listens for incoming traffic
-var port = '8083'
+var port = '8123'
 // Define HTTP proxies to your custom API backend
 // https://github.com/chimurai/http-proxy-middleware
 
@@ -18,6 +21,20 @@ var app = express()
 // serve pure static assets
 var staticPath = '../dist/static'
 app.use('/static', express.static('../dist/static'))
+
+var proxyTable = config.dev.proxyTable
+// proxy api requests
+Object.keys(proxyTable).forEach(function (context) {
+  var options = proxyTable[context]
+  if (typeof options === 'string') {
+    options = { target: options }
+  }
+  if(typeof options === 'function'){
+    app.use(context, options)
+  }else{
+    app.use(proxyMiddleware(context, options))
+  }
+})
 // 路由
 app.get('/:viewname?', function(req, res, next) {
 
@@ -47,4 +64,5 @@ module.exports = app.listen(port, function (err) {
     }
     var uri = 'http://localhost:' + port
     console.log('Listening at ' + uri + '\n')
+    opn(uri)
 })

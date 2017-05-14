@@ -12,45 +12,113 @@
   color: #999;
   line-height: 1.6; 
 }
-.we-legend .el-tooltip, .el-tooltip__rel, .left-tab .el-tooltip, .el-tooltip__rel {
+.we-legend .el-tooltip, .el-tooltip__rel, .el-tooltip__rel {
   display: flex;
 }
 .tree-input {
-  width: 190px;
+  width: 318px;
   height: 22px;
-  border: 1px #c0ccda solid;
-  position: relative;
-  left: 10px;
-  top: 10px;
   padding: 5px;
-  color: #666;
-  font-weight: 500;
+  border: 1px solid #d4d8d2;
   border-radius: 4px;
+  cursor: pointer;
 }
 .tree {
   position: absolute;
-  width: 200px;
-  height: 230px;
-  margin: 10px 0 10px 10px;
+  width: 328px;
+  height: 160px;
+  margin: 10px 0 10px 0px;
   text-align: left;
-  background: #fff;
   z-index: 1002;
   overflow: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px #ccc;
+}
+.tree-classify-con .tree {
+  left: 12px;
+}
+.tree-icon {
+  right: 8px;
+  top: 12px;
+}
+.confirm-btn {
+  position: absolute;
+  z-index: 1003;
+  top: 14px;
+  right: 13px;
+  width: 90px;
+  text-align: center;
+  height: 25px;
+  line-height: 25px;
+  font-size: 14px;
+  border: 1px solid #9fd032;
+  border-radius: 2px;
+  cursor: pointer;
+  background: #9fd032;
+}
+.confirm-btn:before {
+  content: '';
+  position: absolute;
+  right: -14px;
+  top: -15px;
+  width: 328px;
+  height: 1px;
+  background: #e4e4e4;
+}
+.confirm-btn:hover {
+  background: #cadc76;
+  border: 1px solid #9fd032;
 }
 .slider-container {
-  position: relative;
-  width: 285px;
-  height: 40px;
-  margin: 30px 0 0 10px; 
+  width: 306px;
+  height: 46px;
+  line-height: 46px;
   display: block;
 }
+.slider-container .el-slider__button-wrapper {
+  top: -22px;
+}
 .slider-container .slider {
-  float: right;
-  width: 210px;
-  margin: -4px 18px;
+  float: left;
+  width: 170px;
+  margin: -2px 12px;
+}
+.slider-container .el-slider__bar {
+  height: 6px;
+  background-color: #b0cefd;
+}
+.ndvi .ndvi-measure .ndvi-datesel .date-sel {
+  top: 76px;
+}
+.ndvi-datesel .ndvi-slider .el-slider__bar {
+  height: 6px;
+  background-color: #d6a7d1;
+}
+.ndvi-datesel .ndvi-slider.el-slider__runway {
+  height: 6px;
+  margin: 22px 0;
+  background-color: #e2e7e1;
+}
+.ndvi-datesel .ndvi-slider .el-slider__button {
+  background: #c07bb9;
+  border: 1px solid #fff;
+  box-shadow: 0px 2px 4px #cdd1da;
+}
+.ndvi-slider .el-slider__runway:hover .el-slider__bar {
+  background: #be88b9;
+}
+.slider-container .el-slider__runway {
+  height: 6px;
+  margin: 22px 0;
+  background-color: #e2e7e1;
 }
 .slider-container .demonstration {
   float: left;
+}
+.slider-container .el-slider__button {
+  background: #79b4f1;
+  border: 1px solid #fff;
+  box-shadow: 0px 2px 4px #cdd1da;
 }
 .hm-selector .el-input__icon {
   width: 25px;
@@ -64,13 +132,19 @@
 }
 .tb-detail table tr, .select-dropdown .el-select-dropdown__item {
   font-size: 12px;
-  text-align: left;
-}
-.tb-detail .el-table .cell, .tb-detail .el-table th>div {
-  padding: 0 5px;
-}
-.tb-detail .el-table th .cell {
   padding: 0 10px;
+  line-height: 36px;
+}
+/*.tb-detail .el-table .cell, .tb-detail .el-table th>div {
+  padding: 0 5px;
+}*/
+.tb-detail .el-table th .cell {
+  padding: 0 20px;
+  text-align: center;
+}
+.land-info .el-table th .cell {
+  padding: 0 !important;
+  text-align: center;
 }
 .soil .left-tab .list-menu .cf-active {
   width: 58px;
@@ -124,9 +198,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.tb-detail .el-table__body-wrapper tbody td:nth-child(2) {
-  text-align: center;
-}
 .tb-detail .el-table__body-wrapper {
   overflow: hidden;
 }
@@ -177,4 +248,295 @@
 .soil-drop-menu .el-dropdown-menu__item:not(.is-disabled):hover {
   background: #cceaff;
   color: #000;
+}
+.el-slider__button.dragging, .el-slider__button.hover, .el-slider__button:hover {
+  transform: scale(1.1) !important;
+  background: #58a4f7;
+}
+.el-slider__runway:hover .el-slider__bar {
+  background: #58a4f7;
+}
+.tree-bg .el-radio {
+  line-height: 1em;
+  margin: 18px 20px 0px 0;
+}
+.el-radio__label {
+  font-size: 12px !important;
+}
+.el-radio .el-radio__inner {
+  width: 14px;
+  height: 14px;
+}
+.tree-bg .el-radio__input.is-checked .el-radio__inner {
+  border-color: #5a79de;
+  background: #5a79de;
+}
+.tree-bg .el-radio__inner:hover {
+    border-color: #5a79de;
+}
+.el-pagination .el-pager li.active, .el-pagination .el-pager li.active:hover{
+    border-color: #9fd032;
+    background-color: #9fd032;
+    color: #fff;
+}
+.el-pagination .el-pager li:hover {
+    color: #9fd032;
+}
+ .tb-detail .el-table thead tr {
+  border: 1px solid #d8d8d8;
+ }
+.tb-detail .el-table th {
+  background: linear-gradient(top, #fff, #f7f7f7);
+  background: -o-linear-gradient(top, #fff, #f7f7f7);
+  background: -moz-linear-gradient(top, #fff, #f7f7f7);
+  background: -webkit-linear-gradient(top, #fff, #f7f7f7)
+}
+.tb-detail .el-table__header-wrapper thead div {
+  background: none;
+}
+.tb-detail .el-table th.is-leaf {
+  font-size: 14px;
+  height: 37px;
+  font-weight: normal;
+  border-bottom: none;
+}
+.tb-detail .el-table th:nth-child(2) .cell {
+  padding-left: 0;
+  text-align: left;
+}
+.bama .tb-detail .el-table th:nth-child(2) .cell {
+  text-align: center;
+}
+.land-info .el-table th:nth-child(2) .cell {
+  padding-left: 0;
+  text-align: center !important;
+}
+.tb-detail .el-table td {
+  height: 26px;
+  text-align: center;
+  border-bottom: none;
+}
+.land-info .el-table td { 
+  height: 30px !important;
+ }
+.tb-detail .el-table {
+  border: none;
+}
+.tb-detail .el-table .cell {
+  line-height: 26px;
+}
+.tb-detail .el-table .cell .hide-animation {
+  display: none;
+}
+.tb-detail .el-table .cell:hover .hide-animation {
+    position: relative;
+    left: -18px;
+    width: 72px;
+    display: block;
+    animation-duration: .6s;
+    -webkit-animation-duration: .6s;
+    animation-timing-function: linear;
+    -webkit-animation-timing-function: linear;
+}
+.bama .tb-detail .el-table .cell:hover .hide-animation {
+  width: 186px;
+}
+.c-left-tab .tb-detail .el-table .cell:hover .eye-ctl {
+    display: none;
+}
+.land-info .el-table .cell {
+  line-height: 30px;
+}
+.tb-detail .el-table td:first-child {
+  text-align: right;
+}
+.land-info  .el-table td:first-child {
+  text-align: left !important;
+  padding-left: 6px;
+}
+.tb-detail .crop-icon {
+  float: left;
+}
+.tb-detail .el-table::after, .tb-detail .el-table::before {
+  background: none;
+}
+.el-icon-close {
+  font-size: 14px;
+  color: #a9a8a8;
+  cursor: pointer;
+}
+.el-icon-close:hover {
+  color: #367f05;
+}
+.el-tooltip__popper.is-light {
+  border: 1px solid rgba(153,153,153,.8) !important;
+}
+.trend-title .el-input__icon+.el-input__inner {
+  padding-right: 0;
+  border: 1px solid #b9b9b9;
+  color: #555;
+}
+.trend-title .el-input__inner {
+  height: 22px;
+}
+.trend-title .el-input {
+  font-size: 12px;
+}
+.el-select-dropdown__item {
+    font-size: 12px !important;
+  }
+.cell .eye-ctl {
+    font-size: 14px;
+    color: #8bbcf9;
+}
+.bama .cell .eye-ctl {
+  left: -8px;
+}
+.cell .icon-hide {
+    color: #a1a8ae;
+}
+.land-info tbody tr:nth-child(2n) {
+  background: #eef6fb;
+}
+.el-tooltip__popper {
+  padding: 4px 5px !important;
+}
+.plant-slider .slider {
+  width: 154px !important;
+}
+.ndvi-datesel .el-tree-node__content {
+    padding-left: 6px !important;
+  }
+
+.soil .ol-overlay-container .ent-popup {
+  position: relative;
+  background: rgba(255, 255, 255, 0.8);
+  width: 232px;
+  height: 84px;
+  border-radius: 2px;
+  cursor: default;
+}
+.soil .ol-overlay-container .ent-popup span {
+  position: absolute;
+  right: 0;
+  font-size: 20px;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+}
+.soil .ol-overlay-container .ent-popup h3 {
+  position: relative;
+  top: 12px;
+  font-size: 14px;
+  left: 12px;
+  color: #555;
+  width: 180px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.soil .ol-overlay-container .ent-popup p {
+  position: relative;
+  top: 10px;
+  padding: 10px;
+  height: 26px;
+}
+.soil .ol-overlay-container .ent-popup span:hover {
+  color: #f7ba2a;
+}
+
+.ndvi .ol-overlay-container .land-popup {
+  position: relative;
+  background: #fff;
+  width: 150px;
+  height: 75px;
+  border-radius: 4px;
+  cursor: default;
+}
+.ndvi .ol-overlay-container .land-popup span {
+  position: absolute;
+  right: 0;
+  font-size: 20px;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+}
+.ndvi .ol-overlay-container .land-popup h3 {
+  position: relative;
+  margin: 0 10px 7px;
+  top: 20px;
+}
+.ndvi .ol-overlay-container .land-popup h3 i {
+  color: #708c69;
+  font-size: 14px;
+}
+.slider-container .opacity-switch {
+  position: absolute;
+  right: -24px;
+  top: 10px;
+}
+.classify-slider .slider {
+  width: 124px;
+}
+.slider-container  .el-switch--wide .el-switch__label.el-switch__label--left span {
+  top: 5px;
+  font-size: 12px;
+}
+.slider-container  .el-switch--wide .el-switch__label.el-switch__label--right span {
+  top: 5px;
+  font-size: 12px;
+}
+.weather-test-time .el-date-editor.el-input {
+  width: 132px;
+  border-radius: 4px;
+  margin: 14px 0 10px;
+  cursor: pointer;
+}
+.el-picker-panel__body-wrapper .el-date-table td.current:not(.disabled), 
+.el-picker-panel__body-wrapper .el-date-table td.end-date, 
+.el-picker-panel__body-wrapper .el-date-table td.start-date {
+  background-color: rgb(194, 230, 117) !important;
+}
+.el-picker-panel__body-wrapper .el-date-table td.today:before{
+  border-top: .5em solid #c2e675;
+}
+.el-input .el-input__inner:focus {
+    outline: 0;
+    border-color: #fff;
+}
+.el-input__icon+.el-input__inner {
+  cursor: pointer;
+}
+.el-date-table td.today {
+  color: #c2e675 !important;
+}
+.pwd-login-caps .el-popover {
+  min-width: 86px;
+}
+.el-popover {
+  z-index: 20001!important;
+}
+
+.fore-loading-container .el-loading-mask .el-loading-spinner .circular {
+  width: 30px;
+  height: 30px;
+}
+.fore-loading-container .el-loading-mask .el-loading-spinner {
+  margin-top: -10px;
+}
+.login-btn .login-loading .el-loading-mask {
+  width: 0;
+  top: 8px;
+  left: 60px;
+}
+.login-btn .login-loading .el-loading-mask .el-loading-spinner .circular {
+  width: 30px;
+  height: 30px;
+}
+.login-btn .login-loading .el-loading-mask .el-loading-spinner .path {
+  stroke: #fff;
+  stroke-width: 4px;
+}
+.drop-down-menu .el-input__inner {
+  height: 30px;
 }

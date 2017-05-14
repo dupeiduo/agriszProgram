@@ -14,7 +14,8 @@ export default {
   },
   logout(state) {
     cookieUtil.delCookie('token')
-    cookieUtil.delCookie('ci_session')
+    cookieUtil.delCookie('sess_name_rscloud_formal_data_agrisz_com')
+    window.memoryCache = null
     state.user = {
       login: false,
       userName: '',
@@ -24,5 +25,17 @@ export default {
   },
   showLogin(state, isShow) {
     state.user.showLoginModal = isShow
+  },
+  startDraw(state) {
+    state.map.drawing = true
+  },
+  stopDraw(state) {
+    state.map.drawing = false
+  },
+  changeHeaderOpacity(state, opacity) {
+    state.headerOpacity = opacity
+  },
+  showBlurModal(state, show) {
+    state.showBlur = show
   }
 }

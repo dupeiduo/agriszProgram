@@ -2,12 +2,18 @@ export default {
   getLine: function (data) {
     var option = {
       tooltip: {
-        position: ['80%', '60'],
         trigger: 'axis'
       },
-      color:['#3ac1c3','#f7cc9b','#a1c7ee','#add985','#e5adc8'],
+      color:['#ff3607','#a1c7ee','#add985','#f7cc9b','#e5adc8'],
       legend: {
-        data:['当年','去年','最高','最低','平均'],
+        data:['当年','最高','最低','去年','平均'],
+        selected: {
+          '当年': true,
+          '最高': true,
+          '最低': true,
+          '去年': false,
+          '平均': false
+        },
         right: 50,
         top: '0%'
       },
@@ -24,7 +30,9 @@ export default {
         data: data.linexAxis
       },
       yAxis: {
-        type: 'value'
+        type: 'value',
+        min: Number(data.minValue * 0.85).toFixed(0),
+        max: Number(data.maxValue * 1.15).toFixed(0)
       },
       dataZoom: [{ 
         type: 'slider', 
@@ -33,14 +41,15 @@ export default {
       }],
       series: [
       {
+        zlevel: 6,
         name: '当年',
         lineStyle: {
           normal: {
             width: 3
           }
         },
-        symbol: 'none',
-        symbolSize: 10,
+        showSymbol: false,
+        symbolSize: 6,
         type:'line',
         data: data.current,
         markArea: 
@@ -55,19 +64,13 @@ export default {
             }
           },
           data: data.lineYearColor
+        },
+        areaStyle: {
+          normal: {
+            color: '#ff3607',
+            opacity: 0.2
+          }
         }
-      },
-      {
-        name: '去年',
-         lineStyle: {
-              normal: {
-                  width: 1.5,
-              }
-          },
-        symbol: 'none',
-        symbolSize: 10,
-        type:'line',
-        data: data.previous
       },
       {
         name: '最高',
@@ -76,10 +79,16 @@ export default {
                   width: 1.5,
               }
           },
-        symbol: 'none',
-        symbolSize: 10,
+        showSymbol: false,
+        symbolSize: 3,
         type:'line',
-        data: data.max
+        data: data.max,
+        areaStyle: {
+          normal: {
+            color: '#a1c7ee',
+            opacity: 0.2
+          }
+        }
       },
       {
         name: '最低',
@@ -88,22 +97,52 @@ export default {
                   width: 1.5,
               }
           },
-        symbol: 'none',
-        symbolSize: 10,
+        showSymbol: false,
+        symbolSize: 3,
         type:'line',
-        data: data.min
+        data: data.min,
+        areaStyle: {
+          normal: {
+            color: '#add985',
+            opacity: 0.2
+          }
+        }
+      },
+      {
+        name: '去年',
+         lineStyle: {
+              normal: {
+                  width: 1.5
+              }
+          },
+        showSymbol: false,
+        symbolSize: 3,
+        type:'line',
+        data: data.previous,
+        areaStyle: {
+          normal: {
+            color: '#ff3607',
+            opacity: 0.2
+          }
+        }
       },
       {
         name: '平均',
         lineStyle: {
               normal: {
-                  width: 1.5,
+                  width: 1.5
               }
           },
-        symbol: 'none',
-        symbolSize: 10,
+        showSymbol: false,
+        symbolSize: 3,
         type:'line',
-        data: data.average
+        data: data.average,
+        areaStyle: {
+          normal: {
+            color: '#e5adc8',
+            opacity: 0.2
+          }
+        }
       }
       ]
     };

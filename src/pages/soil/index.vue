@@ -1,322 +1,335 @@
 <template>
   <div class="scale-atbottom soil">
-    <my-map class="map" v-loading.body="mapLoading" 
-      @initMap="initMap" :switchCtl="true" background="#31c37c" :top="120" borderRadius="4px" :centerCtl="{use: true, bounds: bounds}" 
-      :addTileAreas="{code: code, areas: tree}"  ref="map"></my-map>
-    <left-tab :showList="showList" 
-      :leftTab="[]"
-      :noDetail="true"
-      :backList="backList"
-      @toggleList="toggleListStatus" 
-      @changeState="switchList"
-      :title="backList ? title + '土壤监测数据详情' : '全国土壤监测数据'"
-      v-loading.body="leftLoading">
-      <div slot="list" class="list">
-         <div class="detail-place-list">
-          <div class="detail-border">
-            <p class="detail-soso pr">
-              <input v-model="selectName" placeholder="请输入监测点名称" class="ps" @keyup.13="searchByField"/>
-              <span class="el-icon-search ps" @click="searchByField"></span>
+    <my-map class="map" v-loading.lock="mapLoading" 
+      @initMap="initMap" :switchCtl="true" :top="97" borderRadius="4px" :centerCtl="{use: true, bounds: bounds}" 
+      :addTileAreas="{code: code, areas: tree, extent: bounds}"  ref="map" :useTools="true"></my-map>
+    
+    <div class="loading-container" v-loading.body="leftLoading">
+      <left-tab :showList="showList" 
+        :leftTab="[]"
+        :noDetail="false"
+        :backList="backList"
+        @toggleList="toggleListStatus" 
+        @changeState="switchList"
+        :title="'全国土壤监测数据'"
+        :listTitle="'返回监测点列表'">
+        <div slot="list" class="list">
+           <div class="detail-place-list">
+            <div class="detail-border">
+              <p class="detail-soso pr">
+                <input v-model="selectName" placeholder="请输入监测点名称" class="ps" @keyup.13="searchByField"/>
+                <span class="el-icon-search ps" @click="searchByField"></span>
+              </p>
+            </div>
+            <div class="detail-result-bj">
+              <el-row class="block-col-detail clear">
+                <el-col>
+                  <el-dropdown trigger="click" menu-align="start" class="clear"> 
+                    <span class="el-dropdown-link">
+                     {{provinceName}}<i class="el-icon-arrow-down el-icon-right"></i>
+                    </span>
+                    <el-dropdown-menu slot="dropdown" v-if="provinces.length > 0" class="soil-drop-menu">
+                      <el-dropdown-item 
+                        v-for="(province, index) in provinces"
+                        @click.native="selectProvince(index)">
+                        {{province.area_name}}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </el-dropdown>
+                </el-col>
+                <el-col :style="{position: 'relative', zIndex : cityNumber > 0 ? 0 : -1}">
+                  <el-dropdown trigger="click" menu-align="start">
+                    <span class="el-dropdown-link">
+                      {{cityName}}<i class="el-icon-arrow-down el-icon-right"></i>
+                    </span>
+                    <el-dropdown-menu v-if="cities.length > 0" class="soil-drop-menu" slot="dropdown">
+                      <el-dropdown-item
+                        v-for="(city, index) in cities"
+                        @click.native="selectCity(index)">
+                        {{city.area_name}}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </el-dropdown>
+                </el-col>
+                <el-col :style="{position: 'relative', zIndex : countyNumber > 0 ? 0 : -1}">
+                  <el-dropdown trigger="click" menu-align="start">
+                    <span class="el-dropdown-link">
+                      {{countyName}}<i class="el-icon-arrow-down el-icon-right"></i>
+                    </span>
+                    <el-dropdown-menu v-if="counties.length > 0" slot="dropdown" class="soil-drop-menu">
+                      <el-dropdown-item 
+                        v-for="(county, index) in counties"
+                        @click.native="selectCounty(index)">
+                        {{county.area_name}}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </el-dropdown>
+                </el-col>
+                <el-col>
+                  <el-dropdown trigger="click" menu-align="start" :hide-on-click="dropMenu">
+                    <span class="el-dropdown-link">
+                      项目筛选<i class="el-icon-arrow-down el-icon-right"></i>
+                    </span>
+                    <el-dropdown-menu slot="dropdown" class="item-screen">
+                      <el-dropdown-item class="clear">
+                        <p class="filter-title fl">监测项目</p>
+                        <ul class="fl">
+                          <li v-for="(target, index) in targets"
+                            :class="index === temTargetIndex ? 'active' : ''"
+                            @click="selectTarget(index)">
+                            {{target.name}}
+                          </li>
+                        </ul>
+                      </el-dropdown-item>
+                      <el-dropdown-item class="clear">
+                        <p class="filter-title fl">达标情况</p>
+                        <ul class="fl">
+                          <li v-for="(standard, index) in standards"
+                            :class="index === temFlagIndex ? 'active' : ''"
+                            @click="changeStandard(index)">
+                            {{standard.name}}
+                          </li>
+                        </ul>
+                      </el-dropdown-item>
+                      <el-dropdown-item class="clear item-button">
+                        <h3 class="fr">
+                          <span class="cancel" @click="cancelFilter">取消</span>
+                          <span class="confirm" @click="filterPoints">筛选</span>
+                        </h3>
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </el-dropdown>
+                </el-col>
+                <el-col class="select-index">
+                  已选择 : <span>{{this.targetIndex === 0 ? '全部项目' : '项目：' + targets[targetIndex].name}}</span>
+                  <span v-show="this.flag === 1" style="color: blue">达标</span>
+                  <span v-show="this.flag === 2" style="color: red">不达标</span>
+                </el-col>
+              </el-row>
+            </div>
+            <div class="point-name">
+              <table>
+                <thead>
+                  <tr>
+                    <th width="35%">监测点名称</th>
+                    <th width="22%">概况</th>
+                    <th width="22%">监测项目</th>
+                    <th width="21%">倍数</th>
+                  </tr>
+                </thead>
+                <tbody v-if="monitorPointList.length > 0">
+                  <tr v-if="curSelectTarget === ''" 
+                    v-for="(item, index) in monitorPointList"
+                    @click="showStationDetail(index)">
+                    <el-tooltip :content="item.station" placement="top" :disabled="item.station.length < 6" effect="light">
+                      <td><span>{{item.station}}</span></td>
+                    </el-tooltip>
+                    <td>{{item.desc}}</td>
+                    <td>{{item.default.name}}</td>
+                    <td :style="{color: item.default.times > 0 ? 'red' : '#333'}">{{item.default.times}}</td>
+                  </tr>
+                  <tr v-if="curSelectTarget !== ''"
+                    v-for="(item, index) in monitorPointList"
+                    @click="showStationDetail(index)">
+                    <el-tooltip :content="item.station" placement="top" :disabled="item.station.length < 6" effect="light">
+                      <td width="35%"><span>{{item.station}}</span></td>
+                    </el-tooltip>
+                    <td>{{item.desc}}</td>
+                    <td>{{item[curSelectTarget].name}}</td>
+                    <td>{{typeof item[curSelectTarget].times === "number" ? item[curSelectTarget].times : item[curSelectTarget].times[1]}}</td>
+                  </tr>
+                </tbody>
+                <tbody v-else-if="monitorPointList.length == 0 && showNoData" class="none-data">
+                  －暂无数据－
+                </tbody>
+              </table>
+            </div>
+            <p class="point-page no-select">
+              <i class="el-icon-arrow-left" @click="prePage"></i>
+              <span>{{pageIndex}}/{{pageCount}}</span>
+              <i class="el-icon-arrow-right" @click="nextPage"></i>
             </p>
           </div>
-          <div class="detail-result-bj">
-            <el-row class="block-col-detail clear">
-              <el-col>
-                <el-dropdown trigger="click" menu-align="start" class="clear"> 
-                  <span class="el-dropdown-link">
-                   {{provinceName}}<i class="el-icon-arrow-down el-icon-right"></i>
-                  </span>
-                  <el-dropdown-menu slot="dropdown" v-if="provinces.length > 0" class="soil-drop-menu">
-                    <el-dropdown-item 
-                      v-for="(province, index) in provinces"
-                      @click.native="selectProvince(index)">
-                      {{province.area_name}}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </el-dropdown>
-              </el-col>
-              <el-col :class="cities.length == 0 ? 'disabled': ''">
-                <el-dropdown trigger="click" menu-align="start">
-                  <span class="el-dropdown-link">
-                    {{cityName}}<i class="el-icon-arrow-down el-icon-right"></i>
-                  </span>
-                  <el-dropdown-menu class="soil-drop-menu" slot="dropdown" v-if="cities.length > 0">
-                    <el-dropdown-item 
-                      v-for="(city, index) in cities"
-                      @click.native="selectCity(index)">
-                      {{city.area_name}}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </el-dropdown>
-              </el-col>
-              <el-col :class="counties.length == 0 ? 'disabled': ''">
-                <el-dropdown trigger="click" menu-align="start">
-                  <span class="el-dropdown-link">
-                    {{countyName}}<i class="el-icon-arrow-down el-icon-right"></i>
-                  </span>
-                  <el-dropdown-menu slot="dropdown" class="soil-drop-menu" v-if="counties.length > 0">
-                    <el-dropdown-item 
-                      v-for="(county, index) in counties"
-                      @click.native="selectCounty(index)">
-                      {{county.area_name}}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </el-dropdown>
-              </el-col>
-              <el-col>
-                <el-dropdown trigger="click" menu-align="start" :hide-on-click="dropMenu">
-                  <span class="el-dropdown-link">
-                    项目筛选<i class="el-icon-arrow-down el-icon-right"></i>
-                  </span>
-                  <el-dropdown-menu slot="dropdown" class="item-screen">
-                    <el-dropdown-item class="clear">
-                      <p class="filter-title fl">监测项目</p>
-                      <ul class="fl">
-                        <li v-for="(target, index) in targets"
-                          :class="index === targetIndex ? 'active' : ''"
-                          @click="selectTarget(index)">
-                          {{target.name}}
-                        </li>
-                      </ul>
-                    </el-dropdown-item>
-                    <el-dropdown-item class="clear">
-                      <p class="filter-title fl">达标情况</p>
-                      <ul class="fl">
-                        <li v-for="(standard, index) in standards"
-                          :class="index === standardIndex ? 'active' : ''"
-                          @click="changeStandard(index)">
-                          {{standard.name}}
-                        </li>
-                      </ul>
-                    </el-dropdown-item>
-                    <el-dropdown-item class="clear item-button">
-                      <h3 class="fr">
-                        <span class="cancel" @click="dropMenu = true">取消</span>
-                        <span class="confirm" @click="filterPoints">筛选</span>
-                      </h3>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </el-dropdown>
-              </el-col>
-              <el-col class="select-index">已选择 : <span>{{this.targetIndex === 0 ? '全部项目' : '项目：' + targets[targetIndex].name}}</span><span v-show="this.flag === 1">达标</span><span v-show="this.flag === 2">不达标</span></el-col>
-            </el-row>
-          </div>
-          <div class="point-name">
-            <table>
-              <thead>
-                <tr>
-                  <th width="35%">监测点名称</th>
-                  <th width="22%">概况</th>
-                  <th width="22%">监测项目</th>
-                  <th width="21%">倍数</th>
-                </tr>
-              </thead>
-              <tbody v-if="monitorPointList.length > 0">
-                <tr v-if="curSelectTarget === ''" 
-                  v-for="(item, index) in monitorPointList"
-                  @click="showStationDetail(index)">
-                  <el-tooltip :content="item.station" placement="top" :disabled="item.station.length < 6" >
-                    <td><span>{{item.station}}</span></td>
-                  </el-tooltip>
-                  <td>{{item.desc}}</td>
-                  <td>{{item.default.name}}</td>
-                  <td :style="{color: item.default.times > 0 ? 'red' : '#333'}">{{item.default.times}}</td>
-                </tr>
-                <tr v-if="curSelectTarget !== ''"
-                  v-for="(item, index) in monitorPointList"
-                  @click="showStationDetail(index)">
-                  <el-tooltip :content="item.station" placement="top" :disabled="item.station.length < 6" >
-                    <td width="35%"><span>{{item.station}}</span></td>
-                  </el-tooltip>
-                  <td>{{item.desc}}</td>
-                  <td>{{item[curSelectTarget].name}}</td>
-                  <td>{{item[curSelectTarget].times}}</td>
-                </tr>
-              </tbody>
-              <tbody v-else class="none-data">
-                －暂无数据－
-              </tbody>
+        </div>
+        <div slot="detail" class="list list-content pr" v-if="backList">
+          <div class="detail-content">
+            <h3 class="no-select product-title">{{sotName}}</h3>
+            <div class="list-result-bj pr">
+              <h3 class="list-result clear">
+                <span class="fl"><i :style="{color: curMonitorPoint.overproof > 0 ? 'red' : 'blue', fontWeight: '900'}">{{curMonitorPoint.overproof > 0 ? '有污染' : '无污染'}}</i></span>
+                <span class="fr">更新时间: {{curMonitorPoint.date_time | formateDatetime}}</span>
+              </h3>
+            </div>
+            <div class="list-height">
+              <table class="table-result">
+              <tr>
+                <th width="143">监测项目</th>
+                <th width="91">标准值</th>
+                <th width="90">实测值</th>
+              </tr>
+              <tr>
+                <td>PH值</td>
+                <td>4.0~8.0</td>
+                <td>{{curMonitorPoint.ph.toFixed(2) + (curMonitorPoint.ph < 7 ? '(酸性)' : '(碱性)')}}</td>
+              </tr>
             </table>
-          </div>
-          <p class="point-page no-select">
-            <i class="el-icon-arrow-left" @click="prePage"></i>
-            <span>{{pageIndex}}/{{pageCount}}</span>
-            <i class="el-icon-arrow-right" @click="nextPage"></i>
-          </p>
-        </div>
-      </div>
-      <div slot="detail" class="list list-content" v-if="backList">
-        <div class="detail-content">
-          <div class="list-result-bj">
-            <h3 class="list-result clear">
-              <span class="fl"><i :style="{color: curMonitorPoint.overproof > 0 ? 'red' : 'blue', fontWeight: '900'}">{{curMonitorPoint.overproof > 0 ? '有污染' : '无污染'}}</i></span>
-              <span class="fr">更新时间: {{curMonitorPoint.date_time}}</span>
-            </h3>
-          </div>
-          <div class="list-height">
-            <table class="table-result">
-            <tr>
-              <th width="125">监测项目</th>
-              <th width="74">标准值</th>
-              <th width="72">实测值</th>
-              <th width="52" rowspan="2">倍数</th>
-            </tr>
-            <tr>
-              <td>PH值</td>
-              <td>4.0~8.0</td>
-              <td>{{curMonitorPoint.ph.toFixed(2) + (curMonitorPoint.ph < 7 ? '(酸性)' : '(碱性)')}}</td>
-            </tr>
-          </table>
-          <p class="soil-show-result clear">
-            <span class="fl">土壤环境质量基本控制项目</span>
-            <span class="fr soil-unit">μg/g</span>
-          </p>
-          <table class="soil-table-result">
-            <tr>
-              <td rowspan="2" width="50">总镉</td>
-              <el-tooltip content="水作、旱作、果树等≤" placement="top">
-                <td width="60"><span>水作、旱作、果树等≤</span></td>
-              </el-tooltip>
-              <td width="75">{{curMonitorPoint.cd.normal[0]}}</td>
-              <td width="72" :class="curMonitorPoint.cd.times > 0 ? 'color-red': ''">{{curMonitorPoint.cd.actual}}</td>
-              <td width="52" :class="curMonitorPoint.cd.times > 0 ? 'color-red': ''">{{curMonitorPoint.cd.times}}</td>
-            </tr>
-            <tr>
-              <td><span>蔬菜≤</span></td>
-              <td>{{curMonitorPoint.cd.normal[1]}}</td>
-              <td :class="curMonitorPoint.cd.times > 0 ? 'color-red': ''">{{curMonitorPoint.cd.actual}}</td>
-              <td :class="curMonitorPoint.cd.times > 0 ? 'color-red': ''">{{curMonitorPoint.cd.times}}</td>
-            </tr>
+            <p class="soil-show-result clear">
+              <span class="fl">土壤环境质量基本控制项目 ( 基本项 ) </span>
+              <span class="fr soil-unit">μg/g</span>
+            </p>
+            <table class="soil-table-result">
+              <tr>
+                  <th width="120">监测项目</th>
+                  <th width="250">作物类型</th>
+                  <th width="90">标准值</th>
+                  <th width="90">实测值</th>
+                  <th width="60">倍数</th>
+              </tr>
+              <tr>
+                <td rowspan="2" width="50">总镉</td>
+                  <td width="60"><span>水作、旱作、果树等≤</span></td>
+                <td width="75">{{curMonitorPoint.cd.normal[0]}}</td>
+                <td width="72" :class="curMonitorPoint.cd.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.cd.actual}}</td>
+                <td width="52" :class="curMonitorPoint.cd.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.cd.times[0]}}</td>
+              </tr>
+              <tr>
+                <td><span>蔬菜≤</span></td>
+                <td>{{curMonitorPoint.cd.normal[1]}}</td>
+                <td :class="curMonitorPoint.cd.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.cd.actual}}</td>
+                <td :class="curMonitorPoint.cd.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.cd.times[1]}}</td>
+              </tr>
 
-            <tr>
-              <td rowspan="2">总汞</td>
-              <el-tooltip content="水作、旱作、果树等≤" placement="top">
-                <td><span>水作、旱作、果树等≤</span></td>
-              </el-tooltip>
-              <td>{{curMonitorPoint.hg.normal[0]}}</td>
-              <td :class="curMonitorPoint.hg.times > 0 ? 'color-red': ''">{{curMonitorPoint.hg.actual}}</td>
-              <td :class="curMonitorPoint.hg.times > 0 ? 'color-red': ''">{{curMonitorPoint.hg.times}}</td>
-            </tr>
-            <tr>
-              <td><span>蔬菜≤</span></td>
-              <td>{{curMonitorPoint.hg.normal[1]}}</td>
-              <td :class="curMonitorPoint.hg.times > 0 ? 'color-red': ''">{{curMonitorPoint.hg.actual}}</td>
-              <td :class="curMonitorPoint.hg.times > 0 ? 'color-red': ''">{{curMonitorPoint.hg.times}}</td>
-            </tr>
+              <tr>
+                <td rowspan="2">总汞</td>
+                  <td><span>水作、旱作、果树等≤</span></td>
+                <td>{{curMonitorPoint.hg.normal[0]}}</td>
+                <td :class="curMonitorPoint.hg.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.hg.actual}}</td>
+                <td :class="curMonitorPoint.hg.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.hg.times[0]}}</td>
+              </tr>
+              <tr>
+                <td><span>蔬菜≤</span></td>
+                <td>{{curMonitorPoint.hg.normal[1]}}</td>
+                <td :class="curMonitorPoint.hg.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.hg.actual}}</td>
+                <td :class="curMonitorPoint.hg.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.hg.times[1]}}</td>
+              </tr>
 
-            <tr>
-              <td rowspan="2">总砷</td>
-              <el-tooltip content="旱作、果树等≤" placement="top">
+              <tr>
+                <td rowspan="2">总砷</td>
                 <td><span>旱作、果树等≤</span></td>
-              </el-tooltip>
-              <td>{{curMonitorPoint.as.normal[0]}}</td>
-              <td :class="curMonitorPoint.as.times > 0 ? 'color-red': ''">{{curMonitorPoint.as.actual}}</td>
-              <td :class="curMonitorPoint.as.times > 0 ? 'color-red': ''">{{curMonitorPoint.as.times}}</td>
-            </tr>
-            <tr>
-              <el-tooltip content="水作、蔬菜≤" placement="top">
+                <td>{{curMonitorPoint.as.normal[0]}}</td>
+                <td :class="curMonitorPoint.as.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.as.actual}}</td>
+                <td :class="curMonitorPoint.as.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.as.times[0]}}</td>
+              </tr>
+              <tr>
                 <td><span>水作、蔬菜≤</span></td>
-              </el-tooltip>
-              <td>{{curMonitorPoint.as.normal[1]}}</td>
-              <td :class="curMonitorPoint.as.times > 0 ? 'color-red': ''">{{curMonitorPoint.as.actual}}</td>
-              <td :class="curMonitorPoint.as.times > 0 ? 'color-red': ''">{{curMonitorPoint.as.times}}</td>
-            </tr>
+                <td>{{curMonitorPoint.as.normal[1]}}</td>
+                <td :class="curMonitorPoint.as.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.as.actual}}</td>
+                <td :class="curMonitorPoint.as.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.as.times[1]}}</td>
+              </tr>
 
-            <tr>
-              <td rowspan="2">总铅</td>
-              <el-tooltip content="水作、旱作、果树等≤" placement="top">
+              <tr>
+                <td rowspan="2">总铅</td>
                 <td><span>水作、旱作、果树等≤</span></td>
-              </el-tooltip>
-              <td>{{curMonitorPoint.pb.normal[0]}}</td>
-              <td :class="curMonitorPoint.pb.times > 0 ? 'color-red': ''">{{curMonitorPoint.pb.actual}}</td>
-              <td :class="curMonitorPoint.pb.times > 0 ? 'color-red': ''">{{curMonitorPoint.pb.times}}</td>
-            </tr>
-            <tr>
-              <td><span>蔬菜≤</span></td>
-              <td>{{curMonitorPoint.pb.normal[1]}}</td>
-              <td :class="curMonitorPoint.pb.times > 0 ? 'color-red': ''">{{curMonitorPoint.pb.actual}}</td>
-              <td :class="curMonitorPoint.pb.times > 0 ? 'color-red': ''">{{curMonitorPoint.pb.times}}</td>
-            </tr>
+                <td>{{curMonitorPoint.pb.normal[0]}}</td>
+                <td :class="curMonitorPoint.pb.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.pb.actual}}</td>
+                <td :class="curMonitorPoint.pb.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.pb.times[0]}}</td>
+              </tr>
+              <tr>
+                <td><span>蔬菜≤</span></td>
+                <td>{{curMonitorPoint.pb.normal[1]}}</td>
+                <td :class="curMonitorPoint.pb.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.pb.actual}}</td>
+                <td :class="curMonitorPoint.pb.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.pb.times[1]}}</td>
+              </tr>
 
-            <tr>
-              <td rowspan="2">总铬</td>
-              <el-tooltip content="水作、旱作、果树等≤" placement="top">
+              <tr>
+                <td rowspan="2">总铬</td>
                 <td><span>水作、旱作、果树等≤</span></td>
-              </el-tooltip>
-              <td>{{curMonitorPoint.cr.normal[0]}}</td>
-              <td :class="curMonitorPoint.cr.times > 0 ? 'color-red': ''">{{curMonitorPoint.cr.actual}}</td>
-              <td :class="curMonitorPoint.cr.times > 0 ? 'color-red': ''">{{curMonitorPoint.cr.times}}</td>
-            </tr>
-            <tr>
-              <td><span>蔬菜≤</span></td>
-              <td>{{curMonitorPoint.cr.normal[1]}}</td>
-              <td :class="curMonitorPoint.cr.times > 0 ? 'color-red': ''">{{curMonitorPoint.cr.actual}}</td>
-              <td :class="curMonitorPoint.cr.times > 0 ? 'color-red': ''">{{curMonitorPoint.cr.times}}</td>
-            </tr>
+                <td>{{curMonitorPoint.cr.normal[1]}}</td>
+                <td :class="curMonitorPoint.cr.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.cr.actual}}</td>
+                <td :class="curMonitorPoint.cr.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.cr.times[1]}}</td>
+              </tr>
+              <tr>
+                <td><span>蔬菜≤</span></td>
+                <td>{{curMonitorPoint.cr.normal[0]}}</td>
+                <td :class="curMonitorPoint.cr.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.cr.actual}}</td>
+                <td :class="curMonitorPoint.cr.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.cr.times[0]}}</td>
+              </tr>
 
-            <tr>
-              <td rowspan="2">总铜</td>
-              <el-tooltip content="水作、旱作、果树等≤" placement="top">
+              <tr>
+                <td rowspan="2">总铜</td>
                 <td><span>水作、旱作、果树等≤</span></td>
-              </el-tooltip>
-              <td>{{curMonitorPoint.cu.normal[0]}}</td>
-              <td :class="curMonitorPoint.cu.times > 0 ? 'color-red': ''">{{curMonitorPoint.cu.actual}}</td>
-              <td :class="curMonitorPoint.cu.times > 0 ? 'color-red': ''">{{curMonitorPoint.cu.times}}</td>
-            </tr>
-            <tr>
-              <td><span>蔬菜≤</span></td>
-              <td>{{curMonitorPoint.cu.normal[1]}}</td>
-              <td :class="curMonitorPoint.cu.times > 0 ? 'color-red': ''">{{curMonitorPoint.cu.actual}}</td>
-              <td :class="curMonitorPoint.cu.times > 0 ? 'color-red': ''">{{curMonitorPoint.cu.times}}</td>
-            </tr>
+                <td>{{curMonitorPoint.cu.normal[1]}}</td>
+                <td :class="curMonitorPoint.cu.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.cu.actual}}</td>
+                <td :class="curMonitorPoint.cu.times[1] > 0 ? 'color-red': ''">{{curMonitorPoint.cu.times[1]}}</td>
+              </tr>
+              <tr>
+                <td><span>蔬菜≤</span></td>
+                <td>{{curMonitorPoint.cu.normal[0]}}</td>
+                <td :class="curMonitorPoint.cu.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.cu.actual}}</td>
+                <td :class="curMonitorPoint.cu.times[0] > 0 ? 'color-red': ''">{{curMonitorPoint.cu.times[0]}}</td>
+              </tr>
 
-            <tr>
-              <td colspan="2">六六六</td>
-              <td>{{curMonitorPoint.six.normal}}</td>
-              <td :class="curMonitorPoint.six.times > 0 ? 'color-red': ''">{{curMonitorPoint.six.actual}}</td>
-              <td :class="curMonitorPoint.six.times > 0 ? 'color-red': ''">{{curMonitorPoint.six.times}}</td>
-            </tr>
-            <tr>
-              <td colspan="2">滴滴涕</td>
-              <td>{{curMonitorPoint.ddt.normal}}</td>
-              <td :class="curMonitorPoint.ddt.times > 0 ? 'color-red': ''">{{curMonitorPoint.ddt.actual}}</td>
-              <td :class="curMonitorPoint.ddt.times > 0 ? 'color-red': ''">{{curMonitorPoint.ddt.times}}</td>
-            </tr>
-          </table>
-          <p class="soil-show-result clear">
-            <span class="fl">土壤环境质量选择控制项目</span>
-            <span class="fr soil-unit">μg/g</span>
-          </p>
-          <table class="soil-table-result">
-            <tr>
-              <td width="125" colspan="2">总锌</td>
-              <td width="74">{{curMonitorPoint.zn.normal}}</td>
-              <td width="72">{{curMonitorPoint.zn.actual}}</td>
-              <td width="52">{{curMonitorPoint.zn.times}}</td>
-            </tr>
-            <tr>
-              <td colspan="2">总镍</td>
-              <td>{{curMonitorPoint.ni.normal}}</td>
-              <td>{{curMonitorPoint.ni.actual}}</td>
-              <td>{{curMonitorPoint.ni.times}}</td>
-            </tr>
-          </table>
+              <tr>
+                <td>六六六</td>
+                <td>全部作物</td>
+                <td>{{curMonitorPoint.six.normal}}</td>
+                <td :class="curMonitorPoint.six.times > 0 ? 'color-red': ''">{{curMonitorPoint.six.actual}}</td>
+                <td :class="curMonitorPoint.six.times > 0 ? 'color-red': ''">{{curMonitorPoint.six.times}}</td>
+              </tr>
+              <tr>
+                <td>滴滴涕</td>
+                <td>全部作物</td>
+                <td>{{curMonitorPoint.ddt.normal}}</td>
+                <td :class="curMonitorPoint.ddt.times > 0 ? 'color-red': ''">{{curMonitorPoint.ddt.actual}}</td>
+                <td :class="curMonitorPoint.ddt.times > 0 ? 'color-red': ''">{{curMonitorPoint.ddt.times}}</td>
+              </tr>
+            </table>
+            <p class="soil-show-result clear">
+              <span class="fl">土壤环境质量选择控制项目 ( 选择项 ) </span>
+              <span class="fr soil-unit">μg/g</span>
+            </p>
+            <table class="soil-table-result">
+              <tr>
+                  <th width="120">监测项目</th>
+                  <th width="250">作物类型</th>
+                  <th width="90">标准值</th>
+                  <th width="90">实测值</th>
+                  <th width="60">倍数</th>
+              </tr>
+                <tr>
+                <td width="120">总锌</td>
+                <td width="250">全部作物</td>
+                <td width="90">{{curMonitorPoint.zn.normal}}</td>
+                <td width="90">{{curMonitorPoint.zn.actual}}</td>
+                <td width="60">{{curMonitorPoint.zn.times}}</td>
+              </tr>
+              <tr>
+                <td>总镍</td>
+                <td width="250">全部作物</td>
+                <td>{{curMonitorPoint.ni.normal}}</td>
+                <td>{{curMonitorPoint.ni.actual}}</td>
+                <td>{{curMonitorPoint.ni.times}}</td>
+              </tr>
+            </table>
+            </div>
           </div>
+         
         </div>
-       
-      </div>
-    </left-tab>
-    
-    <footer-lite></footer-lite>
+      </left-tab>
+    </div>
     <pop-detail :gridData="gridData" :seatSpot="seatSpot"
       :coordinates="coordinates" 
       :standardInfo="standardInfo"
       :left="detailLeft"
       :top="detailTop"
       :showPop="showPop"
-      @goDetail="goDetail"></pop-detail>
+      @goDetail="goDetail"
+      @addEnterPoi="addEnterPoi"
+      @removeEntLayer="removeEntLayer"></pop-detail>
 
     <pop-message popTitle="请先选择一条数据" ref="popMessage"></pop-message>
+
+    <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi>
   </div>
 </template>
 <script>
@@ -324,7 +337,6 @@ import request from 'api/request.js'
 import model from 'api/model.js'
 import leftTab from 'components/leftTab'
 import mapctl from './map/index.js'
-import footerLite from 'components/footerlite'
 import configData from '../../config/data.js'
 import popDetail from './popDetail/'
 
@@ -362,8 +374,10 @@ export default {
         cityName: '城市',
         countyName: '区县',
         flag: 2,
+        temFlagIndex: 2,
         targets: [],
         targetIndex: 0,
+        temTargetIndex: 0,
         curSelectTarget: '',
         standards: [],
         standardIndex: 2,
@@ -379,11 +393,20 @@ export default {
         detailLeft: 0,
         detailTop: 0,
         showPop: true,
-        bindMapEvent: false
+        bindMapEvent: false,
+        cityNumber: 0,
+        countyNumber: 0,
+        sotName: '',
+        showNoData: false
+      }
+    },
+    filters: {
+      formateDatetime(value) {
+        return value.replace(/-/g, "/")
       }
     },
     mounted() {
-      this.mapLoading = true
+      this.leftLoading = true
       var data = { arealist: [ { "grade": '4', "area_code": '000000' } ] }
 
       request.getPartAreas(data).then((response) => {
@@ -391,7 +414,7 @@ export default {
         if (response.status !== 200 || response.data.status != '0') {
           console.log("接口返回:" + response.data.error_msg); 
         } else {
-          this.areas = model.formatAreas(response.data.data)
+          this.areas = model.formatSoilAreas(response.data.data)
           this.provinces = this.areas.province
           this.tree = [this.provinces[0]]
           this.code = this.tree[0].area_id
@@ -399,7 +422,6 @@ export default {
 
           this.getMonitorPoints(this.code, this.flag)
         }
-        this.mapLoading = false
       });
 
       var targets = configData.soil.targets
@@ -431,6 +453,9 @@ export default {
       initMap(map) {
         this.map = map;
       },
+      setCenter() {
+        this.$refs['map'].setCenter()
+      },
       toggleListStatus() {
         this.showList = !this.showList
       },
@@ -442,19 +467,37 @@ export default {
         }
       },
       selectProvince(index) {
-        this.code = this.provinces[index].area_id
-        this.provinceName = this.provinces[index].area_name
-        this.bounds = this.provinces[index].bounds
-        this.tree = [this.provinces[index]]
-        this.cities = []
-        for (var i = 0; i < this.areas.city.length; i++) {
-          if (this.areas.city[i].parent === this.code) {
-            this.cities.push(this.areas.city[i])
+        if (index !== 0) {
+          this.cityNumber = 1
+          this.countyNumber = 0
+          this.code = this.provinces[index].area_id
+          this.provinceName = this.provinces[index].area_name 
+          this.cityName = '城市'
+          this.countyName = '区县'
+          this.bounds = this.provinces[index].bounds
+          this.tree = [this.provinces[index]]
+          this.cities = []
+          for (var i = 0; i < this.areas.city.length; i++) {
+            if (this.areas.city[i].parent === this.code) {
+              this.cities.push(this.areas.city[i])
+            }
           }
+          this.getMonitorPoints(this.code, this.flag)
+        } else {
+          this.code = this.provinces[index].area_id
+          this.provinceName = this.provinces[index].area_name 
+          this.cityNumber = 0
+          this.countyNumber = 0
+
+          this.tree = [this.provinces[0]]
+          this.code = this.tree[0].area_id
+          this.bounds = this.provinces[0].bounds
+          this.getMonitorPoints(this.code, this.flag)
         }
-        this.getMonitorPoints(this.code, this.flag)
       },
       selectCity(index) {
+        this.countyNumber = 1
+        this.countyName = '区县'
         this.code = this.cities[index].area_id
         this.tree = [this.cities[index]]
         this.cityName = this.cities[index].area_name
@@ -476,19 +519,28 @@ export default {
       },
       selectTarget(index) {
         this.dropMenu = false
-        this.targetIndex = index
-        this.selectElement = this.targets[index].key
+        this.temTargetIndex = index
       },
       changeStandard(index) {
         this.dropMenu = false
-        this.flag = this.standards[index].flag
-        this.standardIndex = index
+        this.temFlagIndex = index
       },
       searchByField() {
         this.getMonitorPoints(this.code, this.flag)
       },
+      cancelFilter() {
+        this.dropMenu = true
+        this.temTargetIndex = this.targetIndex
+        this.temFlagIndex = this.standardIndex
+        this.flag = this.standards[this.temFlagIndex].flag
+      },
       filterPoints() {
         this.dropMenu = true;
+        this.targetIndex = this.temTargetIndex
+        this.selectElement = this.targets[this.targetIndex].key
+
+        this.standardIndex = this.temFlagIndex
+        this.flag = this.standards[this.standardIndex].flag
         this.getMonitorPoints(this.code, this.flag)
       },
       getEnterprises(coodinates) {
@@ -527,6 +579,7 @@ export default {
             this.addPoints()
           }
           this.leftLoading = false
+          this.showNoData = true
           this.showPop = true
         })
       },
@@ -566,6 +619,27 @@ export default {
         this.backList = true
         this.curMonitorPoint = this.monitorPointList[index]
         this.title = this.curMonitorPoint.station
+      },
+      addEnterPoi(enterpriseInfo) {
+        var point = JSON.parse(enterpriseInfo.geom.geom).coordinates
+        var overlay = {name: enterpriseInfo.geom.name, address: enterpriseInfo.geom.address}
+        
+        var zoomLevel = enterpriseInfo.zoomLevel
+
+        this.entLayer = mapctl.addEntFeature(this.coordinates, point, overlay, this.map, this.entLayer, enterpriseInfo.geom.id)
+        this.setEntCenter(zoomLevel, point)
+      },
+      setEntCenter(zoomLevel, point) {
+        setTimeout(()=> {
+          this.map.getView().animate({zoom: zoomLevel, center: point, duration: 550, easing:  (t)=> Math.pow(t, 1.5)});
+        }, 100)
+      },
+      removeEntLayer() {
+        if (this.entLayer) {
+          mapctl.removeAllEntLayer()
+          this.map.removeLayer(this.entLayer)
+          this.entLayer = null
+        }
       },
       addPoints() {
         this.removeLayer()
@@ -629,21 +703,38 @@ export default {
 
         function bubbleSort(array) {
           var len = array.length;
-
           for (var i = 0; i < len; i++) {
             for (var j = i + 1; j < len; j++) {
-              if (Number(array[j].times) > Number(array[i].times)) {
+              var _timesJ = typeof array[j].times === "object" ? Number(array[j].times[1]) : Number(array[j].times)
+              var _timesI = typeof array[i].times === "object" ? Number(array[i].times[1]) : Number(array[i].times)
+              
+              if (_timesJ > _timesI) {
                 var temObject = array[i]
                 array[i] = array[j]
                 array[j] = temObject
-              } else if (Number(array[j].times) === Number(array[i].times) && Number(array[j].actual) > Number(array[i].actual)) {
+              } else if (_timesI === _timesJ && Number(array[j].actual) > Number(array[i].actual)) {
                 var temObject = array[i]
                 array[i] = array[j]
                 array[j] = temObject
               }
             }
           }
-          return [array[0], array[1]]
+          
+          var obj1 = {
+              name: array[0].name,
+              normal: array[0].normal,
+              actual: array[0].actual,
+              times: array[0].times
+            }
+          var obj2 = {
+              name: array[1].name,
+              normal: array[1].normal,
+              actual: array[1].actual,
+              times: array[1].times
+            }
+          obj1.times = typeof obj1.times == 'object' ? Number(obj1.times[1]) : Number(obj1.times)
+          obj2.times = typeof obj2.times == 'object' ? Number(obj2.times[1]) : Number(obj2.times) 
+          return [obj1, obj2]
         }
       },
       getStandardInfo(index) {
@@ -666,10 +757,12 @@ export default {
       }
     },
     watch: {
+      title(title) {
+        this.sotName = title + '监测点'
+      }
     },
     components: {
       leftTab,
-      footerLite,
       popDetail
     }
 }
@@ -677,8 +770,17 @@ export default {
 <style 
 lang="less" 
 scoped>
+@import '../../assets/style/reset';
 .soil {
   color: #333;
+
+  .loading-container {
+    position: relative;
+    top: 57px;
+    left: 10px;
+    width: 358px;
+    height: 504px;
+  }
   .list {
     .search-container {
       input {
@@ -688,6 +790,14 @@ scoped>
     }
   }
   .detail-content {
+    .product-title {
+      font-size: 16px;
+      width: 344px;
+      padding-left: 14px;
+      background: #9fd032;
+      color: #fff;
+      .mixin-height(40px);
+    }
     table {
       width: 100%;
       .color-red {
@@ -697,45 +807,47 @@ scoped>
         border: 1px solid #cdd0d2;
         border-bottom: none;
         text-align: center;
+        span {
+          line-height: 20px;
+          display: block;
+        }
       }
     }
   }
   .detail-place-list {
     .detail-border {
-      border: 1px solid #cdd0d2;
+      background: #f3f9eb;
+      border: 1px solid #fff;
     }
     .detail-result-bj {
-      background: #f1f4f4;
       padding-top: 6px;
         .block-col-detail {
-          padding: 10px 0 0 16px;
+          padding: 6px 0 0 16px;
           background: #fff;
           .select-index {
             span {
               display: inline-block;
-              height: 24px;
-              line-height: 24px;
               padding: 0 8px;
               margin-right: 5px;
-              background: #e5f3cb;
+              background: #efefef;
               border-radius: 4px;
-              cursor: pointer;
+              cursor: default;
+              .mixin-height(24px);
             }
           }
           .el-col {
             width: auto;
-            margin: 0 6px 14px 0;
+            margin: 0 22px 10px 0;
           }
         }
     }
     .detail-soso {
       height: 26px;
       margin: 14px 16px;
-      border: 1px solid #cdd0d2;
-      border-radius: 4px;
       background: #f4fcfc;
       color: #a1a8ad;
       overflow: hidden;
+      .mixin-border(#cdd0d2;4px);
       input {
         top: 0px;
         width: 260px;
@@ -758,19 +870,16 @@ scoped>
     .block-col-detail {
       .disabled {
         .el-dropdown {
-          color: #b6b6b6;
-          background: #fafafa;
+          background: #fff;
         }
       }
       .el-dropdown {
         display: block;
-        line-height: 26px;
-        border: 1px solid #cdd0d2;
-        border-radius: 4px;
-        background: #f5fafd;
-        height: 26px;
+        background: #f9f7f8;
         font-size: 12px;
         cursor: pointer;
+        .mixin-height(26px);
+        .mixin-border(#cdd0d2;4px);
           .el-icon-right {
             position: absolute;
             right: 6px;
@@ -778,12 +887,9 @@ scoped>
           }
           .el-dropdown-link {
             position: relative;
-            width: 70px;
             display: block;
             padding: 0 10px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+            .mixin-ellipsis(70px);
           }
           &:hover {
             i {
@@ -793,16 +899,21 @@ scoped>
       }
     }
     .point-name {
-      height: 344px;
+      height: 282px;
       overflow: auto;
       table {
         width: 100%;
         cursor: pointer;
+        th:first-child,td:first-child {
+          text-align: left;
+          padding-left: 20px;
+        }
         thead {
           tr {
-            height: 38px;
-            line-height: 38px;
-            background: #eef6fb;
+            cursor: default;
+            border: 1px solid #d8d8d8;
+            .mixin-gradient-bg(#fff;#f7f7f7);
+            .mixin-height(36px);
           }
         }
         .none-data {
@@ -811,12 +922,12 @@ scoped>
           border-bottom: none;
         }
         tbody {
-          border-bottom: 1px solid #ededed;
+          border-bottom: 1px solid #d8d8d8;
           tr:hover,tr:nth-child(2n):hover {
             background: #cceaff;
           }
           tr:nth-child(2n) {
-            background: #eef6fb;
+            background: #eef5fb;
           }
           .active {
             background: #cceaff;
@@ -825,29 +936,20 @@ scoped>
             background: #cceaff;
           }
           td {
-            height: 28px;
-            line-height: 28px;
             text-align: center;
+            .mixin-height(30px);
              span {
-              position: relative;
-              top: 6px;
-              left: 14px;
-              width: 80px;
-              overflow: hidden;
-              white-space: nowrap;
-              text-overflow: ellipsis;
-              display: inline-block;
+              height: 30px;
+              display: block;
+              .mixin-ellipsis(80px);
              }
           }
         }
       }
-      @media screen and (max-height: 708px) {
-        height: 236px;
-      }
     }
     .point-page {
       text-align: center;
-      line-height: 36px;
+      line-height: 30px;
       i {
         font-size: 14px;
         color: #c1c1c1;
@@ -919,8 +1021,7 @@ scoped>
 .item-screen {
   li {
     .filter-title {
-      height: 20px;
-      line-height: 20px;
+      .mixin-height(20px);
     }
     &:hover {
       background-color: #fff;
@@ -937,15 +1038,12 @@ scoped>
         }
         span {
           display: inline-block;
-          width: 50px;
-          height: 25px;
-          line-height: 25px;
-          text-align: center;
-          border: 1px solid #d3d6d5;
-          border-radius: 4px;
           margin-right: 8px;
           cursor: pointer;
           color: #fff;
+          .mixin-width(50px);
+          .mixin-border(#d3d6d5;4px);
+          .mixin-height(25px);
         }
       }
   li {
@@ -965,31 +1063,27 @@ scoped>
         color: #fff;
       }
       li {
-        line-height: 18px;
         float: left;
-        width: 38px;
-        height: 18px;
         padding: 0;
-        text-align: center;
-        border: 1px solid #d3d6d5;
         margin: 0px 12px 12px 0;
-        border-radius: 4px;
         background: #f2f5f5;
+        .mixin-height(18px);
+        .mixin-width(38px);
+        .mixin-border(#d3d6d5;4px;)
       }
     }
   }
 }
 .list-content {
+  background: #f1f1f1;
+  .mixin-common-border();
   .list-result-bj {
-    background: #f1f4f4;
-    padding-bottom: 10px;
+    .mixin-boxshadow-soft();
     .list-result {
-      line-height: 52px;
-      height: 52px;
       padding: 0 10px;
-      border: 1px solid #cdd0d2;
-      background: #fff;
       font-weight: normal;
+      .mixin-height(52px);
+      .mixin-content-title-bg();
       i {
         color: #ed0f02;
         margin-left: 5px;
@@ -997,11 +1091,11 @@ scoped>
     }
   }
   .list-height {
-    height: 488px;
+    width: 356px;
+    height: 406px;
+    background: #fff;
     overflow: auto;
-    @media screen and (max-height: 708px) {
-      height: 378px;
-    }
+    .mixin-border-radius-bottom();
   }
   .table-result {
     td,th {
@@ -1009,14 +1103,11 @@ scoped>
     }
   }
   .soil-show-result {
-    font-size: 14px;
-    line-height: 40px;
-    height: 40px;
-    width: 292px;
     background: #eef5fb;
     padding: 0 14px 0  10px;
     border: 1px solid #cdd0d2;
     border-bottom: none;
+    .mixin-height(40px);
     .soil-unit {
       margin-right: 10px;
     }

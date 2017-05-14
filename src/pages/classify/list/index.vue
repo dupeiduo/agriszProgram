@@ -2,27 +2,31 @@
   <div class="classify-list">
     <ul v-if="list.length > 0">
       <li v-for="(item, index) in list"
+        class="clear"
         :class="curIndex === index ? 'gradient' : ''">
-        <div class="classification-title">
-          {{item.title}}
-          <span class="iconfont icon-bingtu btn-chart"
-            @mouseover="showPopup(index)"
-            @mouseout="hidePopup"
-            >
-          </span>
-        </div>
-        <p class="cf-desc">{{item.summary}}</p>
-        <p>发布日期 ： {{item.publish_time}}
-          <i class="btn-detail"
-            @click="indexChange(index)">查看详情</i>
-        </p>
+          <span class="fl list-img" :class="'list-n' + (index + 1)"></span>
+          <div class="fl select-product">
+            <div class="classification-title pr">
+              {{item.title}}
+              <span class="iconfont icon-tongjitu btn-chart"
+                @mouseover="showPopup($event,index)"
+                @mouseout="hidePopup"
+                >
+              </span>
+            </div>
+            <p v-limitLine>{{item.summary}}</p>
+            <p class="release-date ps">发布日期 ： {{item.publish_time | formatDatetime}}
+              <i class="btn-detail"
+                @click="indexChange(index)">{{curIndex === index ? '返回详情': '查看详情'}}</i>
+            </p>
+          </div>
       </li>
     </ul>
-    <h3 v-else>－暂无数据－</h3>
+    <h3 v-else-if="list.length == 0 && showNoData">－暂无数据－</h3>
     
-    <div class="chart-popover" v-loading.body="chartLoading">
+    <div class="chart-popover">
       <my-echart class="echart" 
-        :options="options"></my-echart>
+        :options="options" v-loading.lock="chartLoading"></my-echart>
     </div>
   </div>
 </template>
@@ -41,13 +45,22 @@
       curIndex: {
         type: Number,
         default: 0
+      },
+      showNoData: {
+        type: Boolean,
+        default: true
       }
     },
     data() {
       return {
-        hoverIndex: -1,
+        hoverIndex: 0,
         chartLoading: false,
         popTarg: null
+      }
+    },
+    filters: {
+      formatDatetime(value) {
+        return value.replace(/-/g, "/")
       }
     },
     mounted() {
@@ -57,7 +70,8 @@
       indexChange (index) {
         this.$emit('listChange', index)
       },
-      showPopup(index) {
+      showPopup(event,index) {
+        event = event || window.event;
         var y = event.clientY - 80
         this.popTarg.style.top = `${y}px`
         this.popTarg.style.display = 'block'
@@ -75,7 +89,16 @@
       options: function (options) {
         this.chartLoading = false
       }
-    }
+    },
+    directives: {
+      limitLine: {
+        bind: function(el) {
+          $clamp(el, {
+            clamp: 2
+          })
+        }
+      }
+    },
   }
 </script>
 <style lang="less" rel="stylesheet/less" scoped>
@@ -86,82 +109,83 @@
     }
     ul {
       overflow-x: hidden;
-      height: 320px;
+      max-height: 540px;
       background: #fff;
-
+      border-radius: 4px;
       .gradient {
-        .mixin-gradient();
+        .mixin-gradient-bg(#effdd7;#e3f8bc);
         &:hover {
-          .mixin-gradient();
-        }
-        .classification-title {
-          font-weight: 600;
-        }
-        p {
-          color: #4e4c4c;
+          .mixin-gradient-bg(#effdd7;#e3f8bc);
         }
       }
       li {
         position: relative;
         clear: both;
-        padding: 0 10px;
-        width: 296px;
+        padding: 0 16px;
         height: 115px;
         border-right: 1px solid #bbbec2;
         border-bottom: 1px solid #bbbec2;
         border-left: 1px solid #bbbec2;
-
-        &:hover {
-          background: #f5fded;
-          .btn-chart {
-            color: #f7b779;
+        .list-img {
+          display: block;
+          width: 56px;
+          height: 56px;
+          margin-top: 24px;
+          border-radius: 50%;
+        }
+        .list-n1 {
+          background: url('/static/assets/img/classify/list1.png') no-repeat;
+        }
+        .list-n2 {
+          background: url('/static/assets/img/classify/list2.png') no-repeat;
+        }
+        .list-n3 {
+          background: url('/static/assets/img/classify/list3.png') no-repeat;
+        }
+        .select-product {
+          width: 256px;
+          margin-left: 10px;
+          .release-date {
+            width: 250px;
+            bottom: 10px;
+          }
+          .btn-detail {
+            position: absolute;
+            right: 0px;
+            bottom: 0;
+            background: #fff;
+            color: #969696;
+            cursor: pointer;
+            .mixin-width(68px);
+            .mixin-height(24px);
+            .mixin-border(#969696;4px);
+            &:hover {
+              color: #6e9716;
+              border: 1px solid #6e9716;
+            }
+          }
+          .classification-title {
+            font-size: 14px;
+            width: 250px;
+            height: 32px;
+            margin-top: 6px;
+            font-weight: bold;
           }
         }
-        div {
-          font-size: 14px;
-          line-height: 40px;
-          position: relative;
+        &:hover {
+          background: #eee;
+        }
           .btn-chart {
             position: absolute;
-            display: block;
             font-size: 16px;
             top: 0;
             right: 0px;
-            width: 17px;
-            height: 17px;
             color: #b5b5b5;
-            z-index: 9999;
-            cursor: pointer;
+            cursor: default;
           }
-        }
-        .cf-desc {
-          overflow: hidden;
-          width: 290px;
-          height: 46px;
-        }
         p {
-          line-height: 22px;
-          position: relative;
-          color: #b6b6b6;
-        }
-        .btn-detail {
-          position: absolute;
-          line-height: 24px;
-          right: 12px;
-          bottom: 0;
-          width: 66px;
-          height: 24px;
-          cursor: pointer;
-          text-align: center;
-          color: #8abefa;
-          border: 1px solid #8abefa;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: 600;
-          &:hover {
-            color: #fff;
-            background: #8abefa;
-          }
+          line-height: 20px;
+          color: #4e4c4c;
         }
       }
     }
@@ -174,10 +198,11 @@
       position: absolute;
       width: 298px;
       height: 248px;
-      left: 340px;
+      left: 360px;
+      top: 0;
       background: #fff;
       border-radius: 5px;
-      box-shadow: 0 2px 8px #aeaeae;
+      .mixin-boxshadow();
     }
   }
 </style>

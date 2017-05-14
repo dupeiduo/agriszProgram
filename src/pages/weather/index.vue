@@ -1,14 +1,17 @@
 <template>
   <div class="scale-atbottom">
     <my-map class="map" 
-      v-loading.body="mapLoading"
+      v-loading.lock="mapLoading"
       @initMap="initMap" 
       :switchCtl="true"
-      background="#31c37c"
-      :top="120"
+      :top="98"
       borderRadius="4px"
+      :useWeather="false"
+      :useTools="true"
       :centerCtl="{use: true, bounds: bounds}"
-      :addTileAreas="{code: code, areas: tree}" ref="map"></my-map>
+      :addTileAreas="{code: code, areas: tree, extent: bounds}" ref="map"></my-map>
+    
+    <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi>
 
     <div v-if="showTip" class="map-tooltip" :style="{top: tipInfo.top +'px', left: tipInfo.left + 'px'}">
       <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="30px" height="21.184px" viewBox="0 0 30 21.184" enable-background="new 0 0 30 21.184" xml:space="preserve">
@@ -60,39 +63,32 @@
         
     </my-dialog>
 
-    <div v-if="wpLayer" class="wp-date">
-      <h3>{{wpConfig.name}}</h3>
-      <input type="button" @click="minusOneDay" class="btn fl" value="<">
-      <el-date-picker class="date-picker fl"
-        v-model="wpDate"
-        type="date"
-        placeholder="选择日期">
-      </el-date-picker>
-      <input type="button"  @click="addOneDay" class="btn fl" value=">">
-    </div>
-    <weath-product class="left-list"
-      :listData="listData"
-      @ctlOpacity="ctlOpacity"
-      @addWpLayer="addWpLayer"></weath-product>
-    
+    <left-list 
+      :currentDate="wpDate"
+      @dateChange="dateChange"
+      :curPosition="curPosition"
+      @backtoDetail="backtoDetail"
+      @clearLayerStatus="clearLayerStatus"
+      :opacity="opacity"
+      @opacityCtl="opacityCtl"
+      @addWpLayer="addWpLayer"></left-list>
     
     <div v-if="wpConfig" class="we-legend">
-      <h3>图例</h3>
+      <p>50℃</p>
       <ul class="we-legend-ul">
         <el-tooltip
           effect="dark" 
           v-for="(item, index) in wpConfig.legend"
-          :content="item.value" placement="left">
+          :content="item.value + '℃'" placement="left">
           <li
-            :style="{background: item.color, height: height + 'px'}">
-            <span class="we-legend-active">{{item.show}}</span>
+            :style="{background: item.color, height: 16.8 + 'px'}">
           </li>
-        </el-tooltip>
-          
+        </el-tooltip>     
       </ul>
+      <p>-40℃</p>
     </div>
 
-    <img v-if="noWpData" class="no-data ps" src="static/assets/img/common/no-data.png" width="215" style="display: inline;">
+    <no-data :noLayer="noLayer"></no-data>
     <viewreport @loadReport="loadReport" :reportName="reportName">
         <reportlist 
             slot="reportList"
@@ -102,7 +98,6 @@
             >
        </reportlist>
     </viewreport>
-    <footer-lite></footer-lite>
   </div>
 </template>
 
@@ -118,11 +113,13 @@
   import format from 'api/model.js'
   import viewreport from 'components/viewReport'
   import reportlist from 'components/reportList'
-  import footerLite from 'components/footerlite'
+  import leftList from './list'
+  import noData from 'components/noData'
 
   export default{
     data(){
       return {
+        map: null,
         styleCtl:'',
         clientH:400,
         tree: [],
@@ -141,18 +138,21 @@
         chartLoading: false,
         echartVisible: false,
         listData: configData.weatherProduct,
-        wpDate: new Date(),
+        wpDate: "",
         wpLayer: null,
         wpConfig: null,
-        noWpData: false,
+        noLayer: false,
         height: 0,
         reportContent: [],
         reportName: '气象数据报告',
         perPage: 20,
         curPage: 1,
         total: -1,
-        mapLoading: true,
-        opacity: 90
+        mapLoading: false,
+        opacity: 90,
+        curPosition: {show: false},
+        lastPosition: {show: false},
+        forecastPointLayer: null
       }
     },
     mounted() {
@@ -161,7 +161,6 @@
           this.tree = response.data
           this.code = response.data[0].area_id
           this.bounds =  model.formatBounds(response.data[0])
-          this.mapLoading = false
         }
       })
 
@@ -183,6 +182,7 @@
         this.stationInfo = station.currentStation
         this.echartVisible = true
       })
+      this.map.on('click', this.getPointInfo)
     },
     methods: {
       loadReport() {
@@ -193,15 +193,83 @@
       initMap (map) {
         this.map = map;
       },
-      addOneDay() {
-        var date = new Date(this.wpDate)
-        date.setDate(date.getDate() + 1)
-        this.wpDate = dateUtil.formatDate(date)
+      setCenter() {
+        this.$refs['map'].setCenter()
       },
-      minusOneDay() {
-        var date = new Date(this.wpDate)
-        date.setDate(date.getDate() - 1)
-        this.wpDate = dateUtil.formatDate(date)
+      getPointInfo(event) {
+        var center = event.coordinate
+        this.getAdress(center)
+      },
+      getAdress(center) {
+        var lonlat = ol.proj.toLonLat(center),
+          params = { lon: lonlat[0], lat: lonlat[1] }
+
+        
+
+        // var zoom = this.map.getView().getZoom()
+        // this.curPosition = {show: true, center, zoom, content:"aa"}
+        // this.lastPosition = {show: true, center, zoom, content:"aa"}
+
+        this.mapLoading = true
+        request.tdtPoi(params).then((response) => {
+          var formated = model.formatTdtPoi(response.data),
+            content;
+          
+          if (formated) {
+            if (formated.addressComponent.address) {
+              content = formated.addressComponent.address
+            } else {
+              content = formated.addressComponent.poi
+            }
+            if (this.forecastPointLayer) {
+              this.map.removeLayer(this.forecastPointLayer)
+            }
+            this.forecastPointLayer = mapctl.addForecastPoint(center, this.map)
+            var zoom = this.map.getView().getZoom()
+            this.curPosition = {show: true, center, zoom, content}
+            this.lastPosition = {show: true, center, zoom, content}
+          }
+          this.mapLoading = false
+
+        }).catch( (error) => {
+          this.mapLoading = false
+          console.log(error);
+        });
+      },
+      backtoDetail(isforecast) {
+        if (isforecast) {
+          this.opacity = 90
+          this.map.on('click', this.getPointInfo)
+          if (this.forecastPointLayer) {
+            this.map.addLayer(this.forecastPointLayer)
+          }
+          this.curPosition = this.lastPosition
+
+        } else if (this.wpLayer){
+          this.wpLayer.setOpacity(this.opacity/100)
+        }
+          
+      },
+      dateChange(dateStr) {
+        this.wpDate = dateStr
+      },
+      clearLayerStatus(unforecast) {
+        this.noLayer = false
+
+        if (this.forecastPointLayer) {
+          this.map.removeLayer(this.forecastPointLayer)
+        }
+
+        if (this.wpLayer) {
+          this.wpLayer.setOpacity(0)
+        }
+        
+        if (unforecast) {
+          this.map.un('click', this.getPointInfo)
+        } else {
+          this.map.on('click', this.getPointInfo)
+        }
+        this.curPosition = {show: false, content: ""}
       },
       getChart() {
         var options = {
@@ -229,9 +297,7 @@
         this.mapLoading = true
         this.wpConfig = config
         this.height = (100 / this.wpConfig.legend.length).toFixed(0)
-        if (this.wpLayer) {
-          this.map.removeLayer(this.wpLayer)
-        }
+
         var options = {
           areaCode: config.area_code,
           type: config.source_type,
@@ -240,32 +306,34 @@
         }
         request.atmosRecent(options).then((response) => {
           if (response.status != 200 || response.data.status != 0 ) {
-            this.noWpData = true
+            this.noLayer = true
             this.mapLoading = false
+            this.removeWpLayer()
           } else {
-            this.wpDate = dateUtil.dayToDate(response.data.data.year, response.data.data.day);
+            this.noLayer = false
+            this.mapLoading = false
+            var date = dateUtil.dayToDate(response.data.data.year, response.data.data.day)
+            this.wpDate = dateUtil.formatDate(date);
           }
         });
       },
-      ctlOpacity(value) {
+      opacityCtl(value) {
         this.opacity = value
         if (this.wpLayer) {
           this.wpLayer.setOpacity(value/100)
         }
       },
       getLayerName(options) {
-        if (this.wpLayer) {
-          this.map.removeLayer(this.wpLayer)
-        }
         request.getLayerName(options).then((response) => {
           if (response.status != 200 || response.data.status != 0) {
             // no data
-            this.noWpData = true
+            this.noLayer = true
             this.mapLoading = false
+            this.removeWpLayer()
           } else {
             var layerName = model.formatWPLayerName(response.data);
             this.getBounds(layerName, this.wpConfig);
-            this.noWpData = false
+            this.noLayer = false
           }
         })
       },
@@ -273,7 +341,7 @@
         request.areaBounds(wpConfig.area_code).then((response) => {
           if (response.status !== 200 || response.data.status !== 0) {
             console.log('Area bounds data wrong!' + response.data.error_msg);
-            addLayer(null, layerName);
+            this.addLayer(null, layerName);
             this.mapLoading = false
           } else {
             var  bounds = model.formatBounds(response.data.data);
@@ -294,15 +362,16 @@
           extent: extent,
           layerName: "map:" + layerName,
           sld: this.sld("map:" + layerName, sldBody),
-          opacity: this.opacity/100,
-          inRemoveList: true,
-          callback: function (layer) {
-            var container = $('#viewtarget-slide-bg');
-            var slider = $('#viewtarget-slide-bg i');
-            Global.layerOpacityCtl(layer, container, slider);
-          }
+          opacity: this.opacity/100
         }
+
+        this.removeWpLayer()
         this.wpLayer = this.$refs['map'].addGeoLayer(layerOptions, this.map);
+      },
+      removeWpLayer() {
+        if (this.wpLayer) {
+          this.map.removeLayer(this.wpLayer)
+        }
       },
       sld (layerName, sldBody) {
         var sld = '<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd">' +
@@ -337,14 +406,15 @@
           }
         })
       },
-      scrollToBottom() {
+      scrollToBottom(toBottom) {
+        if(toBottom){
           if (this.total && this.total <= this.perPage * this.curPage) {
             return
           }
           this.curPage += 1;
           this.getReportList(this.perPage, this.curPage)
         }
-
+      }
     },
     watch: {
       stationId: function(id) {
@@ -363,26 +433,34 @@
         }
       },
       wpDate(date) {
+        this.mapLoading = true
         date = (date instanceof Date) ? dateUtil.formatDate(date) : date
         var options = {
           areaCode: this.wpConfig.area_code,
           type: this.wpConfig.source_type,
           index: this.wpConfig.atomos_index,
           grade: this.wpConfig.grade,
-          date: date
+          date: date.replace(/\//g,'-')
         }
         this.getLayerName(options);
       }
+    },
+    destroyed() {
+      this.map.un('click', this.getPointInfo)
     },
     components: {
       weathProduct,
       viewreport,
       reportlist,
-      footerLite
+      leftList,
+      noData
     }
   }
 </script>
-<style lang="less" scoped>
+<style 
+lang="less" 
+scoped>
+@import '../../assets/style/reset';
   .map-tooltip {
     position: fixed;
     width: 180px;
@@ -430,16 +508,14 @@
         position: relative;
         float: right;
         overflow: hidden;
-        width: 116px;
-        height: 36px;
-        line-height: 36px;
         cursor: pointer;
-        text-align: center;
         background: #f3f2f2;
-        box-shadow: 0 0 17px #ecebeb;
+        .mixin-boxshadow();
         font-size: 12px;
         color: #333;
         font-weight: 500;
+        .mixin-height(36px);
+        .mixin-width(116px);
         p {
           position: absolute;
           top: 0;
@@ -450,6 +526,7 @@
         i {
           font-size: 20px;
           margin: 0 5px;
+          vertical-align: middle;
         }
       }
       .active {
@@ -470,14 +547,12 @@
     z-index: 1;
     h3 {
       position: relative;
-      width: 200px;
       background: #fff;
-      height: 35px;
       border-radius: 5px;
-      line-height: 35px;
       font-size: 14px;
-      text-align: center;
-      box-shadow: 3px 3px 3px #e5e5e5;
+      .mixin-boxshadow();
+      .mixin-height(35px);
+      .mixin-width(200px);
     }
     .btn {
       display: inline-block;
@@ -486,17 +561,8 @@
       font-size: 14px;
       font-weight: 400;
       line-height: 1.42857143;
-      text-align: center;
-      white-space: nowrap;
-      vertical-align: middle;
       cursor: pointer;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-      background-image: none;
-      border: 1px solid transparent;
-      border-radius: 4px;
+      .mixin-border(transparent;4px);
     }
     .date-picker {
       position: relative;
@@ -505,32 +571,24 @@
       top: 10px;
     }
   }
-  .no-data {
-    z-index: 2;
-    top: 50%;
-    left: 50%;
-    margin-top: -45px;
-    margin-left: -108px;
-  }
   .we-legend {
     position: fixed;
-    right: 22px;
-    bottom: 100px;
-    width: 112px;
-    padding: 10px;
+    right: 12px;
+    top: 210px;
+    width: 32px;
     border-radius: 5px;
-    background: rgba(255,255,255,.8);
-    box-shadow: 0 1px 6px #acacac;
-
-    h3 {
-      font-size: 12px;
-      margin-bottom: 10px;
+    background: #fff;
+    .mixin-boxshadow();
+    p {
+      text-align: center;
+      height: 24px;
+      line-height: 24px;
     }
     ul {
-      height: 100px;
       li {
         position: relative;
-        width: 16px;
+        width: 14px;
+        margin: 0 auto;
         span {
           position: absolute;
           top: 0;

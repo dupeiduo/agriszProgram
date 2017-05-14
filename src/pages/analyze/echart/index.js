@@ -12,7 +12,7 @@ export default {
       hoverAnimation: false,
       type: 'pie',
       name: '面积占比',
-      center:[ '50%','60%'],
+      center:[ '50%','62%'],
       itemStyle: {
         emphasis: {
           shadowBlur: 70,

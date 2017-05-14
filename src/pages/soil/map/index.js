@@ -1,4 +1,159 @@
 export default {
+  addEntFeature(souPoint, entPoint, overlayInfo, map, entLayer, id) {
+    this.entLayer = entLayer ? entLayer : null
+    id = id ? id : new Date().getTime()
+    if (this.entLayer) {
+      let source = this.entLayer.getSource()
+      var _feature = source.getFeatureById(id)
+      if (!_feature) {
+        let features = this.getEntFetatures(souPoint, entPoint, id)
+        this.entLayer = this.addFeatures(features, this.entLayer, map)
+
+        this.addOverlay(overlayInfo, id, entPoint, map)
+      }
+    } else {
+      let features = this.getEntFetatures(souPoint, entPoint, id)
+      this.entLayer = this.addFeatures(features, this.entLayer, map)
+
+      this.addOverlay(overlayInfo, id, entPoint, map)
+    }
+
+    return this.entLayer
+  },
+  getEntFetatures(souPoint, entPoint, id) {
+    let pFeature = new ol.Feature({
+      geometry: new ol.geom.Point(entPoint),
+      id: id
+    })
+    pFeature.setId(id)
+
+    let lFeature = new ol.Feature({
+      geometry: new ol.geom.LineString([souPoint, entPoint]),
+      id: id
+    })
+
+    return [pFeature, lFeature]
+  },
+  addFeatures(features, entLayer, map) {
+    if (!entLayer) {
+      var source = new ol.source.Vector({
+        features: features
+      })
+
+      entLayer = new ol.layer.Vector({
+        source: source,
+        style: function(feature) {
+          var geom = feature.getGeometry()
+          if (geom instanceof ol.geom.Point) {
+            return pointStyle()
+          } else if (geom instanceof ol.geom.LineString) {
+            return lineStyle()
+          }
+        }
+      })
+      entLayer.setZIndex(10)
+      map.addLayer(entLayer)
+    } else {
+      var source = entLayer.getSource()
+      source.addFeatures(features)
+      entLayer.setSource(source)
+    }
+    
+    return entLayer
+
+    function pointStyle() {
+      var style = new ol.style.Style({
+        image: new ol.style.Icon(({
+          src: '/static/assets/img/map/enter.png'
+        }))
+      })
+
+      return style
+    }
+
+    function lineStyle() {
+      var style = new ol.style.Style({
+         stroke: new ol.style.Stroke({
+          color: '#ffcc33',
+          width: 2
+        })
+      })
+
+      return style
+    }
+  },
+  addOverlay(overlay, id, entPoint, map) {
+    let popup = document.createElement('div')
+
+    let closeBtn = document.createElement('span')
+    closeBtn.innerHTML = '&times;'
+    closeBtn.dataset.id = id
+
+    let title = document.createElement('h3')
+    title.innerHTML = overlay.name
+    title.className = 'ent-popup-h3'
+
+    let address = document.createElement('p')
+    address.className = 'ent-popup-p'
+    address.innerHTML = overlay.address
+
+    popup.id = id
+    popup.className = 'ent-popup'
+    popup.appendChild(closeBtn)
+    popup.appendChild(title)
+    popup.appendChild(address)
+
+    document.body.appendChild(popup)
+
+    let height = document.body.clientHeight + 130
+    popup.style.left = `-116px`
+    popup.style.top = `-${height}px`
+
+    let pop = new ol.Overlay({
+      element: popup,
+      insertFirst: false
+    });
+    map.addOverlay(pop);
+    pop.setPosition(entPoint)
+    $clamp(address, {
+      clamp: 2
+    })
+
+    closeBtn.onclick = (event) => {
+      this.removeFeature(event.target.dataset.id)
+    }
+  },
+  removeFeature(id) {
+    let source = this.entLayer.getSource()
+
+    source.forEachFeature((feature) => {
+      if (feature.get('id') == id) {
+        source.removeFeature(feature)
+      }
+    })
+
+    let popups = document.getElementsByClassName('ent-popup') 
+    for (let i = 0; i < popups.length; i++) {
+      if (popups[i].id == id) {
+        popups[i].parentNode.removeChild(popups[i])
+      }
+    }
+  },
+  removeAllEntLayer() {
+    if (this.entLayer) {
+      let source = this.entLayer.getSource()
+      source.forEachFeature((feature) => {
+        source.removeFeature(feature)
+      })
+
+      let popups = document.getElementsByClassName('ent-popup') 
+      
+      for (let i = 0; i < popups.length; i++) {
+        popups[i].parentNode.removeChild(popups[i])
+        i--
+      }
+    }
+  },
   addPoints(points, map, outof) {
 
     var getStyle = (text, outof, zoomLevel) => {
@@ -13,6 +168,7 @@ export default {
 
     function turnToFeaturs(data, outof) {
       let _data = data
+      _data.sort(sortByoutof)
       var len = _data.length;
       if (len > 0) {
         var features = new Array(len);
@@ -34,6 +190,10 @@ export default {
       }
     }
 
+    function sortByoutof(obj1, obj2) {
+      return obj1.outof - obj2.outof
+    }
+
     function addPoints(features, map) {
       var source = new ol.source.Vector({
         features: features
@@ -42,8 +202,8 @@ export default {
       let pointLayer = new ol.layer.Vector({
         source: source,
         style: function(feature) {
-          return getStyle(feature.G.maxValue, 
-              feature.G.outof, 
+          return getStyle(feature.getProperties().maxValue, 
+              feature.getProperties().outof, 
               map.getView().getZoom());
         }
       });
@@ -100,12 +260,12 @@ export default {
           
           _point = position.position
           var left = parseInt(_point[0]) - 50,
-            top = parseInt(_point[1]) + 15,
-            station = feature.G.station,
-            outof = feature.G.outof,
-            name = feature.G.name,
-            id = feature.G.id,
-            coordinates = feature.G.coordinates
+            top = parseInt(_point[1]) - 50,
+            station = feature.getProperties().station,
+            outof = feature.getProperties().outof,
+            name = feature.getProperties().name,
+            id = feature.getProperties().id,
+            coordinates = feature.getProperties().coordinates
           
           setTimeout( () => {
             parent.$emit('featureInfo', {station, outof, name, id, left, top, coordinates})
@@ -129,13 +289,12 @@ export default {
     }
 
     var moveListener = (event) => {
+      if (event.dragging) {
+        return;
+      }
       var pixel = map.getEventPixel(event.originalEvent);
       var hit = map.hasFeatureAtPixel(pixel);
-      if (hit) {
-        map.getViewport().style.cursor = 'pointer';
-      } else {
-        map.getViewport().style.cursor = '-webkit-grab';
-      }
+      map.getViewport().style.cursor = hit ? 'pointer' : '';
     }
 
     var resetIcon = (zoomLevel, layer) => {
@@ -144,7 +303,7 @@ export default {
       }
 
       layer.getSource().forEachFeature((feature) => {
-        let img = this.getImg(feature.G.outof, zoomLevel),
+        let img = this.getImg(feature.getProperties().outof, zoomLevel),
           iconStyle = this.getIconStyle(img)
         feature.setStyle(iconStyle)
       })
@@ -215,12 +374,7 @@ export default {
     return { point, position, doPan}
   },
   panToPoint(point, map) {
-    var pan = ol.animation.pan({
-      duration: 500,
-      source: map.getView().getCenter()
-    })
-    
-    map.beforeRender(pan)
-    map.getView().setCenter(point)
+    var view = map.getView()
+    view.setCenter(point)
   }
 }

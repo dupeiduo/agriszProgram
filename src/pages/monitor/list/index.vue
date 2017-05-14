@@ -1,21 +1,21 @@
 <template>
   <div class="monitor-list">
-    <ul v-if="list.length > 0" :style="{'max-height':cHeight}">
+    <ul v-if="list.length > 0">
       <li 
         v-for="(item, index) in list"
-        :class="curIndex === index ? 'gradient' : ''"
-        @click="indexChange(index)">
+        :class="curIndex === index ? 'gradient' : ''">
         <span :class="'list-n' + (index + 1)"></span>
         <div class="list-txt">
         <h3>
           {{item.product_title}}
-          <el-tooltip class="tips" effect="light" 
-            :content="list[index].product_explanation" placement="right-start" popper-class="tips-popover">
-            <i class="tool-tip">?</i>
-          </el-tooltip>
         </h3>
-        <p>{{item.product_misc}}</p>
+        <el-tooltip class="tips" effect="light" 
+            :content="list[index].product_explanation" placement="right-start" popper-class="tips-popover">
+            <i class="tool-tip iconfont icon-wenti"></i>
+          </el-tooltip>
+        <p v-limitLine>{{item.product_misc}}</p>
         </div>
+        <h2 class="check-detail" @click="indexChange(index)">{{curIndex === index ? '返回详情': '查看详情'}}</h2>
       </li>
     </ul>
     <h3 v-else>－暂无数据－</h3>
@@ -36,18 +36,26 @@
     },
     data() {
       return {
-        cHeight: ''
+        cHeight: '',
+        checkDetail: ''
       }
     },
      mounted(){
-      var cHeight = document.documentElement.clientHeight || document.body.clientHeight;
-          this.cHeight = (cHeight - 320) + 'px';
     },
     methods: {
       indexChange (index) {
         this.$emit('listChange', index)
       }
-    }
+    },
+    directives: {
+      limitLine: {
+        bind: function(el) {
+          $clamp(el, {
+            clamp: 2
+          })
+        }
+      }
+    },
   }
 
 </script>
@@ -58,9 +66,13 @@
   >
   @import '../../../assets/style/reset';
   .monitor-list {
+    
     ul {
+      width: 356px;
+      max-height: 585px;
       overflow-x: hidden;
       background: #fff;
+      .mixin-common-border();
       .gradient {
         .mixin-gradient();
         &:hover {
@@ -78,80 +90,98 @@
       li {
         position: relative;
         clear: both;
-        width: 328px;
-        height: 82px;
-        padding: 0 10px;
+        padding: 0 16px;
+        height: 116px;
         border-right: 1px solid #d2d2d2;
         border-bottom: 1px solid #d2d2d2;
-        cursor: pointer;
         text-align: left;
         &:hover {
-          background: #f5fded;
+          background: #eee;
         }
         span {
           float: left;
-          width: 48px;
-          height: 48px;
-          margin-top: 16px;
+          width: 56px;
+          height: 56px;
+          margin-top: 24px;
           border-radius: 50%;
         }
         .list-n1 {
-          background: url('/static/assets/img/monitor/listn1.png') no-repeat;
-        }
-        .list-n1 {
-          background: url('/static/assets/img/monitor/listn1.png') no-repeat;
+          background: url('@{imgurl}monitor/listn1.png') no-repeat;
         }
         .list-n2 {
-          background: url('/static/assets/img/monitor/listn2.png') no-repeat;
+          background: url('@{imgurl}monitor/listn2.png') no-repeat;
         }
         .list-n3 {
-          background: url('/static/assets/img/monitor/listn3.png') no-repeat;
+          background: url('@{imgurl}monitor/listn3.png') no-repeat;
         }
         .list-n4 {
-          background: url('/static/assets/img/monitor/listn4.png') no-repeat;
+          background: url('@{imgurl}monitor/listn4.png') no-repeat;
         }
         .list-n5 {
-          background: url('/static/assets/img/monitor/listn5.png') no-repeat;
+          background: url('@{imgurl}monitor/listn5.png') no-repeat;
         }
         .list-n6 {
-          background: url('/static/assets/img/monitor/listn6.png') no-repeat;
+          background: url('@{imgurl}/monitor/listn6.png') no-repeat;
         }
         .list-txt {
           float: left;
           margin-left: 10px;
         }
+        .check-detail {
+          position: absolute;
+          bottom: 10px;
+          right: 18px;
+          font-size: 12px;
+          font-weight: normal;
+          background: #fff;
+          color: #969696;
+          cursor: pointer;
+          .mixin-width(68px);
+          .mixin-height(24px);
+          .mixin-border(#969696;4px);
+          &:hover {
+            color: #6e9716;
+            .mixin-border(#6e9716;4px);
+          }
+        }
         .list-txt h3 {
           font-size: 14px;
           line-height: 40px;
           position: relative;
-          width: 248px;
-          height: 34px;
+          width: 250px;
+          height: 32px;
+          margin-top: 6px;
           color: #484848;
         }
         .list-txt p {
           line-height: 20px;
           font-size: 12px;
-          width: 220px;
+          width: 250px;
           color: #989696;
         }
-        .list-txt h3 i {
-          font-size: 10px;
-          line-height: 14px;
-          position: absolute;
-          right: 10px;
-          width: 14px;
-          height: 14px;
-          text-align: center;
-          color: #bbbec2;
-          border: 1px solid #bbbec2;
-          border-radius: 50%;
-          background: #fff;
+      }
+      .gradient {
+        .check-detail:hover{
+          color: #969696;
+          .mixin-border(#969696;4px);
         }
+      }
+      @media screen and (max-height: 830px) {
+        height: 500px;
+        overflow: scroll;
+      }
+      @media screen and (max-height: 678px) {
+        height: 448px;
+        overflow: scroll;
       }
     }
   }
   .tips {
-    float: right;
-    margin-top: 10px;
+      position: absolute;
+      right: 16px;
+      top: 10px;
+      font-size: 20px;
+      color: #989898;
   }
+
 </style>

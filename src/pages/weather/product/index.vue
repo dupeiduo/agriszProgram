@@ -5,7 +5,6 @@
         @toggleList="toggleListStatus"
         :leftTab="[{name: '产品'}, {name: '介绍'}]"
         :title="title"
-        :onlyList="true"
         :index="pindex"
         @clickMenu="clickMenu">
       <div slot="list">
@@ -33,10 +32,11 @@
         </transition>
       </div>
           <p>图层样式</p>
-          <div class="block slider-container">
+          <div class="block slider-container pr">
             <opacity-ctl 
               :opacity="opacity"
               @changeOpacity="changeOpacity"
+              :right="'44px'"
               ></opacity-ctl>
           </div>
         </div>
@@ -108,6 +108,7 @@ import leftTab from 'components/leftTab'
 
 <style 
   lang="less">
+@import '../../../assets/style/reset';
   .weath-prod {
     .product {
       .product-active {
@@ -135,10 +136,9 @@ import leftTab from 'components/leftTab'
       h3 {
         margin: 5px 10px 0;
         cursor: pointer;
-        line-height: 40px;
-        height: 40px;
         padding-left: 10px;
         border-radius: 4px;
+        .mixin-height(40px);
           .triangle-right {
             display: inline-block;
             width: 0;
@@ -149,14 +149,12 @@ import leftTab from 'components/leftTab'
             border-left: 6px solid #777;
           }
           i {
-            line-height: 20px;
-            width: 20px;
-            height: 20px;
             margin: 10px;
-            text-align: center;
             color: #fff;
             border-radius: 50%;
             background: #777;
+            .mixin-height(20px);
+            .mixin-width(20px);
           }
         &:hover {
           background: #eee;
@@ -169,7 +167,6 @@ import leftTab from 'components/leftTab'
             border-bottom: none;
           };
           li {
-            border-radius: 3px;
             cursor: pointer;
             padding: 2px 10px;
             border-bottom: 1px solid #ddd;
@@ -191,6 +188,7 @@ import leftTab from 'components/leftTab'
       }
       .slider-container{
         margin-top: 0;
+        margin-left: 10px;
       }
       .toggle-container {
         margin: 0px;
@@ -229,9 +227,7 @@ import leftTab from 'components/leftTab'
     }
   }
   .fade-expand {
-    animation-name: expandme;
-    animation-duration: .2s; 
-    animation-iteration-count: 1; 
+    .mixin-animation(expandme;0.2s;1;forwards);
   }
   @keyframes shrinkme {
     0% {
@@ -242,8 +238,9 @@ import leftTab from 'components/leftTab'
     }
   }
   .fade-shrink {
-    animation-name: shrinkme;
-    animation-duration: .2s; 
-    animation-iteration-count: 1; 
+    .mixin-animation(shrinkme;0.2s;1;forwards);
+  }
+  .product-slider .slider {
+    width: 244px !important;
   }
 </style>

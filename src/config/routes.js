@@ -6,7 +6,7 @@ export default [{
   children: [
   {
     path: '/index', 
-    component: resolve => require(['../pages/index/'], resolve)
+    component: resolve => require(['../pages/home/'], resolve)
   }, 
   {
     path: '/monitor', 
@@ -56,6 +56,14 @@ export default [{
     path: '/services', 
     component: resolve => require(['../pages/services/'], resolve)
   },
+  {
+    path: '/ndvi', 
+    component: resolve => require(['../pages/ndvi/'], resolve)
+  },
+  {
+    path: '/demo', 
+    component: resolve => require(['../pages/demo/'], resolve)
+  }, 
   {
     path: '*', 
     redirect: '/index'

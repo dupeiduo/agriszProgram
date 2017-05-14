@@ -1,42 +1,55 @@
 export default {
-	lineChart: function(xAxis, yAxis, maxPrice, cropName) {
+	lineChart: function(xAxis, yAxis, maxPrice, cropName, minPrice) {
 		var option = {
 			title: {
-				text: '全国' + cropName + '价格走势',
-				left: 'center',
-				top: '10px'
+				left: '25px',
+				top: '10px',
+				bottom: '14px',
+				textStyle: {
+					fontSize: 16,
+					fontWeight: 'normal',
+					fontStyle: 'normal',
+					color: '#232323'
+				}
 			},
-			color: ['#00b9ff'],
+			color: ['#6887da'],
+			backgroundColor: '#fafafa',
 			tooltip: {
 				trigger: 'axis',
-				backgroundColor: '#f7f6f6',
-				borderColor: '#61d4fb',
+				backgroundColor: '#fafafa',
+				borderColor: '#6887da',
 				borderWidth: 1,
-				axisPointer: {
-					type: 'shadow',
-				},
 				textStyle: {
 					color: '#000',
 				},
 				formatter: '{b}<br/>{a} : {c}（元/kg）'
 			},
 			grid: {
+				show: false,
 				left: '3%',
 				right: '4%',
-				bottom: '3%',
-				containLabel: true
+				bottom: '10%',
+				containLabel: true,
+				borderWidth: 1,
+				borderColor: '#ccc',
 			},
 			xAxis: [{
 				type: 'category',
 				data: xAxis,
 				axisTick: {
-					alignWithLabel: true
+					alignWithLabel: true,
+					show: true
 				}
 			}],
 			yAxis: [{
 				type: 'value',
-				min: 0,
-				max: maxPrice
+				min: (minPrice - maxPrice * 0.15).toFixed(1),
+				max: (maxPrice + maxPrice * 0.15).toFixed(1),
+				name: '(元/公斤)',
+				splitLine: {
+					show: false
+				},
+				// boundaryGap: ['8%', '8%']
 			}],
 			series: [{
 				name: cropName + '单价',
@@ -44,89 +57,130 @@ export default {
 				data: yAxis,
 				symbol: 'circle',
 				showAllSymbol: true,
-				markArea: {
-					silent: true,
+				markPoint: {
+					data: [
+						{type: 'max', name: '最大值',
+						 itemStyle: {
+						 	normal: {
+						 		color: '#e96678'
+						 	}
+						 }
+						},
+						{
+							type: 'min', name: '最小值',
+							symbolRotate: 180,
+							label: {
+								normal: {
+									show: true,
+									position: 'inside',
+									offset: [0, 10],
+									textStyle: {
+										color: '#fff'
+									}
+								}
+							},
+							itemStyle: {
+								normal: {
+									color: '#6cbe7e'
+								}
+							},
+						},
+					],
 					itemStyle: {
 						normal: {
-							color: '#eef6fa',
-							opacity: 0.8
+							color: 'rgba(0,0,0,.5)'
 						}
-					},
-					data: this.lineDifColor(xAxis)
+					}
+				},
+				markLine: {
+					data: [
+						{type: 'average', name: '平均值'}
+					],
+					lineStyle: {
+						normal: {
+							color: '#a0a0a0'
+						}
+					}
 				}
-			}]
+			}],
+			dataZoom: [{ 
+		        type: 'slider', 
+		        start: 80,
+		        end: 100
+		    }]
 		}
 		return option
 	},
 	barChart(xAxis, yAxis, cropName) {
 		var option = {
-	      color: ['#61d4fb'],
-	      title: {
-	        text: '全国'+ cropName +'各省价格分布',
-	        left: 'center',
-	        top: '10px'
-	    },
-	      tooltip : {
-	        trigger: 'axis',
-	        backgroundColor:'#f7f6f6',
-	        borderColor: '#61d4fb',
-	        borderWidth: 1,
-	        axisPointer : { 
-	          type : 'shadow',
-	        },
-	        textStyle: {
-	          color:'#000',
-	        },
-	        formatter:'{b}<br/>{a} : {c}（元/kg）'
-	      },
-	      grid: {
-	        left: '3%',
-	        right: '4%',
-	        bottom: '3%',
-	        containLabel: true
-	      },
-	      xAxis : [
-	      {
-	        type : 'category',
-	        data : xAxis,
-	        axisTick: {
-	          alignWithLabel: true
-	        }
-	      }
-	      ],
-	      yAxis : [
-	      {
-	        type : 'value',
-	        boundaryGap: ['0', '30%']
-	      }
-	      ],
-	      series : [
-	      {
-	        name: cropName +'单价',
-	        type:'bar',
-	        barWidth: '30%',
-	        data: yAxis
-	      }
-	      ]
-	    }
-	    return option
-	},
-	detailChart(xAxis, yAxis, startDate, endDate, maxPrice, cropName) {
-		var option = {
+			color: ['#6887da'],
+			backgroundColor: '#fafafa',
 			title: {
-				text: cropName + '价格走势（' + startDate + ' ~ ' + endDate + ')',
 				left: 'center',
 				top: '10px'
 			},
-			color: ['#61d4fb'],
+			tooltip : {
+				trigger: 'axis',
+				backgroundColor:'#fafafa',
+				borderColor: '#6887da',
+				borderWidth: 1,
+				axisPointer : { 
+					type : 'shadow',
+				},
+				textStyle: {
+					color:'#000',
+				},
+				formatter:'{b}<br/>{a} : {c}（元/kg）'
+			},
+			grid: {
+				left: '4%',
+				right: '4%',
+				bottom: '3%',
+				containLabel: true
+			},
+			xAxis : [{
+				type : 'category',
+				data : xAxis,
+				axisTick: {
+					alignWithLabel: true
+				}
+			}],
+			yAxis : [{
+				name: '(元/公斤)',
+				type : 'value',
+				boundaryGap: ['0', '30%']
+			}],
+			series : [{
+				name: cropName +'单价',
+				type:'bar',
+				barWidth: '30%',
+				data: yAxis,
+				label: {
+					normal: {
+						show: true,
+						position: 'top',
+						textStyle: {
+							color: '#000'
+						}
+					}
+				}
+			}]
+		}
+	    return option
+	},
+	detailChart(xAxis, yAxis, startDate, endDate, maxPrice, cropName, minPrice) {
+		var option = {
+			title: {
+				text: cropName + '价格走势折线图',
+				left: 'center',
+				top: '10px'
+			},
+			color: ['#6887da'],
 			tooltip: {
 				trigger: 'axis',
-				backgroundColor: '#f7f6f6',
-				borderColor: '#61d4fb',
+				backgroundColor: '#fafafa',
+				borderColor: '#6887da',
 				borderWidth: 1,
-				axisPointer: {
-					type: 'shadow',
-				},
 				textStyle: {
 					color: '#000',
 				},
@@ -135,7 +189,7 @@ export default {
 			grid: {
 				left: '3%',
 				right: '4%',
-				bottom: '3%',
+				bottom: '15%',
 				containLabel: true
 			},
 			xAxis: [{
@@ -143,12 +197,16 @@ export default {
 				data: xAxis,
 				axisTick: {
 					alignWithLabel: true
-				}
+				},
 			}],
 			yAxis: [{
 				type: 'value',
-				min: 0,
-				max: maxPrice
+				min: (minPrice - maxPrice * 0.15).toFixed(1),
+				max: (maxPrice + maxPrice * 0.15).toFixed(1),
+				name: '(元/公斤)',
+				splitLine: {
+					show: false
+				}
 			}],
 			series: [{
 				name: cropName + '单价',
@@ -156,7 +214,57 @@ export default {
 				barWidth: '80%',
 				data: yAxis,
 				symbol: 'circle',
-			}]
+				markPoint: {
+					data: [
+						{type: 'max', name: '最大值',
+						itemStyle: {
+						 	normal: {
+						 		color: '#e96678'
+						 	}
+						 }
+						},
+						{
+							type: 'min', name: '最小值',
+							symbolRotate: 180,
+							itemStyle: {
+						 	normal: {
+						 		color: '#6cbe7e'
+						 		}
+						 	},
+							label: {
+								normal: {
+									show: true,
+									position: 'inside',
+									textStyle: {
+										color: '#fff'
+									},
+									offset: [0, 10]
+								}
+							}
+						}
+					],
+					itemStyle: {
+						normal: {
+							color: 'rgba(0,0,0,.5)'
+						}
+					}
+				},
+				markLine: {
+					data: [
+						{type: 'average', name: '平均值'}
+					],
+					lineStyle: {
+						normal: {
+							color: '#a0a0a0'
+						}
+					}
+				}
+			}],
+			dataZoom: [{ 
+		        type: 'slider', 
+		        start: 80,
+		        end: 100
+		    }]
 		}
 		return option
 	},

@@ -12,7 +12,12 @@ const state = {
       userName:'',
       showLoginModal: false,
       errMsg: ''
-  }
+  },
+  map: {
+    drawing: false
+  },
+  headerOpacity: 1,
+  showBlur: false
 }
 
 export default new Vuex.Store({
