@@ -38,6 +38,7 @@
 </template>
 <script>
   import pFooter from 'components/footer/';
+  import {mapGetters} from 'vuex'
   export default{
     data(){
       return {
@@ -118,15 +119,18 @@
               bottomSection:'精准预测粮食产量增减趋势'
             }]
           }
-  			]
+  			],
+        animationClassName: ''
       }
     },
     computed: {
-
-    },
+      ...mapGetters({
+        menuWidth: 'menuWidth',
+        getScreenHeight: 'getScreenHeight',
+    })},
     mounted(){
     	this.eHeight = document.documentElement.clientHeight || document.body.clientHeight;
-      this.eWidth = (document.documentElement.clientWidth || document.body.clientWidth)*90%
+      this.eWidth = document.documentElement.clientWidth || document.body.clientWidth
     	this.dispatchMouseWheelEvent()
     },
     methods: {
@@ -232,7 +236,7 @@
    lang="less"
    rel="stylesheet/less"
    scoped>
-   @import '../../assets/style/reset';
+   @import '../../assets/style/common';
    .banner {
    	position: relative;
    	top: 0;
@@ -242,7 +246,7 @@
    	background-position: center center;
    	background-size: cover;
     .banner-position0 {
-       .mixin-position(50%;50%);
+      .adv-position-center();
     }
     .banner-position1 {
       left: 10%;
@@ -272,7 +276,7 @@
       	width: 90%;
       	margin: 0 auto 3%;
       	height: 1px;
-      	background: #fff;
+      	background: @assistant-bg;
       	&:before {
       		left: 0;
       	}
@@ -288,7 +292,7 @@
       		width: 7px;
       		height: 7px;
       		border-radius: 50%;
-      		background: #fff;
+      		background: @assistant-bg;
       	}
       }
       h3 {
@@ -320,8 +324,8 @@
         background: none;
         border: 1px solid #fff;
         color: #fff;
-        .mixin-width(24px);
-        .mixin-height(24px);
+        .adv-horizontal-center(24px);
+        .adv-height(24px);
       }
       .active {
         background: #fff;
@@ -336,8 +340,8 @@
    .home-footer {
    	width: 100%;
    	position: fixed;
-   	left: 0;
    	bottom: 0;
+    left: 0;
    }
    .banner-bottom-position0, .banner-bottom-position2,.banner-bottom-position3 {
     .banner-bottom {
@@ -380,10 +384,10 @@
           margin-left: 12px;
           padding-left: 12px;
           h3 {
-            font-size: 18px;
+            .adv-font-large();
           }
           p {
-            font-size: 16px;
+            .adv-font-big();
           }
         }
       }

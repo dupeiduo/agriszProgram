@@ -1,20 +1,28 @@
 <template>
   <div class="scale-atbottom soil">
-    <my-map class="map" v-loading.lock="mapLoading" 
-      @initMap="initMap" :switchCtl="true" :top="97" borderRadius="4px" :centerCtl="{use: true, bounds: bounds}" 
-      :addTileAreas="{code: code, areas: tree, extent: bounds}"  ref="map" :useTools="true"></my-map>
+    <my-map class="map"
+      @initMap="initMap" 
+      :switchCtl="true" :top="97" borderRadius="4px" 
+      :centerCtl="{use: true, bounds: bounds}" 
+      ref="map" 
+      :useTools="true"></my-map>
     
-    <div class="loading-container" v-loading.body="leftLoading">
-      <left-tab :showList="showList" 
+    <div class="loading-container">
+      <left-tab
+        class="soil-lefttab" 
+        :showList="showList" 
         :leftTab="[]"
         :noDetail="false"
         :backList="backList"
         @toggleList="toggleListStatus" 
         @changeState="switchList"
         :title="'全国土壤监测数据'"
-        :listTitle="'返回监测点列表'">
+        :listTitle="'返回监测点列表'"
+        
+        >
         <div slot="list" class="list">
-           <div class="detail-place-list">
+          <div :style="{'max-height': getScreenHeight - 120 + 'px'}">
+           <div class="detail-place-list" v-loading.lock="leftLoading">
             <div class="detail-border">
               <p class="detail-soso pr">
                 <input v-model="selectName" placeholder="请输入监测点名称" class="ps" @keyup.13="searchByField"/>
@@ -139,8 +147,9 @@
                     <td>{{typeof item[curSelectTarget].times === "number" ? item[curSelectTarget].times : item[curSelectTarget].times[1]}}</td>
                   </tr>
                 </tbody>
-                <tbody v-else-if="monitorPointList.length == 0 && showNoData" class="none-data">
-                  －暂无数据－
+                <tbody v-else-if="monitorPointList.length == 0 && showNoData && !leftLoading" class="no-tb-data">
+                  <expect-data class="list-nodata-bg pr" 
+                    :showSectionData="true" ></expect-data>
                 </tbody>
               </table>
             </div>
@@ -150,6 +159,7 @@
               <i class="el-icon-arrow-right" @click="nextPage"></i>
             </p>
           </div>
+         </div>
         </div>
         <div slot="detail" class="list list-content pr" v-if="backList">
           <div class="detail-content">
@@ -313,7 +323,6 @@
             </table>
             </div>
           </div>
-         
         </div>
       </left-tab>
     </div>
@@ -327,9 +336,15 @@
       @addEnterPoi="addEnterPoi"
       @removeEntLayer="removeEntLayer"></pop-detail>
 
-    <pop-message popTitle="请先选择一条数据" ref="popMessage"></pop-message>
+    <pop-message :popTitle="popTitle" ref="popMessage"></pop-message>
 
-    <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi>
+    <div class="bar-contain" v-if="barCollection.length > 0">
+      <template v-for="barData in barCollection">
+        <map-chart :barData="barData"></map-chart>
+      </template>
+    </div>
+
+    <expect-data :showPageData="true" v-if="noMapData"></expect-data>
   </div>
 </template>
 <script>
@@ -339,6 +354,11 @@ import leftTab from 'components/leftTab'
 import mapctl from './map/index.js'
 import configData from '../../config/data.js'
 import popDetail from './popDetail/'
+import mapChart from './mapchart/'
+import {mapGetters} from 'vuex';
+import {elementUtil} from 'plugins/utils.js'
+import expectData from 'components/expectData/'
+import config from 'config/env/config.env.js'
 
 export default {
   data() {
@@ -352,8 +372,8 @@ export default {
         options: [],
         value: '',
         pointLayer: null,
-        mapLoading: false,
         leftLoading: false,
+        firstLoad: true,
         showTip: false,
         tipLeft: 0,
         tipTop: 0,
@@ -373,14 +393,14 @@ export default {
         provinceName: '全国',
         cityName: '城市',
         countyName: '区县',
-        flag: 2,
-        temFlagIndex: 2,
+        flag: 0,
+        temFlagIndex: 0,
         targets: [],
         targetIndex: 0,
         temTargetIndex: 0,
         curSelectTarget: '',
         standards: [],
-        standardIndex: 2,
+        standardIndex: 0,
         pageSize: 8,
         pageIndex: 1,
         pageCount: 0,
@@ -397,7 +417,14 @@ export default {
         cityNumber: 0,
         countyNumber: 0,
         sotName: '',
-        showNoData: false
+        showNoData: false,
+
+        DEFUALT_ITEM: 'all',
+        barCollection: [],
+        pointStats: {},
+
+        popTitle: '',
+        noMapData: false,
       }
     },
     filters: {
@@ -405,56 +432,100 @@ export default {
         return value.replace(/-/g, "/")
       }
     },
-    mounted() {
-      this.leftLoading = true
-      var data = { arealist: [ { "grade": '4', "area_code": '000000' } ] }
-
-      request.getPartAreas(data).then((response) => {
-        
-        if (response.status !== 200 || response.data.status != '0') {
-          console.log("接口返回:" + response.data.error_msg); 
-        } else {
-          this.areas = model.formatSoilAreas(response.data.data)
-          this.provinces = this.areas.province
-          this.tree = [this.provinces[0]]
-          this.code = this.tree[0].area_id
-          this.bounds = this.provinces[0].bounds
-
-          this.getMonitorPoints(this.code, this.flag)
-        }
-      });
-
-      var targets = configData.soil.targets
-      for(var key in targets) {
-        var name = targets[key]
-        this.targets.push({name ,key})
-      }
-
-      this.standards = configData.soil.standard
-
-      this.$on('featureInfo', (featureInfo) => {
-        this.coordinates = featureInfo.coordinates
-        this.standardInfo = this.getStandardInfo(featureInfo.id)
-
-        this.detailLeft = featureInfo.left - 95;
-        this.detailTop = featureInfo.top - 130;
-        this.seatSpot.station = featureInfo.station
-        this.seatSpot.id = this.monitorPointIndex = featureInfo.id
-
-        this.gridData = this.getMaxTwo(featureInfo.id)
-      })
-
-      this.$on('dragPoint', ({left, top}) => {
-        this.detailLeft = this.detailLeft - left;
-        this.detailTop = this.detailTop - top;
+    computed: {
+      ...mapGetters({
+        menuWidth: 'menuWidth',
+        getScreenHeight: 'getScreenHeight',
+        screenWidth: 'screenWidth'
       })
     },
+    mounted() {
+      
+      this.fetchAreaInfo()
+
+      this.setConfig()
+
+      this.bindEvents()
+    },
     methods: {
+      showPopMsgUnAutoHide(msg) {
+        this.$refs['popMessage'].showUnAutoHideDialog()
+        this.popTitle = msg
+      },
+      hidePopMsg() {
+        this.$refs['popMessage'].hidePopMsgImmediate()
+      },
+      mapDrawHandler({maptool}) {
+        if (maptool) {
+          mapctl.mapUnbindEvents(this);
+
+        } else {
+          mapctl.mapEvents(this);
+        }
+        
+      },
       initMap(map) {
         this.map = map;
       },
+      fetchAreaInfo() {
+        this.leftLoading = true
+        this.changeLoadOpacity("rgba(255,255,255,1)")
+        var data = { arealist: [ { "grade": '4', "area_code": '000000' } ] }
+
+        request.getPartAreas(data).then((response) => {
+          
+          if (response.status !== 200 || response.data.status != '0') {
+            console.log("接口返回:" + response.data.error_msg); 
+
+          } else {
+            this.areas = model.formatSoilAreas(response.data.data)
+            this.provinces = this.areas.province
+            this.tree = [this.provinces[0]]
+            this.code = this.tree[0].area_id
+            this.bounds = this.provinces[0].bounds
+
+            this.getMonitorPoints(this.code, this.flag)
+
+            this.fetchPointStats()
+          }
+        });
+      },
+      setConfig() {
+        var targets = configData.soil.targets
+        for(var key in targets) {
+          var name = targets[key]
+          this.targets.push({name ,key})
+        }
+
+        this.standards = configData.soil.standard
+      },
+      bindEvents() {
+        this.$on('featureInfo', (featureInfo) => {
+          this.coordinates = featureInfo.coordinates
+          this.standardInfo = this.getStandardInfo(featureInfo.id)
+
+          this.detailLeft = featureInfo.left - 95;
+          this.detailTop = featureInfo.top - 130;
+          this.seatSpot.station = featureInfo.station
+          this.seatSpot.id = this.monitorPointIndex = featureInfo.id
+
+          this.gridData = this.getMaxTwo(featureInfo.id)
+        })
+
+        this.$on('dragPoint', ({left, top}) => {
+          this.detailLeft = this.detailLeft - left;
+          this.detailTop = this.detailTop - top;
+        })
+
+        vueBus.$on('mapDrawHandler', this.mapDrawHandler)
+      },
       setCenter() {
-        this.$refs['map'].setCenter()
+        var view = this.map.getView(),
+          zoomLev = 4,
+          coordinates = [10824372.461471561, 4847130.72849994]
+        
+        view.setZoom(zoomLev)
+        view.setCenter(coordinates)
       },
       toggleListStatus() {
         this.showList = !this.showList
@@ -577,8 +648,12 @@ export default {
             this.pageCount = Math.ceil(this.monitorPoints.length / this.pageSize)
             this.curPageData()
             this.addPoints()
+            
+          } else {
+            this.noMapData = true
           }
           this.leftLoading = false
+          this.firstLoad = false
           this.showNoData = true
           this.showPop = true
         })
@@ -651,7 +726,8 @@ export default {
             lonlat: this.monitorPoints[i].point,
             station: this.monitorPoints[i].station,
             outof: this.monitorPoints[i].overproof > 0 ? 1 : 0,
-            maxValue: this.monitorPoints[i].maxValue
+            maxValue: this.monitorPoints[i].maxValue,
+            element: this.monitorPoints[i].default.name
           }
           points.push(obj)
         }
@@ -665,13 +741,9 @@ export default {
         }
         
         this.pointLayer = mapctl.addPoints(points, this.map, isOutof)
-        if (!this.bindMapEvent) {
-          this.bindMapEvent = true
-          mapctl.mapEvents(this)
-        } else {
-          mapctl.mapEvents(this, true)
-        }
         
+        mapctl.mapEvents(this)
+        mapctl.zoomListener()
       },
       removeLayer() {
         if (this.pointLayer) {
@@ -682,13 +754,10 @@ export default {
         var targets = configData.soil.targets,
           temArray = []
 
-        temArray = turnToArray(this.monitorPoints[index])
-        return bubbleSort(temArray)
-
-        function turnToArray(data) {
+        var turnToArray =(data) => {
           var array = []
           for(var key in targets) {
-            if (key !== 'all' && key !== 'ph') {
+            if (key !== this.DEFUALT_ITEM && key !== 'ph') {
               var obj = {
                   name: data[key].name,
                   normal: data[key].normal,
@@ -700,6 +769,10 @@ export default {
           }
           return array
         }
+
+        temArray = turnToArray(this.monitorPoints[index])
+
+        return bubbleSort(temArray)
 
         function bubbleSort(array) {
           var len = array.length;
@@ -743,7 +816,7 @@ export default {
           data = this.monitorPoints[index]
 
         for(var key in targets) {
-          if (key !== 'all' && key !== 'ph' && data[key].times > 0) {
+          if (key !== this.DEFUALT_ITEM && key !== 'ph' && data[key].times > 0) {
             var obj = {
               name: data[key].name,
               normal: data[key].normal,
@@ -754,34 +827,160 @@ export default {
           } 
         }
         return temArray
+      },
+      fetchPointStats() {
+        this.showPopMsgUnAutoHide("图层加载中...")
+        request.soilPointStats().then((response)=> {
+          if (response && response.status === 200 && response.data.status === 0) {
+            this.pointStats = response.data.data
+            this.freshBarData(this.pointStats, this.DEFUALT_ITEM)
+
+          } else {
+            // no stats data
+            this.hidePopMsg()
+            this.noMapData = true
+          }
+        })
+      },
+      freshBarData(stats, key) {
+        this.barCollection = []
+        for(var code in stats) {
+          var ele = stats[code][key]
+
+          if (ele) {
+            var bar = [
+              {value: ele.good, name: ele.good},
+              {value: ele.bad, name: ele.bad}
+            ]
+            var color = ["#1c99f7", "#e21414"]
+            var position = stats[code].position
+            var size = this.getSize(ele.good + ele.bad)
+            var province = this.getProvinceName(code)
+            var tips = `${province}土壤监测点<br><span class="soil-pie-tips out-level"></span>&nbsp;&nbsp;超标：<span class="out-level-text">${ele.bad}</span><br><span class="soil-pie-tips in-level"></span>&nbsp;&nbsp;达标：<span class="in-level-text">${ele.good}</span>`
+
+            this.barCollection.push({code, color, bar, position, size, tips})
+          }
+        }
+
+        this.$nextTick(() => {
+          mapctl.addBarTomap(this.barCollection, this.map)
+          this.hidePopMsg()
+        })
+        
+      },
+      getProvinceName(code) {
+        var name = ''
+        for (var i = 0; i < this.provinces.length; i++) {
+          if (code === this.provinces[i].area_id) {
+            name = this.provinces[i].area_name
+            break
+          }
+        }
+        return name
+      },
+      getSize(count) {
+        var size
+        if (count <= 50) {
+          size = 46
+
+        } else if (count <= 100) {
+          size = 52
+
+        } else if (count <= 150) {
+          size = 58
+
+        } else {
+          size = 66
+        }
+        return size
+      },
+      changeLoadOpacity(color) {
+        setTimeout(()=> {
+          var dom = document.getElementsByClassName('el-loading-mask')
+          elementUtil.setDomStyle(dom, 'backgroundColor', color)
+        })
+      },
+      removeAreaLayer() {
+        if (this.areaLayer) {
+          this.map.removeLayer(this.areaLayer)
+          this.areaLayer = null
+        }
+      },
+      addAreaLayers(codes) {
+        this.removeAreaLayer()
+
+        this.areaLayer = this.$refs.map.getMultyAreaLayer(config.mapUrl, codes, this.bounds)
+        this.map.addLayer(this.areaLayer)
+      },
+      getMapViewExtent(bounds) {
+        var minX = this.menuWidth + 358 + 10
+        var minY = 48
+        var maxX = this.screenWidth
+        var maxY = this.getScreenHeight
+
+        var viewPixel = [minX, minY, maxX, maxY]
+        var mapPixel = [0,0, this.screenWidth, this.getScreenHeight]
+
+        var fitedExtent = this.$refs.map.getFitExtent(viewPixel, mapPixel)
+
+        return fitedExtent
+      },
+      fitToView(bounds) {
+        setTimeout(()=> {
+          var extent = this.getMapViewExtent(bounds)
+          this.map.getView().fit(extent)
+        }, 100)
       }
     },
     watch: {
       title(title) {
         this.sotName = title + '监测点'
+      },
+      selectElement(ele) {
+        var key = ele === "" ? this.DEFUALT_ITEM : ele
+        this.freshBarData(this.pointStats, key)
+      },
+      leftLoading(loading) {
+        if (loading && this.firstLoad) {
+          this.changeLoadOpacity("rgba(255,255,255,1)")
+        }
+      },
+      firstLoad(loading) {
+        if (!loading) {
+          this.changeLoadOpacity("rgba(255,255,255,.9)")
+        }
+      },
+      bounds(bounds) {
+        this.fitToView(bounds)
+      },
+      code(code) {
+        this.addAreaLayers([code])
       }
     },
     components: {
       leftTab,
-      popDetail
+      popDetail,
+      mapChart,
+      expectData
     }
 }
 </script>
 <style 
 lang="less" 
 scoped>
-@import '../../assets/style/reset';
+@import '../../assets/style/common';
 .soil {
-  color: #333;
 
-  .loading-container {
-    position: relative;
-    top: 57px;
-    left: 10px;
+  .bar-contain {
+    position: fixed;
+  }
+
+  color: #333;
+  .soil-lefttab {
     width: 358px;
-    height: 504px;
   }
   .list {
+    overflow-y: auto;
     .search-container {
       input {
         width: 260px;
@@ -791,12 +990,12 @@ scoped>
   }
   .detail-content {
     .product-title {
-      font-size: 16px;
+      .adv-font-big();
       width: 344px;
       padding-left: 14px;
       background: #9fd032;
       color: #fff;
-      .mixin-height(40px);
+      .adv-height(40px);
     }
     table {
       width: 100%;
@@ -811,7 +1010,7 @@ scoped>
           line-height: 20px;
           display: block;
         }
-      }
+      } 
     }
   }
   .detail-place-list {
@@ -823,7 +1022,7 @@ scoped>
       padding-top: 6px;
         .block-col-detail {
           padding: 6px 0 0 16px;
-          background: #fff;
+          background: @assistant-bg;
           .select-index {
             span {
               display: inline-block;
@@ -832,22 +1031,23 @@ scoped>
               background: #efefef;
               border-radius: 4px;
               cursor: default;
-              .mixin-height(24px);
+              .adv-height(24px);
             }
           }
           .el-col {
             width: auto;
-            margin: 0 22px 10px 0;
+            margin: 0 20px 10px 0;
           }
         }
     }
     .detail-soso {
+      .adv-common-border-radius();
       height: 26px;
       margin: 14px 16px;
       background: #f4fcfc;
       color: #a1a8ad;
       overflow: hidden;
-      .mixin-border(#cdd0d2;4px);
+      border: 1px solid #cdd0d2;
       input {
         top: 0px;
         width: 260px;
@@ -856,10 +1056,10 @@ scoped>
         background: #f5fafd;
       }
       span {
+        .adv-font-big();
         right: 10px;
         top: 5px;
         height: 26px;
-        font-size: 16px;
         color: #425660;
         cursor: pointer;
         &:hover{
@@ -874,12 +1074,14 @@ scoped>
         }
       }
       .el-dropdown {
+        .adv-font-small();
+        .adv-common-border-radius();
+        .adv-height(26px);
         display: block;
         background: #f9f7f8;
-        font-size: 12px;
         cursor: pointer;
-        .mixin-height(26px);
-        .mixin-border(#cdd0d2;4px);
+        border: 1px solid #cdd0d2;
+
           .el-icon-right {
             position: absolute;
             right: 6px;
@@ -889,7 +1091,7 @@ scoped>
             position: relative;
             display: block;
             padding: 0 10px;
-            .mixin-ellipsis(70px);
+            .adv-ellipsis(70px);
           }
           &:hover {
             i {
@@ -912,14 +1114,9 @@ scoped>
           tr {
             cursor: default;
             border: 1px solid #d8d8d8;
-            .mixin-gradient-bg(#fff;#f7f7f7);
-            .mixin-height(36px);
+            .adv-gradient(#fff;#f7f7f7);
+            .adv-height(36px);
           }
-        }
-        .none-data {
-          position: absolute;
-          left: 118px;
-          border-bottom: none;
         }
         tbody {
           border-bottom: 1px solid #d8d8d8;
@@ -937,12 +1134,23 @@ scoped>
           }
           td {
             text-align: center;
-            .mixin-height(30px);
+            .adv-height(30px);
              span {
               height: 30px;
               display: block;
-              .mixin-ellipsis(80px);
+              .adv-ellipsis(80px);
              }
+          }
+        }
+
+        .no-tb-data {
+          position: absolute;
+          border-bottom: none;
+          .list-nodata-bg {
+            width: 358px;
+            min-height: 300px; 
+            overflow-y: auto;
+            .adv-border-bottom-radius();
           }
         }
       }
@@ -951,7 +1159,7 @@ scoped>
       text-align: center;
       line-height: 30px;
       i {
-        font-size: 14px;
+        .adv-font-normal();
         color: #c1c1c1;
         cursor: pointer;
         &:hover {
@@ -978,9 +1186,9 @@ scoped>
       border-top: 6px solid rgba(0, 0, 0, .5);
     }
     h3 {
+      .adv-common-border-radius();
       line-height: 30px;
       text-align: center;
-      border-radius: 4px;
       background: rgba(0, 0, 0, .5);
       color: #fff;
       cursor: pointer;
@@ -1021,7 +1229,7 @@ scoped>
 .item-screen {
   li {
     .filter-title {
-      .mixin-height(20px);
+      .adv-height(20px);
     }
     &:hover {
       background-color: #fff;
@@ -1037,13 +1245,14 @@ scoped>
           background: #8ec51f;
         }
         span {
+          .adv-common-border-radius();
+          .adv-horizontal-center(50px);
+          .adv-height(25px);
           display: inline-block;
           margin-right: 8px;
+          border: 1px solid #d3d6d5;
           cursor: pointer;
           color: #fff;
-          .mixin-width(50px);
-          .mixin-border(#d3d6d5;4px);
-          .mixin-height(25px);
         }
       }
   li {
@@ -1063,27 +1272,29 @@ scoped>
         color: #fff;
       }
       li {
+        .adv-common-border-radius();
+        .adv-horizontal-center(38px);
+        .adv-height(18px);
         float: left;
         padding: 0;
         margin: 0px 12px 12px 0;
         background: #f2f5f5;
-        .mixin-height(18px);
-        .mixin-width(38px);
-        .mixin-border(#d3d6d5;4px;)
+        border: 1px solid #d3d6d5;
       }
     }
   }
 }
 .list-content {
+  .adv-common-border-radius();
+
   background: #f1f1f1;
-  .mixin-common-border();
   .list-result-bj {
-    .mixin-boxshadow-soft();
+    .adv-boxshadow-soft();
     .list-result {
       padding: 0 10px;
       font-weight: normal;
-      .mixin-height(52px);
-      .mixin-content-title-bg();
+      .adv-height(52px);
+      background: #f3f9eb;
       i {
         color: #ed0f02;
         margin-left: 5px;
@@ -1091,11 +1302,11 @@ scoped>
     }
   }
   .list-height {
-    width: 356px;
+    .adv-border-bottom-radius();
+    width: @list-width;
     height: 406px;
-    background: #fff;
+    background: @assistant-bg;
     overflow: auto;
-    .mixin-border-radius-bottom();
   }
   .table-result {
     td,th {
@@ -1103,11 +1314,11 @@ scoped>
     }
   }
   .soil-show-result {
+    .adv-height(40px);
     background: #eef5fb;
     padding: 0 14px 0  10px;
     border: 1px solid #cdd0d2;
     border-bottom: none;
-    .mixin-height(40px);
     .soil-unit {
       margin-right: 10px;
     }

@@ -1,5 +1,5 @@
 <template>
-  <div class="suit-detail" :class="showMe ? 'animation-suit-inleft' : 'animation-suit-outleft'">
+  <div class="suit-detail pop-zIndex" :class="className">
     
     <div  v-loading.lock="loading" class="pr">
       <div class="legend-container" v-if="showLegend">
@@ -15,21 +15,24 @@
       
       <div class="current-address">
         <i class="address-icon"></i>
-        <span class="address-name font16">{{addressName}}</span>
+        <span class="address-name" v-loading.lock="addressLoading">{{addressName}}</span>
       </div>
 
       <span class="suit-lonlat suit-common">{{lonlatStr}}</span>
 
       <div class="comment-bg">
-        <p class="componet">
-          <span>综合评价</span>
-          <span class="stars">
-            <i class="iconfont icon-xingxing" 
-              v-for="item in stars"
-              :style="{color: item ===1 ? '#8fc31e' : '#dcdcdc'}"></i>
-          </span>
-          <span class="comment-content">{{commentContent}}</span>
-        </p>
+        <div class="componet">
+          <p class="rate-result">评价结果</p>
+          <h3 class="comment-rate">
+            <span class="comment-content">{{commentContent}}</span>
+            <span class="stars">
+             <i class="iconfont icon-xingxing" 
+                v-for="item in stars"
+                :style="{color: item ===1 ? '#8fc31e' : '#dcdcdc'}">
+             </i>
+            </span>
+          </h3>
+        </div>
       </div>
 
       <div class="suit-params-detail">
@@ -88,6 +91,10 @@ export default {
     cropName: {
       type: String,
       default: ''
+    },
+    addressLoading: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -97,7 +104,8 @@ export default {
       commentContent: '',
       loading: false,
       eleGroup: [],
-      eleSuit: []
+      eleSuit: [],
+      className: ''
     }
   },
   mounted() {
@@ -180,7 +188,6 @@ export default {
       }
     },
     getSutContent(value) {
-      console.log(value)
       if (value == -1) {
         return null
       }
@@ -215,19 +222,13 @@ export default {
       },
       deep: true
     },
-    paramList: {
-      handler: function (list) {
-        if (list && list.length > 0) {
-          // console.log(list)
-        }
-      },
-      deep: true
-    },
     showMe(show) {
       if (show) {
         this.doFadein()
+        this.className = 'animation-suit-inleft'
       } else {
         this.doFadeout()
+        this.className = 'animation-suit-outleft'
       }
     }
   }
@@ -236,32 +237,28 @@ export default {
 
 <style 
 lang="less" scoped>
-@import '../../../assets/style/reset';
+@import '../../../assets/style/common';
 @color: #898989;
 .suit-common {
     display: block;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     color: @color;
 }
   .suit-detail {
-    z-index: 2;
     position: fixed;
-    right: -524px;
     bottom: 45px;
+    right: -524px;
     width: 524px;
-    height: 320px;
     background: #fff;
     border-radius: 4px;
-    .mixin-boxshadow();
-    @media screen and ( max-height: 800px) {
-      height: 350px;
-    }
+    padding-bottom: 8px;
+    .adv-boxshadow();
     .legend-container {
       width: 524px;
       height: 38px;
       background: #f8f9f9;
       border-radius: 4px 4px 0 0;
-      .mixin-boxshadow();
+      .adv-boxshadow();
       
       .legend {
         .legend-item {
@@ -278,7 +275,7 @@ lang="less" scoped>
           em {
             float: left;
             padding: 1px 8px;
-            font-size: 14px;
+            .adv-font-normal();
             float: left;
           }
         }
@@ -291,10 +288,13 @@ lang="less" scoped>
       cursor: pointer;
     }
     .current-address {
-      line-height: 50px;
-      padding-left: 12px;
+      margin: 8px 0 4px 0;
+      padding-left: 14px;
       .address-icon,.address-name {
         vertical-align: middle;
+      }
+      .address-name{
+        .adv-font-big();
       }
     }
     .address-icon {
@@ -305,36 +305,58 @@ lang="less" scoped>
       vertical-align: middle;
     }
     .suit-lonlat,.comment-bg,.suit-params-detail {
-      padding-left: 26px;
-    }
-    .suit-lonlat {
-      
+      padding-left: 22px;
     }
     .comment-bg {
-      background: #f1f4f4;
-      line-height: 36px;
-      .stars, .comment-content {
-        margin-left: 14px;
+      background: #f1f6f7;
+      line-height: 34px;
+      border-top: 1px solid #b3b5b4;
+      border-bottom: 1px solid #b3b5b4;
+      .rate-result {
+        .adv-font-normal();
+        line-height: 45px;
+      }
+      .comment-rate {
+        margin-bottom: 5px;
+        .stars {
+          margin-left: 14px;
+          i {
+            font-size: 24px;
+            margin-right: 14px;
+          }
+        }
+        .comment-content {
+          font-size: 36px;
+        }
       }
     }
     .suit-params-detail {
       .params-title {
-        line-height: 46px;
-        font-size: 14px;
+        .adv-font-normal();
+        font-weight: normal;
+        line-height: 42px;
       }
     }
     .params-detail {
       overflow: hidden;
       .params-li {
         float: left;
+        &:nth-child(2) {
+          width: 110px;
+          margin: 0 34px;
+        }
+        &:nth-child(1){
+          width: 142px;
+        }
+        &:nth-child(3) {
+          width: 160px;
+        }
         ul {
           li {
-            padding: 6px 10px;
-            margin-right: 22px;
             background: #e7f5d5;
             border-radius: 4px;
             margin-bottom: 10px;
-
+            padding: 6px 0 6px 8px;
             .point {
               width: 6px;
               height: 6px;
@@ -357,7 +379,7 @@ lang="less" scoped>
     }
   }
   .animation-suit-inleft {
-    .mixin-animation(suit-inleft;.5s;1;forwards)
+    .adv-animation(suit-inleft;.5s;1;forwards)
   }
   @keyframes suit-outleft {
     0% {
@@ -370,6 +392,6 @@ lang="less" scoped>
     }
   }
   .animation-suit-outleft {
-    .mixin-animation(suit-outleft;.5s;1;forwards)
+    .adv-animation(suit-outleft;.5s;1;forwards)
   }
 </style>

@@ -26,22 +26,30 @@ const router = new VueRouter({
 
 router.beforeEach(({path}, from, next) => {
   store.commit('changeHeaderOpacity', 1)
-  request.isLogin().then( (data) => {
-    let isLogin = data.data.is_login,
-      userName = data.data.username
+  store.commit('showLoading')
 
-    if (isLogin) {
-      store.commit('login', {isLogin, userName})
-      next()
-    } else {
-      cookieUtil.setCookie('url_router_front', path, 'h2')
-      store.commit('logout')
-      if (path !== '/index') {
-        store.commit('showLogin', true)
+  setTimeout(() => {
+    request.isLogin().then( (data) => {
+      let isLogin = data.data.is_login,
+        userName = data.data.username
+
+      store.commit('hideLoading')
+      if (isLogin) {
+        store.commit('login', {isLogin, userName})
+        next()
+      } else {
+        cookieUtil.setCookie('url_router_front', path, 'h2')
+        store.commit('logout')
+
+        if (path !== '/index') {
+          store.commit('showLogin', true)
+          store.commit('showBlurModal', true)
+        }
+        next()
       }
-      next()
-    }
-  });
+    });
+  })
+    
 })
 Vue.config.keyCodes = {
   caps: 20

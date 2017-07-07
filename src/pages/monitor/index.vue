@@ -8,147 +8,195 @@
       borderRadius="4px"
       :switchCtl="true"
       :centerCtl="{use: true, bounds: bounds}"
-      :addTileAreas="{code: code, areas: tree, extent: bounds}"
       :maxZoom="12" ref="map"
       :useTools="true"></my-map>
-    <div class="m-left-tab"
-      :style="{width: leftLoading ? '358px' : '0'}"
-      v-loading.lock="leftLoading">
+    <div class="m-left-tab">
       <left-tab 
+        class="m-lefttab"
         :showList="showList"
         @toggleList="toggleListStatus"
         :leftTab="[]"
         :title="'产品列表'"
         listTitle="返回查看所有监测产品"
         :backList="backList"
-        @changeState="switchList">
+        @changeState="switchList"
+
+        >
 
         <v-list slot="list" 
           :list="list" 
           :curIndex="curIndex"
-          @listChange="changeIndex"></v-list>
+          :listHeight="(showWeather ? getScreenHeight - 300 : getScreenHeight - 285)"
+          @listChange="changeIndex">
+        </v-list>
 
-        <div slot="detail">
+        <div slot="detail" v-loading.lock="leftLoading">
           <div class="crop-test">
             <div class="clear">
               <h3 class="crop-test-titile fl">{{listTitle}}</h3>
-              <div @click.stop="hideTree">
+              <div @click.stop="hideTree" class="pr">
+                   <el-tooltip class="item" effect="dark" content="上一期" placement="top">
+                     <i class="phase pre-period el-icon-arrow-left ps" @click="jumpPeriod(-1)"></i>
+                   </el-tooltip>
                   <v-time @click.native="stopEvent"
                     :curDate="curDate" 
                     :showPop="showTime"
                     :startDate="new Date('2010-01-01')"
                     @showPanel="showTime = true"
                     @changeDate="changeDate"></v-time>
+                    <el-tooltip class="item" effect="dark" content="下一期" placement="top">
+                      <i class="phase next-period el-icon-arrow-right ps" @click="jumpPeriod(1)"></i>
+                    </el-tooltip>
               </div>
             </div>
+
             <p class="crop-introduce">{{misc}}</p>
           </div>
-          <div class="detail-height">
-            <div class="tree-bg" @click.stop="hideTree" >
-              <div class="tree-position pr">
-                <input class="tree-input" type="text" readonly
-                  @click="toggleTree"
-                  :value="treeNodeName">
-                <el-tree class="tree" 
-                  v-if="showTree" 
-                  highlight-current
-                  :data="tree" 
-                  :props="defaultProps" 
-                  @node-click="treeNodeClick">
-                </el-tree>
-                
-                <span @click="toggleTree" class="el-icon-arrow-down ps tree-icon"></span>
 
-                <div v-if="showTree" class="confirm-btn-con">
-                  <span @click="toggleTree" class="confirm-btn">确&nbsp;&nbsp;定</span>
+          <div class="detail-height" :style="{height: getScreenHeight <= 794 ? (showWeather ? getScreenHeight - 400 + 'px': getScreenHeight - 380 + 'px') : '410px'}">
+            <div>
+              <div class="tree-bg" @click.stop="hideTree" >
+
+                <div class="area-tree">
+                  <tree 
+                    :treeData="treeData" 
+                    :showTree="areaShowTree"
+                    @getTreeNode="getTreeNode"
+                    @changeShowTreeStatus="getAreaShowTreeStatus"
+                    ></tree>
                 </div>
-              </div>
-              <template v-if="isGrow">
-                <el-radio-group v-model="yearLabel"  @change="changeYear">
-                  <el-radio :disabled="noLayer" class="radio" label="1" v-model="yearLabel"
-                 >近一年</el-radio>
-                  <el-radio :disabled="noLayer" class="radio" label="5" v-model="yearLabel" 
-                  >近五年</el-radio>
-                </el-radio-group>
-              </template>
-              <div class="block slider-container pr classify-slider">
-                <opacity-ctl 
+                <div class="sub-area-tree">
+                  <tree 
+                    :treeData="filterTree" 
+                    :showTree="subShowTree"
+                    @getTreeNode="getFilterTreeNode" 
+                    @changeShowTreeStatus="getSubShowTreeStatus"
+                    ></tree>
+                </div>
+
+                <template v-if="isGrow">
+                  <el-radio-group v-model="yearLabel"  @change="changeYear">
+                    <el-radio :disabled="noLayer" class="radio" label="1" v-model="yearLabel"
+                   >近一年</el-radio>
+                    <el-radio :disabled="noLayer" class="radio" label="5" v-model="yearLabel" 
+                    >近五年</el-radio>
+                  </el-radio-group>
+                </template>
+
+                <div class="block slider-container pr classify-slider clear">
+                  <opacity-ctl 
                     :useable="noLayer"
                     :opacity="opacity"
                     @changeOpacity="changeOpacity"
-                    :title="opactlTitle"
-                  ></opacity-ctl>
+                    :title="opactlTitle">
+                  </opacity-ctl>
+                </div>
+              </div>
+              <div class="check-data-container">
+                <div class="check-data">
+                  <h3 class="check-data-title">数据查看</h3>
+                  <p class="check-data-section">通过对数据不同方面的查看，来更加深入的了解{{isGrow ? '作物长势' : '旱情'}}的综合情况。</p>
+                </div>
+
+                <div class="m-select-list">
+                  <ul>
+                    <li v-if="isGrow" class="clear">
+                      <img src="static/assets/img/monitor/line.png">
+                      <div class="m-list-right">
+                        <p class="list-chart">
+                          <span class="list-chart-title">作物长势变化图</span>
+                          <span :disabled="noLayer" class="popupctl-btn"
+                            @click="echartVisible = true, chartType='line'">查看折线图</span>
+                        </p>
+                        <p class="list-section" v-limitLine>{{lineSection}}
+                        </p>
+                      </div>
+                    </li>
+                    <li>
+                      <img src="static/assets/img/monitor/bar.png">
+                      <div class="m-list-right">
+                        <p class="list-chart">
+                          <span class="list-chart-title">{{isGrow ? '作物长势' : '旱情'}}分级统计图</span>
+                          <span :disabled="noLayer" class="popupctl-btn"
+                            @click="echartVisible = true, chartType='bar'">查看柱状图</span>
+                        </p>
+                        <p class="list-section" v-limitLine>{{barSection}}
+                        </p>
+                      </div>
+                    </li>
+                    <li>
+                      <img src="static/assets/img/monitor/report.png">
+                      <div class="m-list-right">
+                        <p class="list-chart">
+                          <span class="list-chart-title">{{reportSection}}</span>
+                          <span class="popupctl-btn" @click="loadReport">查看报告</span>
+                        </p>
+                        <p class="list-section" v-limitLine>{{listSection}}</p>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
-            <div class="check-data">
-              <h3 class="check-data-title">数据查看</h3>
-                <p class="check-data-section">通过对数据不同方面的查看，来更加深入的了解{{isGrow ? '作物长势' : '旱情'}}的综合情况。</p>
-            </div>
-            <div class="m-select-list">
-              <ul>
-                <li v-if="isGrow">
-                  <img src="static/assets/img/monitor/line.png" class="fl">
-                  <div class="m-list-right fl">
-                    <p class="list-chart">
-                      作物长势变化图
-                      <span :disabled="noLayer" class="popupctl-btn"
-                        @click="echartVisible = true, chartType='line'">查看折线图</span>
-                    </p>
-                    <p class="list-section" v-limitLine>{{lineSection}}
-                    </p>
-                  </div>
-                </li>
-                <li>
-                  <img src="static/assets/img/monitor/bar.png" class="fl">
-                  <div class="m-list-right fl">
-                    <p class="list-chart">
-                      {{isGrow ? '作物长势' : '旱情'}}分级统计图
-                      <span :disabled="noLayer" class="popupctl-btn"
-                        @click="echartVisible = true, chartType='bar'">查看柱状图</span>
-                    </p>
-                    <p class="list-section" v-limitLine>{{barSection}}
-                    </p>
-                  </div>
-                </li>
-                <li>
-                  <img src="static/assets/img/monitor/report.png" class="fl">
-                  <div class="m-list-right fl">
-                    <p class="list-chart">
-                      {{reportSection}}
-                      <span class="popupctl-btn" @click="loadReport">查看报告</span>
-                    </p>
-                    <p class="list-section" v-limitLine>{{listSection}}</p>
-                  </div>
-                </li>
-              </ul>
-          </div>
           </div>
         </div>
       </left-tab>
     </div>
       
     <my-dialog v-show="echartVisible"
-      v-loading.body="chartLoading"
-      class="dialog-bg"
-      :titlePadding="'15px 0px 0px 18px'"
       @close="echartVisible = false">
-      <el-tooltip slot="title" class="chart-title" effect="light" :content="chartTip" placement="right-start" popper-class="tips-popover">
+
+      <div class="chart-title" slot="title">
         <p class="chart-title-p no-select">
           {{chartTitle}}
-          <span class="help"><i class="chart-tip no-select">?</i></span>
+          <el-tooltip effect="light" :content="chartTip" placement="right-start" popper-class="tips-popover">
+            <span class="help"><i class="chart-tip no-select">?</i></span>
+          </el-tooltip>
         </p>
-      </el-tooltip>
-      <my-echart slot="content" class="echart" :options="echartData" :width="'600px;'" :height="'36px;'"></my-echart>
+        <div class="chart-area-tree fr">
+          <tree 
+            :treeData="chartTreeData" 
+            :showTree="chartShowTree"
+            :nodeName="currentArea"
+            @getTreeNode="getChartTreeNode" 
+            @changeShowTreeStatus="getChartShowTreeStatus">
+          </tree>
+        </div>
+      </div>
+       <div slot="content" class="pop-echart" v-loading.lock="chartLoading">
+         <my-echart  
+          class="echart"
+          v-if="echartData" 
+          :options="echartData" 
+          :width="'600px'" 
+          :height="'36px'"></my-echart>
+        <div v-else-if="(!chartLoading) && (!echartData)" class="we-expect-data ps">
+          <i class="iconfont icon-iconfontgantanhao"></i>
+          <h3 class="none-place-data">{{currentArea}}暂无{{chartTitle}}数据</h3>
+          <h4 class="other-data">请选择其他区域进行查看</h4>
+        </div>
+       </div>
     </my-dialog>
-
-    <date-selector class="date-selector no-select"
-      v-loading.body="dlLoading"
-      :start="startDate"
-      :end="new Date()"
-      :date="curDate"
-      :dlData="dlData" 
-      @changeDate="changeDate">
-    </date-selector>
+    
+    <template>
+      <div v-if="showWeather" class="time-axis pf" @click="showWeather = false">收起</div>
+      <div class="date-selector no-select" v-loading.lock="dlLoading">
+        <date-selector
+          v-if="list.length > 0"
+          :style="{width: timelineWidth + 'px'}"
+          :start="startDate"
+          :end="new Date()"
+          :date="curDate"
+          :dlData="dlData"
+          :forecastLoading="forecastLoading"
+          :atmosLoading="atmosLoading"
+          :showWeather="showWeather"
+          @currentYearChange="fetchPreYearAtoms"
+          @changeDate="changeDate">
+      </date-selector>
+      </div>
+    </template>
+      
     <viewreport :showReport="showReport" @closePopReport="showReport = false" class="dialog-bg" :showReportTitle="true" :reportTitle="reportTitle">
         <reportlist 
             slot="reportList"
@@ -160,11 +208,44 @@
             >
        </reportlist>
     </viewreport>
+
     <pop-message :popTitle="popTitle" ref="popMessage"></pop-message>
+    
+    <expect-data
+      v-if="noMapData" 
+      :showPageData="true"
+      >
+    </expect-data>
 
-    <no-data :noLayer="noLayer"></no-data>
+    <template>
+      <div>
+        <div v-show="!showPopDetail" id="regionBreifPopup" class="pop-fixed-width-container">
+          <div class="pop-main">
+            <h3 class="pop-title">{{popupTitle}}</h3>
+            <p v-limitLine class="pop-content">{{popupDesc}}</p>
+          </div>
+          <div class="view-all-report">
+            <i class="iconfont icon-iconfontgantanhao view-all-report-icon"></i>
+            <span class="view-all-report-content">点击受灾区域查看完整报告</span>
+          </div>  
+        </div>
+      </div>
+      
+      <div>
+        <div v-show="showPopDetail" id="regionDetailPopup" class="pop-view-content-container" 
+          :style="{top: -detailTop+'px', left: -detailLeft+'px'}">
+          <div class="close-btn el-icon-close ps" @click="showPopDetail = false"></div>
+          <div class="pop-main">
+            <h3 class="pop-title">{{popupTitle}}</h3>
+            <p class="pop-content">{{popupDesc}}</p>
+          </div>
+          <div class="view-weather">
+            <span class="view-weather-btn" @click="initWeather">查看天气数据</span>
+          </div>
+        </div>
+      </div>
+    </template>
 
-    <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi>
   </div>
 </template>
 
@@ -181,16 +262,26 @@
   import {mapGetters} from 'vuex'
   import charts from './echart/index.js'
   import config from 'config/env/config.env.js'
-  import dateSelector from './dateSelector'
+  import dateSelector from './dateline'
   import viewreport from 'components/viewReport';
   import reportlist from 'components/reportList';
   import format from 'api/model.js';
-  import noData from 'components/noData';
+  import drawCtl from 'agrisz-map-polygon'
+  import {elementUtil} from 'plugins/utils.js'
+  import tree from '../../components/tree'
+  import expectData from 'components/expectData/'
+  import subFilter from './subfilter'
+
+  import modisLib from 'agrisz-lib-modis'
+
+  var layerCtl = modisLib(config.mapUrl, config.tileMapUrl, dateUtil, configData)
+
   export default{
     data(){
       return {
         map: null,
         leftLoading: false,
+        firstLoad: true,
         dlLoading: false,
         chartLoading: false,
         curDate: new Date(),
@@ -201,20 +292,15 @@
         misc: '',
         list: [],
         curIndex: null,
-        homeIndex: null,
-        treeNodeName: '',
-        showTree: false,
-        tree: [],
-        defaultProps: {
-          children: 'contain',
-          label: 'area_name'
-        },
+        treeData: [],
         code: null,
         bounds: [],
         isOneYear: true,
         yearLabel: "1",
         isGrow: true,
         opacity: 90,
+        lineReqHan: null,
+        barReqHan: null,
         echartVisible: false,
         echartData: null,
         chartType: '',
@@ -245,42 +331,197 @@
         barSection: '',
         reportTitle: '',
         showTime: false,
-        showLegend: false,
+        showLegend: true,
+
+        timelineWidth: 0,
+        showPageData: false,
+        showSectionData: false,
+        noMapData: false,
+        currentTreeNode: null,
+        currentChartTreeNode: null,
+        filterTree: [],
+        filteredCodes: [],
+        filteredNodeName: '',
+        chartTreeData: [],
+        importantCodes: [],
+        currentArea: '',
+        chartCode: '',
+
+        START_YEAR: 2010,
+        END_YEAR: new Date().getFullYear(),
+
+        producLayers: [],
+
+        subShowTree:false,
+        areaShowTree:false,
+        chartShowTree:false,
+
+        showWeather: false,
+
+        regionId: '',
+        popupTitle: '',
+        popupDesc: '',
+        detailTop: 200,
+        detailLeft: 132,
+        showPopDetail: false,
+        weatherCache: {},
+
+        forecastLoading: false,
+        atmosLoading: false,
+        atmosCache: {},
       }
   },
-  created() {
-    this.leftLoading = true
-    this.dlLoading = true
-    axios.all([request.cantonTree(), request.productList()])
-    .then(axios.spread((treeData, listData) => {
-      if (treeData.status === 200 && treeData.data.length > 0) {
-        this.tree = treeData.data;
-        this.code = treeData.data[0].area_id
-        this.treeNodeName = treeData.data[0].area_name
-        this.bounds = model.formatBounds(treeData.data[0])
-      } else {
-        this.setNoLayer()
-      }
-
-      if (listData.data && listData.data.length > 0) {
-        this.list = listData.data;
-        this.curIndex = this.homeIndex ? this.homeIndex : 0
-      } else {
-        this.setNoLayer()
-      }
-      this.leftLoading = false
-      this.showLegend = true
-    }));
+  mounted() {
+    this.initRequest()
+    this.timelineWidth = this.screenWidth - this.menuWidth - 20
   },
   methods: {
+    getAreaShowTreeStatus(status){
+      this.areaShowTree = status
+    },
+    getSubShowTreeStatus(status){
+      this.subShowTree = status
+    },
+    getChartShowTreeStatus(status){
+      this.chartShowTree = status
+    },
+    initRequest() {
+      this.fetchAreaTree()
+    },
+    fetchAreaTree() {
+      this.leftLoading = true
+      this.dlLoading = true
+      this.showPopMsgUnAutoHide("图层加载中...")
+
+      request.cantonTree().then((response)=> {
+        if (response && response.status === 200 && response.data.status === 200) {
+          this.formatTrees(response.data.data)
+        }
+
+        if (!this.treeData || this.treeData.length === 0) {
+          this.noProduct()
+
+        } else {
+          this.fetchProductList()
+        }
+      })
+    },
+    fetchProductList() {
+      this.showPopMsgUnAutoHide("图层加载中...")
+      request.productList().then((listData)=> {
+        if (listData && listData.status === 200 && listData.data.status === 200) {
+          if (listData.data.data.length > 0) {
+            this.list = listData.data.data;
+            this.curIndex = 0
+          }
+        } 
+
+        if (!this.list || this.list.length < 0) {
+          this.noProduct()
+        }
+
+        this.firstLoad = false
+        this.leftLoading = false
+      })
+    },
+    noProduct() {
+      this.leftLoading = false
+      this.dlLoading = false
+      this.list =[]
+      this.backList = false
+
+      this.setNoLayer()
+      this.hidePopMsg()
+    },
+    setNoLayer() {
+      this.noLayer = true
+      this.noMapData = true
+      this.removeProductLayers()
+    },
+    formatTrees(data) {
+      var tree = model.formatMonitorTree(data)
+      var chartTree = model.formatMonitorTree(data)
+
+      this.treeData = tree.treeData
+      this.chartTreeData = chartTree.treeData
+      this.defaultTreeNodeClick()
+    },
+    defaultTreeNodeClick() {
+      if (this.list && this.list.length > 0) {
+        this.getTreeNode(this.treeData[0])
+      } else {
+        setTimeout(()=> {
+          this.defaultTreeNodeClick()
+        }, 10)
+      }
+    },
+    getTreeNode(data){
+      this.currentTreeNode = data
+      this.code = data.area_id;
+      this.bounds = model.formatBounds(data)
+      this.importantCodes = data.codes
+      
+      this.getFilterTree(data.grade, data.minGrade)
+
+      this.getChartTreeNode(data)
+    },
+    getFilterTreeNode(data) {
+      this.filteredNodeName = data.area_name
+      var grade = data.value
+      
+      // 是否拼接当前选中的政区本身
+      var codes = this.currentTreeNode[grade] 
+          ? [this.currentTreeNode.area_id].concat(this.currentTreeNode[grade])
+          : [this.currentTreeNode.area_id]
+
+      this.setFilteredCodes(grade, codes)
+
+      var areaCodes = this.filteredCodes.concat(this.currentTreeNode.area_id)
+      
+      this.addAreaLayers(areaCodes)
+      this.tryAddLayers()
+    },
+    getChartTreeNode(data) {
+      this.currentChartTreeNode = data
+      this.currentArea = this.currentChartTreeNode.area_name
+      
+      this.chartCode = data.area_id
+    },
+    getFilterTree(grade, minGrade) {
+      this.filterTree = []
+      for(var g in subFilter[grade]) {
+        if (g <= minGrade) {
+          var item = {
+            value: g,
+            area_name:  subFilter[grade][g]
+          }
+          this.filterTree.push(item)
+        }
+      }
+      this.getFilterTreeNode(this.filterTree[0])
+    },
     changeOpacity(value) {
       this.opacity = value
-      if (this.layer && typeof value ==="number") {
-        this.layer.setOpacity(value/100)
+      if (this.producLayers.length > 0 && typeof value ==="number") {
+
+        for (var i = 0; i < this.producLayers.length; i++) {
+          this.producLayers[i].setOpacity(value/100)
+        }
       }
     },
     toggleListStatus(isShow) {
       this.showList = isShow;
+    },
+    showPopMsg(msg) {
+      this.$refs['popMessage'].showDialog()
+      this.popTitle = msg
+    },
+    showPopMsgUnAutoHide(msg) {
+      this.$refs['popMessage'].showUnAutoHideDialog()
+      this.popTitle = msg
+    },
+    hidePopMsg() {
+      this.$refs['popMessage'].hidePopMsgImmediate()
     },
     loadReport() {
       this.reportContent = [];
@@ -295,6 +536,7 @@
       params.append('curPage', currntPage);
       params.append('perPage', perPage);
       params.append('section', section);
+      
       request.sectionRepor(params).then((requestData) => {
         this.total = requestData.data.total;
         if (currntPage == 1) {
@@ -315,26 +557,334 @@
     },
     initMap (map) {
       this.map = map;
+      this.setDrawConfi()
     },
+    setDrawConfi() {
+      var breifPopup = document.getElementById('regionBreifPopup')
+
+      drawCtl.setRefrence(this.map)
+      drawCtl.openHoverTip(breifPopup, ({id, index})=> {
+        if (id) {
+          this.setRegionRefrence(id, index)
+        }
+      })
+      drawCtl.openClickEvent(({id, index, coordinates, pixel})=> {
+        if (id) {
+          this.showRegionPopup(id, index, coordinates, pixel)
+        }
+      })
+      this.map.renderSync()
+    },
+    setRegionRefrence(id, index) {
+      this.regionId = id
+      this.popupTitle = this.polygonGeomtries[index].title
+      this.popupDesc = this.polygonGeomtries[index].desc
+      this.lonlat = this.polygonGeomtries[index].lonlat
+    },
+    showRegionPopup(id, index, coordinates, pixel) {
+      this.setRegionRefrence(id, index)
+      
+      this.fetchPreYearAtoms(this.currentYear)
+      this.addDetailPopup(coordinates, pixel)
+      // add detail popup detailPopup
+    },
+    addDetailPopup(coordinates, pixel) {
+      var detailPopup = document.getElementById('regionDetailPopup')
+
+      if (!this.detailOverlay) {
+        this.detailOverlay = new ol.Overlay({
+          element: detailPopup
+        });
+        this.map.addOverlay(this.detailOverlay);
+      }
+      this.detailOverlay.setPosition(coordinates)
+      
+      
+      this.showPopDetail = true
+      this.$nextTick(()=> {
+        var offset = 50
+        var direction = this.$refs.map.getDirection(detailPopup, pixel, this.showList)
+        var position = this.$refs.map.getOverlayPosition(detailPopup, direction, offset)
+
+        this.detailTop = position.top
+        this.detailLeft = position.left
+      })
+    },
+    initWeather() {
+      this.showWeather = true
+      this.fecthWeatherSkycon()
+      this.fetchCurrentYearAtoms()
+    },
+    fecthWeatherSkycon() {
+      if (!this.weatherCache[this.regionId]) {
+        this.fetchForecastHistory(this.regionId)
+      }
+    },
+    fetchForecastHistory(markerId) {
+      this.forecastLoading = true
+      request.atmosOfPeriodOnPoint(markerId).then((response) => {
+        if (response && response.status === 200 && response.data.status === 0) {
+          this.weatherCache[this.regionId] = {}
+          this.weatherCache[this.regionId].history = response.data.data
+          
+          this.fetchForecast(this.lonlat)
+
+        } else {
+          // 获取该点气象数据失败
+          this.forecastLoading = false
+        }
+      })
+    },
+    fetchForecast(lonlat) {
+      request.weatherFifteenDays(lonlat).then((response)=> {
+        if(response && response.status === 200 && response.data.status === 0 && response.data.data.status === "ok") {
+          this.weatherCache[this.regionId].forecast = response.data.data.result
+
+          var skycons = model.formatDLSkycon(this.weatherCache[this.regionId])
+          // this.dlData.forecast = skycons
+          var temDlData = this.appendSkyconToDl(skycons)
+          
+          this.dlData = ((data)=> data)(temDlData)
+        }
+        this.forecastLoading = false
+      })
+    },
+    appendSkyconToDl(skycons) {
+      var length = skycons.length
+      var count = 0
+      for (var i = this.dlData.data.length - 1; i >= 0; i--) {
+        
+        for (var j = 0; j < skycons.length; j++) {
+          if (skycons[j][0].date == this.dlData.data[i].date) {
+            // this.dlData.data[i].forecast = skycons[j]
+            Vue.set(this.dlData.data[i], "forecast", skycons[j])
+            count ++
+            break
+          }
+        }
+        if (count >= length) {
+          break
+        }
+      }
+      return this.dlData
+    }, 
+    formatSkycon(data) {
+      var skycons = []
+      var date = new Date()
+      var currentPeriod = dateUtil.dayToPeriod(date.getDate())
+      
+      var dateArrary = getDateStringByPeriod(date, currentPeriod)
+
+      var history = data.history
+
+      appenHistorySkycon(history, dateArrary, skycons)
+
+      var forecastSkycon = data.forecast.daily.skycon
+
+      appendForcastSkycon(forecastSkycon, skycons)
+      
+      
+      return splitToPeriod(skycons)
+
+      function splitToPeriod(skycons) {
+        var periodSkycons = []
+
+        var firstDay = skycons[0].day
+        if (firstDay == 1) {
+          periodSkycons[0] = skycons.slice(0, 10)
+          periodSkycons[1] = skycons.slice(10, 10)
+          periodSkycons[2] = skycons.slice(20)
+
+        } else if (firstDay == 11) {
+          periodSkycons[0] = skycons.slice(0, 10)
+
+          var index = getIndex(skycons)
+          if (index > 0) {
+            periodSkycons[1] = skycons.slice(11, 10)
+            periodSkycons[2] = skycons.slice(11, index - 10)
+
+          } else {
+            periodSkycons[1] = skycons.slice(11)
+          }
+
+        } else {
+          var index = getIndex(skycons)
+
+          periodSkycons[0] = skycons.slice(0, index)
+          periodSkycons[1] = skycons.slice(index, index + 10)
+          periodSkycons[2] = skycons.slice(index + 10)
+        }
+
+        return periodSkycons
+      }
+
+      function getIndex(skycons) {
+        var index
+        for (var i = 0; i < skycons.length; i++) {
+          if (skycons[i].day == 1) {
+            index = i
+            break
+          }
+        }
+
+        return index
+      }
+
+      function appendForcastSkycon(forecastSkycon, skycons) {
+        for (var i = 0; i < forecastSkycon.length; i++) {
+          var item = {
+            date: forecastSkycon[i].date,
+            skycon: forecastSkycon[i].value,
+            icon: getIcon(forecastSkycon[i].value),
+            day: forecastSkycon[i].date.substr(-2)
+          }
+          skycons.push(item)
+        }
+        return skycons
+      }
+
+      function getDateStringByPeriod(date, currentPeriod) {
+        var result = []
+        var dateStr = dateUtil.formatDate(date)
+        dateStr = dateStr.substr(0, 7)
+        if (currentPeriod == 1) {
+          for(var i = 1; i<= 10; i++) {
+            if (i > date.getDate()) {
+              break
+            }
+            result.push(dateStr + '-0'+i)
+          }
+
+        } else if (currentPeriod == 2) {
+          for(var i = 11; i<= 20; i++) {
+            if (i > date.getDate()) {
+              break
+            }
+            result.push(dateStr + '-'+i)
+          }
+        } else {
+          for(var i = 21; i<= 31; i++) {
+            if (i > date.getDate()) {
+              break
+            }
+            result.push(dateStr + '-'+i)
+          }
+        }
+
+        return result
+      } 
+
+      function appenHistorySkycon(history, dateArrary, skycons) {
+        for (var i = 0; i < dateArrary.length; i++) {
+          for(var key in history) {
+            var _skycon = history[key].result.skycon
+            var item = {
+              date: dateArrary[i],
+              skycon: dateArrary[i] == key ? _skycon : '-',
+              icon: dateArrary[i] == key ? getIcon(_skycon) : '-',
+              day: dateArrary[i].substr(-2)
+            }
+
+            if (dateArrary[i] == key) {
+              break
+            }
+            
+          }
+          skycons.push(item)
+        }
+      }
+
+      function getIcon(key) {
+        var skycon = [ "CLEAR_DAY", "CLEAR_NIGHT", "PARTLY_CLOUDY_DAY",
+            "PARTLY_CLOUDY_NIGHT", "CLOUDY", "RAIN", "SNOW", "WIND", "FOG"]
+
+        var skyconZhs  =["晴", "晴", "多云", "多云", "阴", "雨", "雪", "风", "雾"]
+        var skyconIcons = [ "icon-tianqitubiao_qing", "icon-qingye", "icon-tianqitubiao_duoyun", 
+                 "icon-wanshangtubiao_wanshangduoyun", "icon-tianqitubiao_yin", 
+                 "icon-tianqitubiao_zhongyu", "icon-tianqitubiao_zhongxue", 
+                 "icon-fengxiang", "icon-tianqitubiao_wu",
+               ]
+        var index = skycon.indexOf(key)
+
+        return skyconIcons[index]
+      }
+    },
+    fetchCurrentYearAtoms() {
+      var period = dateUtil.dateToPeriod(new Date())
+      var params = {
+        startYear: this.END_YEAR,
+        startTenday: 1,
+        endYear: this.END_YEAR,
+        endTenday: period,
+        lon: this.lonlat[0],
+        lat: this.lonlat[1]
+      }
+      this.fetchAtmosHistory(params)
+    },
+    fetchPreYearAtoms(year) {
+      var key = this.regionId.toString() + year.toString()
+      
+      if (!this.atmosCache[key] && this.lonlat) {
+        var params = {
+          startYear: year,
+          startTenday: 1,
+          endYear: year,
+          endTenday: 36,
+          lon: this.lonlat[0],
+          lat: this.lonlat[1]
+        }
+        this.fetchAtmosHistory(params, key)
+      }
+    },
+    fetchAtmosHistory(params, key) {
+      this.atmosLoading = true
+
+      request.atmosSummaryOfPoint(params).then((response) => {
+        if (response && response.status === 200 && response.data.status === 0) {
+          
+          var atmosHistory = model.formatBreifAtmosHistory(response.data.data, params)
+          var temDlData = this.appendAtmosToDl(atmosHistory)
+
+          this.dlData = ((data)=> data)(temDlData)
+          this.atmosCache[key] = true
+
+        } else {
+          this.atmosCache[key] = false
+        }
+        this.atmosLoading = false
+      })
+    },
+    appendAtmosToDl(atmosHistory) {
+      var length = atmosHistory.length
+      var count = 0
+      for (var i = this.dlData.data.length - 1; i >= 0; i--) {
+        
+        for (var j = 0; j < atmosHistory.length; j++) {
+          if (atmosHistory[j].date == this.dlData.data[i].date) {
+            // this.dlData.data[i].atmos = atmosHistory[j].atmos
+            Vue.set(this.dlData.data[i], "atmos", atmosHistory[j].atmos)
+            count ++
+            break
+          }
+        }
+        if (count >= length) {
+          break
+        }
+      }
+      return this.dlData
+    }, 
     setCenter() {
       this.$refs['map'].setCenter()
     },
     hideTree() {
-      this.showTree = false
       this.showTime = false
+
+      this.areaShowTree = false
+      this.subShowTree = false
+      this.chartShowTree = false
     },
     stopEvent(event) {
       event.stopPropagation()
-    },
-    toggleTree() {
-      event.stopPropagation()
-      this.showTree = !this.showTree
-      console.log(this.showTree)
-    },
-    treeNodeClick(data) {
-      this.bounds = model.formatBounds(data)
-      this.code = data.area_id
-      this.treeNodeName = data.area_name
     },
     switchList(topicId) {
       this.backList = !this.backList; 
@@ -345,17 +895,21 @@
       }
     },
     changeDate(date) {
-      // 底层实现
       var dateStr = dateUtil.formatDate(date)
       this.curDate = new Date(dateStr)
-
       for (var i = this.dlData.data.length - 1; i >= 0; i--) {
+        
         if (dateStr === this.dlData.data[i].date) {
           if (this.dlData.data[i].hasData) {
+
             this.noLayer = false
-            var key = this.list[this.curIndex].product_key
-            key += this.isGrow ? (this.isOneYear ? '-1' : '-5') : ''
-            this.layer = this.addLayerByDate(key, date)
+            this.noMapData = false
+
+            var key = this.getKey()
+
+            this.addLayers()
+
+            this.showPopMsg(`已切换至(${dateStr})${this.listTitle}`)
           } else {
             this.setNoLayer()
           }
@@ -363,139 +917,336 @@
         }
       }
     },
-    getRecent() {
-      if (this.code && this.curIndex >= 0) {
-        var key = this.list[this.curIndex].product_key
-        key += this.isGrow ? (this.isOneYear ? '-1' : '-5') : ''
-        var start = this.startDate.getFullYear(),
-          end = new Date().getFullYear();
-        this.dlLoading = true
-        this.noLayer = false
-        request.latestProduct(key, this.code).then((response) => {
-          var _year = new Date().getFullYear(),
-            _period = '1'
-          this.dlLoading = false
-          if (response.status === 200 && response.data.status === 0) {
-            response = response.data;
-            _year = response.data.year;
-            _period = response.data.tenday;
 
-            this.curDate = dateUtil.periodToDate(_year + _period);
-            this.layer = this.addLayerByDate(key, this.curDate)
-            this.hasProduct(key, this.code, start, end)
-          } else {
-            this.setNoLayer()
-            this.curDate = new Date()
-            this.dlData = model.formatDLData(null, start, end)
+    jumpPeriod(step){
+      var date = new Date(this.curDate);
+      date = this.getPeriodDate(date, step)
+      this.changeDate(date)
+    },
+    getPeriodDate(date, step) {
+      var year = date.getFullYear()
+      var period = parseInt(dateUtil.dateToPeriod(date))
+      
+      period = step + period
+      
+      var _date = this.getDateByPeriod(year, period)
+
+      return _date
+    },
+    getDateByPeriod(year, period) {
+      if (period > 36) {
+        period = "01"
+        year = year + 1
+
+      } else if (period < 0) {
+        period = "36"
+        year = year - 1
+      }
+      var dateStr = year.toString() + period.toString()
+      var date = dateUtil.periodToDate(dateStr)
+
+      return date
+    },
+
+
+    getKey() {
+      var key = this.list[this.curIndex].product_key
+      key += this.isGrow ? (this.isOneYear ? '-1' : '-5') : ''
+      return key
+    },
+    removeAreaLayer() {
+      if (this.areaLayer) {
+        this.map.removeLayer(this.areaLayer)
+        this.areaLayer = null
+      }
+    },
+    addAreaLayers(codes) {
+      this.removeAreaLayer()
+
+      this.areaLayer = this.$refs.map.getMultyAreaLayer(config.mapUrl, codes, this.bounds)
+      this.map.addLayer(this.areaLayer)
+    },
+    setFilteredCodes(grade, codes) {
+      var result = []
+      var rootNode = this.currentTreeNode
+      if (grade == rootNode.grade) {
+        // area self
+        result = [rootNode.area_id]
+
+      } else if (rootNode[grade]) {
+        // area son
+        for (var i = 0; i < rootNode.contain.length; i++) {
+          result.push(rootNode.contain[i].area_id)
+        }
+
+      } else if (rootNode.contain) {
+        // area grandson
+        for (var i = 0; i < rootNode.contain.length; i++) {
+          if (rootNode.contain[i][grade]) {
+            result = result.concat(rootNode.contain[i][grade])
+          }
+        }
+      }
+
+      this.filteredCodes = result
+    },
+    tryAddLayers() {
+      this.removeProductLayers()
+      this.showPopMsgUnAutoHide("图层加载中...")
+      if (this.filteredCodes.length > 0 && this.list.length > 0) {
+        this.fetchLatestLayers(this.filteredCodes)
+      }
+    },
+    fetchLatestLayers(codes) {
+      var key = this.getKey()
+      var data = {
+        "mask_type": "10",
+        "index": key,
+        "area_codes": codes
+      }
+      this.dlLoading = true
+
+      request.latestModisLayer(data).then((response)=> {
+        this.dlLoading = false
+        var data = null
+        if (response && response.status === 200 && response.data.status === 0) {
+          data = response.data.data.summary
+        }
+
+        this.setCurrentDate(codes, data)
+      })
+    },
+    setCurrentDate(codes, data) {
+      if (data && data.year) {
+        var currentYear = data.year;
+        var currentPeriod = data.tenday;
+
+        this.curDate = dateUtil.periodToDate(currentYear + currentPeriod);
+        this.fetchExistLayers(codes)
+
+      } else {
+        this.curDate = new Date()
+        this.setEmptyTimeline()
+      }
+    },
+    fetchExistLayers(codes) {
+      var data = {
+        "mask_type": "10",
+        "index": this.getKey(),
+        "area_codes": codes,
+        "start_year": this.START_YEAR,
+        "end_year": this.END_YEAR
+      }
+      this.dlLoading = true
+
+      request.existModisLayer(data).then((response)=> {
+        if (response && response.status === 200 && response.data.status === 0) {
+          this.dlData = model.formatDLData(response.data.data.summary, this.START_YEAR, this.END_YEAR)
+          this.exsitDetail = response.data.data.detail
+
+          this.modisMarkerExist()
+          this.addLayers()
+
+        } else {
+          this.setEmptyTimeline()
+        }
+        
+        this.dlLoading = false
+      })
+    },
+    setEmptyTimeline() {
+      this.noMapData = true
+      this.hidePopMsg()
+      this.dlData = model.formatDLData(null, this.START_YEAR, this.END_YEAR)
+    },
+    removeProductLayers() {
+      if (this.producLayers.length !== 0) {
+        for (var i = 0; i < this.producLayers.length; i++) {
+          this.map.removeLayer(this.producLayers[i])
+        }
+        this.producLayers = []
+        drawCtl.removePolygons()
+      }
+    },
+    addLayers() {
+      this.noMapData = false
+      this.noLayer = false
+
+      var layers = this.addLayersByCodes(this.filteredCodes, this.exsitDetail)
+          
+      if (layers.length === 0) {
+        layers = this.addLayersByCodes(this.currentTreeNode.area_id, this.exsitDetail)
+      }
+      
+      if (layers.length === 0) {
+        this.noMapData = true
+      }
+      this.showPopMsg(`已切换至${this.currentArea}${this.filteredNodeName}`)
+    },
+    addLayersByCodes(codes, detail) {
+      this.removeProductLayers()
+
+      var key = this.getKey()
+      var layer = null
+
+      for (var i = 0; i < codes.length; i++) {
+        var period = dateUtil.dateToPeriod(this.curDate)
+        var year = this.curDate.getFullYear()
+        var extent = this.getExtentByCode([this.currentTreeNode], codes[i])
+        
+        if (detail[codes[i]] && detail[codes[i]][year][period] === 1) {
+          layer = this.addLayerByDate(key, this.curDate, codes[i], extent)
+          this.producLayers.push(layer)
+        }
+      }
+      
+      return this.producLayers
+    },
+    getExtentByCode(tree, code) {
+      var extent = []
+      for (var i = 0; i < tree.length; i++) {
+        if (tree[i].area_id == code) {
+          var bounds = model.formatBounds(tree[i])
+          var extent = ol.extent.applyTransform(bounds, ol.proj.getTransform("EPSG:4326", "EPSG:3857"))
+          break
+        }
+
+        if (tree[i].contain) {
+          extent = this.getExtentByCode(tree[i].contain, code)
+          
+          if (extent.length !== 0) {
+            return extent
+          }
+        }
+      }
+
+      return extent
+    },
+    addLayerByDate(key, date, code, extent) {
+      this.renderPolygons(key, date)
+      
+      var url = `${key}/${date.getFullYear()}/${key}_${date.getFullYear()}${dateUtil.dateToPeriod(date)}_FARMLANDMASK.${code}_GRADE`
+      url = config.tileMapUrl + url
+      
+      var layer = this.$refs['map'].addXYZLayer(url, extent, this.map)
+      layer.setOpacity(this.opacity/100)
+      
+      return layer
+    },
+    modisMarkerExist() {
+      if (this.code && this.list.length > 0) {
+        var key = this.getKey()
+        var params = {
+          type: 10,
+          index: key,
+          code: this.code,
+          start: this.START_YEAR,
+          end: this.END_YEAR,
+          status: 1
+        }
+        request.modisMarkerExist(params).then((response)=> {
+          if (response && response.status === 200 && response.data.status === 0) {
+            var existMarker = model.formatMarkerExist(response.data.data, params)
+            var temDlData = this.appendMarkerToDl(existMarker)  
+            
+            this.dlData = ((data)=> data)(temDlData)
           }
         })
       }
     },
-    setNoLayer() {
-      this.noLayer = true
-      if (this.layer) {
-        this.map.removeLayer(this.layer)
-        this.layer = null
+    appendMarkerToDl(markers) {
+      for (var i = 0; i < this.dlData.data.length; i++) {
+        // this.dlData.data[i].marker = markers[i]
+        Vue.set(this.dlData.data[i], "marker", markers[i])
       }
+      return this.dlData
     },
-    hasProduct(key, code, start, end) {
-      this.dlLoading = true
-      request.existProduct(key, code, start, end).then((response) => {
-        if (response.status === 200 && response.data.status === 0) {
-          this.dlData = model.formatDLData(response.data.data, start, end)
-        } else {
-          this.dlData = model.formatDLData(null, start, end)
-        }
-        this.dlLoading = false
-      })
-    },
-    addLayerByDate(key, date) {
-      if (this.layer) {
-        this.map.removeLayer(this.layer)
+    renderPolygons(key, date) {
+      var params = {
+        type: 10,
+        index: key,
+        code: this.code,
+        start: dateUtil.formatDate(date),
+        end: dateUtil.formatDate(date),
+        status: 1
       }
-      
-      var extent = ol.extent.applyTransform(this.bounds, ol.proj.getTransform("EPSG:4326", "EPSG:3857")),
-        url = `${key}/${date.getFullYear()}/${key}_${date.getFullYear()}${dateUtil.dateToPeriod(date)}_FARMLANDMASK.${this.code}_GRADE`
-      url = config.tileMapUrl + url
-      var layer = this.$refs['map'].addXYZLayer(url, extent, this.map)
-      layer.setOpacity(this.opacity/100)
-      return layer
-
-      function getRasterSld(layerName, legend) {
-        var colorList;
-        for (var key in legend) {
-          if (key == '0') {
-            colorList += '<ColorMapEntry color="' +
-              legend[key].color + '" quantity="' + key +
-              '" label="' + legend[key].name +
-              '" opacity="0" />';
-          } else {
-            colorList += '<ColorMapEntry color="' +
-              legend[key].color + '" quantity="' + key +
-              '" label="' + legend[key].name +
-              '" opacity="1" />';
-          }
-        }
-        var sld = '<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd">' +
-          '<NamedLayer>' +
-          '<Name>' + layerName + '</Name>' +
-          '<UserStyle>' +
-          '<Title>SLD Cook Book: Discrete colors</Title>' +
-          '<FeatureTypeStyle>' +
-          '<Rule>' +
-          '<RasterSymbolizer>' +
-          '<ColorMap extended="true" type="values">' +
-          colorList +
-          '</ColorMap>' +
-          '</RasterSymbolizer>' +
-          '</Rule>' +
-          '</FeatureTypeStyle>' +
-          '</UserStyle>' +
-          '</NamedLayer>' +
-          '</StyledLayerDescriptor>';
-        return sld;
-      }
+      this.fetchPolygon(params)
     },
-    lineChart(key) {
+    getLineChartParams(key, code) {
       var end = (new Date()).getFullYear().toString(),
-        url = `${key}/${this.code}/${end}/9`,
-        startDate = new Date(`${(end - 9)}-01-01`),
-        options = {
-          url: url,
-          startDate: startDate,
-          endDate: new Date()
+        url = `${key}/${code}/${end}/9`,
+        startDate = new Date(`${(end - 9)}-01-01`)
+      
+      var params = {
+        url: url,
+        startDate: startDate,
+        endDate: new Date()
+      }
+
+      return params
+    },
+    lineChart(options) {
+      
+      if (this.lineReqHan) {
+        this.lineReqHan.cancelRequest("cancel request")
+        this.lineReqHan = null
+      }
+
+      this.chartLoading = true
+      this.lineReqHan = request.lineData(options)
+
+      this.lineReqHan.then((response) => {
+        this.lineReqHan = null
+        if (response && response.status === 200) {
+          response = response.data;
+          if (response && response.status == '0') {
+            var formated = model.formatMonitorLine(response, options);
+            this.echartData = charts.getLine(formated);
+          } else {
+            this.echartData = null
+          }
+          this.chartLoading = false
         }
-      request.lineData(options).then((response) => {
-        response = response.data;
-        if (response && response.status == '0') {
-          var formated = model.formatMonitorLine(response, options);
-          this.echartData = charts.getLine(formated);
-        } else {
-          this.echartData = {}
-        }
-        this.chartLoading = false
       });
     },
-    barChart(key) {
+    getBarChartParams(key, code) {
       var end = dateUtil.formatDate(new Date()),
         startDate = new Date('2010-01-01'),
         startStr = dateUtil.formatDate(startDate),
-        url =  `${key}/${this.code}/${startStr}/${end}`,
-        options = {
-          url: url,
-          legend: this.legend,
-          startDate: startDate,
-          endDate: new Date()
+        url =  `${key}/${code}/${startStr}/${end}`
+      
+      var params = {
+        url: url,
+        legend: this.legend,
+        startDate: startDate,
+        endDate: new Date()
+      }
+
+      return params
+    },
+    barChart(options) {
+
+      if (this.barReqHan) {
+        this.barReqHan.cancelRequest("cancel request")
+        this.barReqHan = null
+      }
+
+      this.chartLoading = true
+      this.barReqHan = request.barData(options)
+
+      this.barReqHan.then((response) => {
+        this.barReqHan = null
+        if (response && response.status === 200) {
+          response = response.data;
+          if (response && response.status == '0') {
+            var formated = model.formatMonitorBar(response, options);
+            this.echartData = charts.getBar(formated);
+          
+          } else {
+            this.echartData = null
+          }
+          this.chartLoading = false
         }
-      request.barData(options).then((response) => {
-        response = response.data;
-        if (response && response.status == '0') {
-          var formated = model.formatMonitorBar(response, options);
-          this.echartData = charts.getBar(formated);
-        } else {
-          this.echartData = {}
-        }
-        this.chartLoading = false
       });
     },
     setLegend(legend) {
@@ -546,6 +1297,65 @@
         this.reportTitle = this.reportSection
         this.listSection = '跟据农作物的干旱情况，分析出干旱面积、致灾因素等，并提出合理生产建议。'
       }
+    },
+    fetchPolygon(params) {
+
+      request.modisMarkerInfo(params).then((res) => {
+        if (res && res.status === 200 && res.data.status === 0) {
+          
+          var data = res.data.data
+          this.polygonGeomtries = []
+          for(var year in data) {
+
+            for(var period in data[year]) {
+              
+              for (var i = 0; i < data[year][period].length; i++) {
+                var item = {
+                  marker_id: data[year][period][i].marker_id,
+                  title: data[year][period][i].title,
+                  color: data[year][period][i].color,
+                  geom: data[year][period][i].geom,
+                  desc: data[year][period][i].desc,
+                  lonlat: data[year][period][i].center
+                }
+                this.polygonGeomtries.push(item)
+                
+              }
+            }
+          }
+          
+          drawCtl.removePolygons()
+          drawCtl.renderPolygons(this.polygonGeomtries)
+
+        } else {
+          drawCtl.removePolygons()
+        }
+      })
+    },
+    changeLoadOpacity(color) {
+      setTimeout(()=> {
+        var dom = document.getElementsByClassName('el-loading-mask')
+        elementUtil.setDomStyle(dom, 'backgroundColor', color)
+      })
+    },
+    getMapViewExtent(bounds) {
+      var minX = this.menuWidth + 358 + 10
+      var minY = 48
+      var maxX = this.screenWidth
+      var maxY = this.getScreenHeight
+
+      var viewPixel = [minX, minY, maxX, maxY]
+      var mapPixel = [0,0, this.screenWidth, this.getScreenHeight]
+
+      var fitedExtent = this.$refs.map.getFitExtent(viewPixel, mapPixel)
+
+      return fitedExtent
+    },
+    fitToView(bounds) {
+      setTimeout(()=> {
+        var extent = this.getMapViewExtent(bounds)
+        this.map.getView().fit(extent)
+      }, 100)
     }
   },
   watch: {
@@ -558,20 +1368,30 @@
       this.legend = configData.productLegendConf[key]
 
       this.setLegend(this.legend)
-      this.getRecent()
+      
+      if (this.currentTreeNode) {
+        this.getTreeNode(this.currentTreeNode)
+      } else {
+        this.tryAddLayers()
+      }
+
       this.setChartTip(index)
       this.getAllTitle()
+      this.showPopMsg(`已切换至${this.listTitle}`)
     },
     chartType: function(chartType) {
-      this.chartLoading = true
       this.echartData = null
       var key = this.list[this.curIndex].product_key
 
       if (chartType == 'line') {
-        this.lineChart(key);
+        var params = this.getLineChartParams(key, this.code)
+        this.lineChart(params);
+
       } else if (chartType == 'bar') {
         key += this.isGrow ? (this.isOneYear ? '-1' : '-5') : ''
-        this.barChart(key)
+        var params = this.getBarChartParams(key, this.code)
+        this.barChart(params)
+
       } else {
         return
       }
@@ -581,32 +1401,79 @@
     },
     isOneYear: function(isOneYear) {
       this.chartType = ''
-      var productType = this.list[this.curIndex].product_key
-      productType += this.isGrow ? (isOneYear ? '-1' : '-5') : ''
+      var productType = this.getKey()
       if (!this.noLayer) {
-        this.layer = this.addLayerByDate(productType, this.curDate)
+        this.tryAddLayers()
         this.$refs['popMessage'].showDialog()
         this.popTitle = isOneYear ? '地图已切换至与近一年长势对比' : '地图已切换至与近五年长势对比'
 
         this.setChartTip(this.curIndex)
       }
-        
     },
-    code: function (code) {
-      this.getRecent()
+    menuWidth(width) {
+      if (width > 0) {
+        this.timelineWidth = this.screenWidth - width - 20
+      }
     },
-    $route: {
-      handler: function({query}) {
-        if (query.index) {
-          this.homeIndex = Number(query.index)
+    screenWidth(width) {
+      if (width > 0) {
+        this.timelineWidth = width - this.menuWidth - 20
+      }
+    },
+    bounds(bounds) {
+      this.fitToView(bounds)
+    },
+    leftLoading(loading) {
+      if (loading && this.firstLoad) {
+        this.changeLoadOpacity("rgba(255,255,255,1)")
+      }
+    },
+    firstLoad(loading) {
+      if (!loading) {
+        this.changeLoadOpacity("rgba(255,255,255,.9)")
+      }
+    },
+    chartCode(code) {
+      if (this.list.length > 0) {
+        var key = this.list[this.curIndex].product_key
+        if (this.chartType == 'line') {
+          var params = this.getLineChartParams(key, code)
+          this.lineChart(params);
+
+        } else if (this.chartType == 'bar') {
+          key = this.getKey()
+          var params = this.getBarChartParams(key, code)
+          this.barChart(params)
         }
-      },
-      immediate: true
+      }
+    },
+    showPopDetail(showHover) {
+      drawCtl.enableHoverTip(showHover)
+    },
+    curDate(date) {
+      this.showPopDetail = false
+      this.currentYear = date.getFullYear()
+      this.fetchPreYearAtoms(this.currentYear)
     }
   },
+  directives: {
+    limitLine: {
+      bind: function(el) {
+        $clamp(el, {
+          clamp: 2
+        })
+      }
+    }
+  },
+  computed: {
+    ...mapGetters({
+      menuWidth: 'menuWidth',
+      screenWidth: 'screenWidth',
+      getScreenHeight: 'getScreenHeight'
+    })
+  },
   beforeDestroy(){
-    this.map.removeLayer(this.layer)
-    this.homeIndex = null
+    drawCtl.destroy()
   },
   directives: {
       limitLine: {
@@ -625,7 +1492,8 @@
     viewreport,
     reportlist,
     vTime,
-    noData
+    tree,
+    expectData
   }
 }
 </script>
@@ -634,32 +1502,22 @@
   lang="less" 
   rel="stylesheet/less" 
   scoped>
-  @import '../../assets/style/reset';
+  @import '../../assets/style/common';
   .detail-height {
-    @media screen and (max-height: 830px) {
-      height: 395px;
-      overflow: scroll;
-    }
-    @media screen and (max-height: 678px) {
-      height: 324px;
-      overflow: scroll;
-    }
+    height: 410px;
+    overflow-x: hidden;
   }
-  .m-left-tab {
-    position: fixed;
-    top: 80px;
-    left: 10px;
-    z-index: 1;
-    height: 550px;
+  .m-lefttab {
+    width: 100%;
   }
   .e-chart {
+    .adv-boxshadow();
     position: absolute;
     top: 175px;
     background: #fff;
     width: 318px;
     border-radius: 2px;
     text-align: left;
-    .mixin-boxshadow();
     
     p {
       margin: 5px 0 0 10px; 
@@ -673,142 +1531,154 @@
       cursor: pointer;
       background: #e3e3e3;
       color: #2c3e50;
-      .mixin-border(#898989;4px);
+      border: 1px solid #898989;
+      border-radius: 4px;
       em {
         margin-left: 2px;
       }
     }
-  } 
+  }
   .echart {
     width: 700px;
     height: 400px;
+    padding-bottom: 20px;
   }
   .chart-title {
-    width: 30%;
+    width: 100%;
     font-size: 14px;
     font-weight: 600;
     color: #6ea363;
-      .chart-title-p {
-        font-size: 16px;
-        .help {
-          height: 18px;
-          background: #fff;
-          display: inline-block;
-          cursor: pointer;
-          color: #bbbec2;
-          margin: 0 10px;
-          font-size: 15px;
-          .mixin-width(18px);
-          .mixin-border(#bbbec2;16px);
 
-        }
-      }
     .chart-title-p {
+      font-size: 16px;
       color: #7e6139;
+      .help {
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border: 1px solid #bbbec2;
+        border-radius: 16px;
+        text-align: center;
+        display: inline-block;
+        cursor: pointer;
+        color: #bbbec2;
+        margin: 0 10px;
+        font-size: 15px;
+      }
+    }
+    .chart-area-tree {
+      margin-top: -26px;
+      margin-right: 20px;
     }
   }
   .date-selector {
-    width: 98%;
-    height: 42px;
-    position: fixed;
-    bottom: 8px;
-    left: 1%;
+    position: fixed !important;
+    bottom: 10px;
+    right: 10px;
     border-radius: 4px;
+    background: #fff;
     overflow: hidden;
   }
   .crop-test {
     padding: 0px 14px;
     background: #9fd032;
     .crop-test-titile {
-      font-size: 16px;
-      margin: 12px 0 4px 0;
-      font-weight: bold;
-      color: #fff;
+      .adv-title-list();
+      margin-top: 8px; 
+    }
+     .phase {
+      top: 14px;
+      padding: 8px 6px;
+      background: #fff;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    .next-period {
+      right: -8px;
+    }
+    .pre-period {
+      left: 165px;
     }
     .crop-introduce {
-        color: #fff;
-        line-height: 22px;
-        padding-bottom: 14px;
-      }
+      .adv-text-line-height-normal();
+      color: #fff;
+      padding-bottom: 14px;
+    }
   }
   .tree-bg {
-    padding: 20px 14px 0px;
+    padding: 20px 14px 0px 14px;
     background: #f2fee7;
     border-bottom: 1px solid #cdd0d2;
-    .el-switch {
-      line-height: 1em;
-      margin: 14px 0 8px;
+
+    .area-tree {
+      width: 165px;
     }
-    .confirm-btn-con {
-      position: absolute;
-      width: 328px;
-      height: 50px;
-      background: #fff;
-      top: 202px;
-      left: 1px;
-      z-index: 10002;
-      .mixin-boxshadow();
-    } 
+    .sub-area-tree {
+      width: 134px;
+      float: right;
+      margin-top: -34px;
+      margin-right: 0px;
+    }
   }
-  .check-data {
-    padding: 0px 14px 14px;
-    .check-data-title {
-      margin: 12px 0 6px;
-      font-size: 16px;
-    }
-    .check-data-section {
-      margin: 0 20px;
-      line-height: 22px;
-      color: #272727;
+  .check-data-container {
+    width: 100%;
+    padding: 20px 14px 0 14px;
+    box-sizing: border-box;
+    .check-data {
+      .check-data-title {
+        .adv-title-big();
+      }
+      .check-data-section {
+        .adv-text-line-height-normal();
+        margin: 14px 20px;
+        color: #272727;
+      }
     }
   }
   .m-select-list {
-    margin: 0 14px 10px;
+    margin: 0 0 0 10px;
     padding-bottom: 10px;
     li {
-      margin: 0 8px;
-      clear: both;
-      overflow: hidden;
+      position: relative;
+      height: 94px;
       border-top: 1px dashed #d5d5d5;
-      border-bottom: 1px dashed #d5d5d5;
       img {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 54px;
         height: 54px;
         border-radius: 50%;
-        margin: 16px 0 0 10px;
+        margin: 16px 0 0 8px;
       }
       .m-list-right {
-        width: 228px;
-        margin: 0 0 10px 15px;
+        width: 100%;
+        padding: 0 0 10px 77px;
+        box-sizing: border-box; 
         .list-chart {
           position: relative;
-          font-size: 14px;
-          margin-top: 6px;
+          margin-top: 7px;
+    
+          .list-chart-title{
+            .adv-title-normal();
+            font-weight: normal;
+          }
           .popupctl-btn {
+            .adv-fixed-normal-primary-btn();
             position: absolute;
-            width: 70px;
-            right: 4px;
-            height: 25px;
-            line-height: 25px;
+            top: 0;
+            right: 19px;
             font-size: 13px;
-            text-align: center;
-            background: #a2d245;
-            border: 1px solid #a2d245;
-            cursor: pointer;
-            padding: 0 4px;
-            .mixin-common-border();
-            &:hover{
-              background: #cadc76;
-            }
+            border-radius: 4px;
           }
         }
         .list-section {
-          line-height: 22px;
+          .adv-text-line-height-normal();
+          height: 44px;
           color: #a4a4a4;
+          margin-right: 10px;
+          overflow: hidden;
         }
-      }
-      &:last-child {
-        border-bottom: none;
       }
       &:hover{
         background: #eee;
@@ -818,6 +1688,114 @@
   .monitor-report ul {
     .report-single {
       width: 100%;
+    }
+  }
+  .pop-echart {
+    min-height: 400px;
+    z-index: 0;
+  }
+.we-expect-data {
+  width: 640px;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%,-50%);
+  text-align: center;
+  i {
+    font-size: 24px;
+    color: #bdb9ba;
+  }
+  .none-place-data {
+    color: #bdb9ba;
+    font-size: 18px;
+    margin-top: 4px;
+  }
+  .other-data {
+    font-size: 14px;
+    color: #e34601;
+  }
+}
+.time-axis {
+  width: 48px;
+  height: 22px;
+  text-align: center;
+  line-height: 22px;
+  right: 10px;
+  bottom: 186px;
+  background: #fff;
+  border-radius: 4px 4px  0px 4px;
+  cursor: pointer;
+} 
+  .pop-fixed-width-container {
+    .adv-common-border-radius();
+    display: none;
+    position: absolute;
+    top: -150px;
+    left: -114px;
+    width: 228px;
+    height: 123px;
+    background: @assistant-bg;
+    .pop-main {
+      padding: 14px 10px 10px 10px;
+      border-bottom: 1px solid #c9c9c9;
+      .pop-title{
+        .adv-font-big();
+      }
+      .pop-content {
+        .adv-font-small();
+        widows: 208px;
+        height: 38px;
+        -webkit-line-clamp: 2;
+        height: 38px;
+        line-height: 22px;
+        margin-top: 4px;
+      }
+    }
+    .view-all-report {
+      margin-top: 8px;
+      text-align: center;
+      color: #d17302;
+      cursor: pointer;
+      .view-all-report-icon {
+        font-size: 14px;
+      }
+      .view-all-report-content {
+        margin-left: 8px;
+      }
+    }
+  }
+
+  .pop-view-content-container {
+    .adv-common-border-radius();
+    position: absolute;
+    left: -132px;
+    width: 265px;
+    background: @assistant-bg;
+    .close-btn{
+      .adv-font-small();
+      top: 6px;
+      right: 6px;
+      cursor: pointer;
+    }
+    .pop-main {
+      padding: 18px 10px 10px 10px;
+      border-bottom: 1px solid #c9c9c9;
+      .pop-title{
+        .adv-font-big();
+      }
+      .pop-content {
+        .adv-font-small();
+        text-indent: @font-indent-small;
+        line-height: 22px;
+        margin-top: 4px;
+      }
+    }
+    .view-weather {
+      .adv-height(46px);
+      text-align: center;
+      .view-weather-btn {
+        .adv-normal-primary-btn();
+        padding: 8px 40px;
+      }
     }
   }
 </style>

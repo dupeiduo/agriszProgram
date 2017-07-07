@@ -17,7 +17,12 @@ const state = {
     drawing: false
   },
   headerOpacity: 1,
-  showBlur: false
+  showBlur: false,
+  screenHeight: document.documentElement.clientHeight || document.body.clientHeight,
+  screenWidth: document.documentElement.clientWidth || document.body.clientWidth,
+  menuWidth: 132,
+  showLeftHeader: true,
+  loading: false
 }
 
 export default new Vuex.Store({

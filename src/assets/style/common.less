@@ -1,0 +1,291 @@
+@import 'params.less';
+@import 'methods.less';
+/* ======== btn-base ======== */
+
+.adv-btn {
+  .adv-border-normal();
+  .adv-btn-padding-normal();
+  .adv-init-font-size(@font-small);
+
+  display: inline-block;
+  background-image: none;
+  text-align: center;
+  user-select: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ======== btn-size ======== */
+.adv-btn-padding-none {
+  padding: 0;
+}
+
+.adv-btn-padding-small {
+  padding: 3px 12px;
+}
+
+.adv-btn-padding-normal {
+  padding: 8px 10px;
+}
+
+.adv-btn-padding-big {
+  padding: 10px 24px;
+}
+
+
+.adv-font-small {
+  font-size: @font-small;
+}
+
+.adv-font-normal {
+  font-size: @font-normal;
+}
+
+.adv-font-big {
+  font-size: @font-big;
+}
+
+.adv-font-large {
+  font-size: @font-large;
+}
+
+.adv-font-super {
+  font-size: @font-super;
+}
+
+/* ======== btn-color ======== */
+
+.adv-btn-primary {
+  border: @btn-bg;
+  background: @btn-bg;
+  &:hover{
+    background: @btn-bg-hover;
+  }
+}
+
+.adv-btn-primary-hard{
+  border: @btn-fixed-bg;
+  background: @btn-fixed-bg;
+  &:hover{
+    border: @btn-fixed-bg-hover;
+    background: @btn-fixed-bg-hover;
+
+  }
+}
+
+.adv-btn-gray {
+  border: @btn-gray-bg;
+  background: @btn-gray-bg;
+  &:hover{
+    background: @btn-gray-bg-hover;
+  }
+}
+
+/* ======== btn的固定尺寸 ======== */
+
+.adv-btn-fixed-small {
+  .adv-btn();
+  .adv-btn-padding-none();
+  .adv-height(24px);
+  .adv-font-small();
+  width: 68px;
+}
+
+.adv-btn-fixed-normal {
+  .adv-btn();
+  .adv-btn-padding-none();
+  .adv-height(27px);
+  .adv-font-small();
+  width: 80px;
+}
+
+.adv-btn-fixed-big {
+  .adv-btn();
+  .adv-btn-padding-none();
+  .adv-height(27px);
+  .adv-font-normal();
+  width: 92px;
+}
+
+/* ======== btn实例 ======== */
+
+/* ======== 常用按钮 ======== */
+
+.adv-small-primary-btn {
+  .adv-btn();
+  .adv-btn-padding-small();
+  .adv-font-small();
+  background: @btn-checked-bg;
+}
+
+
+.adv-normal-primary-btn {
+  .adv-btn();
+  .adv-btn-padding-normal();
+  .adv-font-small();
+  .adv-btn-primary();
+  color: @btn-color;
+}
+
+/* ======== 确定与取消按钮（大） ======== */
+
+.adv-big-primary-btn {
+  .adv-btn();
+  .adv-btn-padding-big();
+  .adv-font-normal();
+  .adv-btn-primary();
+  color: @btn-color;
+}
+
+.adv-big-gray-btn {
+  .adv-btn();
+  .adv-btn-padding-big();
+  .adv-font-normal();
+  .adv-btn-gray;
+  color: @btn-color;
+}
+
+/* ======== 固定按钮 ======== */
+
+.adv-fixed-small-btn {
+  .adv-btn();
+  .adv-btn-fixed-small();
+  background: #fff;
+  color: #969696;
+  border: 1px solid #969696;
+
+  &:hover {
+    color: #6e9716;
+    border: 1px solid #6e9716;
+  }
+}
+
+.adv-fixed-normal-primary-btn {
+  .adv-btn();
+  .adv-btn-fixed-normal();
+  .adv-btn-primary-hard();
+}
+
+.adv-fixed-big-primary-btn {
+  .adv-btn();
+  .adv-btn-fixed-big();
+  .adv-btn-primary-hard();
+}
+
+
+/*==关闭按钮==*/
+.adv-close-btn {
+  &:hover {
+    color: #62815b;
+  }
+}
+
+
+/* ======== public title and text ======== */ 
+
+/* ======== title-base ======== */ 
+
+.adv-title {
+  font-weight: @font-weight-bold;
+}
+
+/* ======== list title 一级标题 ======== */ 
+
+
+.adv-title-list {
+  .adv-title();
+  font-size: 16px;
+  line-height: 40px;
+  color:#fff;
+}
+
+/* ======== list内部 二级标题 ======== */ 
+
+.adv-title-normal {
+  .adv-init-font-size(14px);
+  .adv-title();
+}
+
+.adv-title-big {
+  .adv-title();
+  .adv-init-font-size(16px);
+}
+
+.adv-title-large {
+  .adv-title();
+  .adv-init-font-size(18px);
+}
+
+.adv-title-super {
+  .adv-title();
+  .adv-init-font-size(20px);
+}
+
+.adv-title-after-vertical-line-normal {
+  .adv-title();
+  font-size: @font-normal;
+  
+  &:before {
+    display: inline-block;
+    width: 5px;
+    height: 26px;
+    margin-right: 6px;
+    content: '';
+    vertical-align: middle;
+    background: #9ed132;
+  }
+}
+
+.adv-title-after-vertical-line-small {
+  .adv-title();
+  padding-left: 20px;
+  font-weight: normal;
+  font-size: @font-small;
+
+  &:before {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: inline-block;
+    width: 4px;
+    height: 15px;
+    content: '';
+    vertical-align: middle;
+    background: #9ed132;
+  }
+}
+
+/* ======== text ======== */ 
+
+.adv-text {
+  .adv-font-small();
+}
+
+.adv-text-line-height-small {
+  .adv-text();
+  line-height: 18px;
+}
+
+.adv-text-line-height-normal {
+  .adv-text();
+  line-height: 22px;
+}
+
+.adv-text-line-height-big {
+  .adv-text();
+  line-height: 24px;
+}
+
+.adv-text-line-height-large {
+  .adv-text();
+  .adv-font-big();
+  line-height: 32px;
+  text-indent: @font-indent-big;
+}
+
+
+
+
+
+
+

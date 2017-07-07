@@ -1,41 +1,46 @@
 <template>
-  <div class="left-tab">
-    <div class="pr">
-        <div  v-if="onlyList" 
+  <div class="left-tab-position lefttab-zIndex" :style="{'margin-left': menuWidth + 10 + 'px'}" :class="className">
+    <div class="left-tab">
+    <div class="pf">
+      <div class="list-all" :style="{'max-height': getScreenHeight - 60 + 'px'}">
+        <div
+          class="only-list"  
+          v-if="onlyList" 
           :class="!showList ? 'fadeout-left' : 'fadein-left'"
-          class="only-list">
+          >
           <h3 class="detail-list-bg no-select pr ">
           </h3>
           <slot name="list"></slot>
         </div>
 
-        <div v-else class="detail-list" :class="!showList ? 'fadeout-left' : 'fadein-left'">
-          <div class="back-detail" 
-            v-show="backList"
-            :class="{'addlist-animate' : backList,'removelist-animate' : !backList}"
-            >
-            <h3 class="detail-list-product no-select pr ">
-              <span class="back-detail ps no-select back-detail-color"
-                @click="changeState">
-                <i class="back-list-icon iconfont icon-icon_retractsvg"></i>
-                <span class="back-list-title">{{listTitle}}</span>
-              </span>
-            </h3>
-            <slot name="detail"></slot>
-          </div>
-          <div class="back-list"
-               v-show="!backList"
-               :class="{'addlist-animate' : !backList,'removelist-animate' : backList}">
-            <h3 class="detail-list-bg no-select pr ">
-              <span class="back-detail ps no-select product-title"
-                v-if="!noDetail"
-              >{{title}}</span>
-            </h3>
-            <slot name="list"></slot>
+        <div v-else class="detail-list" 
+             :class="!showList ? 'fadeout-left' : 'fadein-left'">
+            <div  class="back-detail" 
+                  v-show="backList"
+                  :class="{'addlist-animate' : backList,'removelist-animate' : !backList}">
+                <h3 class="detail-list-product no-select pr ">
+                  <span class="back-detail ps no-select back-detail-color"
+                        @click="changeState">
+                        <i class="back-list-icon iconfont icon-icon_retractsvg"></i>
+                        <span class="back-list-title">{{listTitle}}</span>
+                  </span>
+                </h3>
+              <slot name="detail"></slot>
+            </div>
+            <div class="back-list"
+                 v-show="!backList"
+                 :class="{'addlist-animate' : !backList,'removelist-animate' : backList}">
+              <h3 class="detail-list-bg no-select pr ">
+                <span class="back-detail ps no-select product-title"
+                  v-if="!noDetail"
+                >{{title}}</span>
+              </h3>
+              <slot name="list"></slot>
+            </div>
           </div>
         </div>
 
-      <div class="list-menu ps" :class="showList ? 'to-right' : 'to-left'" @click="toggleList">
+      <div class="list-menu ps" :class="showList ? 'list-menu-to-right' : 'list-menu-to-left'" @click="toggleList">
         <em class="cf-back" :class="!showList ? 'el-icon-arrow-right' : 'el-icon-arrow-left'"></em>
 
         <div v-show="leftTab.length > 0" class="list-ctl">
@@ -67,10 +72,12 @@
 
     </div>
   </div>
+  </div>
 </template>
 
 
 <script>
+import {mapGetters} from 'vuex'
   export default{
     props:{
       leftTab:{
@@ -108,11 +115,15 @@
     },
     data(){
       return {
-        el:'.left-tab'
+        el:'.left-tab',
+        className: ''
       }
     },
     computed: {
-
+      ...mapGetters({
+        getScreenHeight: 'getScreenHeight',
+        menuWidth: 'menuWidth'
+      })
     },
     methods: {
       changeState () {
@@ -123,6 +134,13 @@
       },
       toggleList() {
         this.$emit('toggleList', !this.showList)
+      }
+    },
+    watch: {
+      menuWidth(width){
+        if(width){
+          this.className = 'menu-left-animation'
+        }
       }
     },
     components: {
@@ -136,27 +154,27 @@
     lang="less" 
     rel="stylesheet/less" 
     scoped>
-    @import '../../assets/style/reset';
-  .left-tab {
-    position: fixed;
-    top: 57px;
-    left: 10px;
-    z-index: 1;
-
-    .back-list {
-      /*border-radius: 4px 0 4px 4px;
-      overflow-x: hidden;*/
+    @import '../../assets/style/common';
+  .left-tab-position {
+    position: absolute;
+    top: @header-height + 9;
+    left: 0px;
+    .left-tab {
+      position: absolute;
+      left: 0;
+      top: 0;
     }
-
+    /*.list-all {
+      overflow: hidden;
+    }*/
     .detail-list, .only-list {
-      font-size: 12px;
+      .adv-boxshadow();
+      .adv-font-small();
       line-height: 32px;
       position: relative;
-      width: 358px;
+      width: @list-width;
       background: #fff;
       border-radius: 4px 0 4px 4px;
-      /*overflow-x: hidden;*/
-      .mixin-boxshadow();
       
       .detail-list-bg {
         height: 40px;
@@ -164,30 +182,31 @@
         border-radius: 4px 0 0 0;
         overflow: hidden;
         .back-detail {
+          .adv-height(32px);
           top: 8px;
           left: 14px;
           cursor: default;
-          .mixin-height(32px);
         }
         .product-title {
+          .adv-height(40px);
+          .adv-font-big();
           left: 0;
           top: 0;
-          font-size: 16px;
-          width: 344px;
+          width: @list-width - 14;
           padding-left: 14px;
           background: #9fd032;
           color: #fff;
-          .mixin-height(40px);
+          border-radius: 4px 0 0 0;
         }
       }
       .detail-list-product {
         height: 32px;
         width: 342px;
         padding-left: 12px;
-        font-weight: normal;
+        font-weight: @font-weight-normal;
         .back-list-icon {
+          .adv-font-normal();
           color: #989898;
-          font-size: 14px;
           padding-right: 5px;
           vertical-align: middle;
         }
@@ -207,24 +226,24 @@
     }
     .list-menu {
       top: 0px;
-      left: 358px;
+      left: @list-width;
       width: 32px;
       height: 32px;
-      background: #fff;
+      background: @assistant-bg;
       border-radius: 0px 4px 4px 0;
       cursor: pointer;
-      .mixin-boxshadow();
+      .adv-boxshadow();
         &:hover{
            .cf-back{
             color: #778f31;
            }
         }
       .list-ctl {
-        .mixin-boxshadow();
+        .adv-boxshadow();
       }
       .cf-back {
+        .adv-font-big();
         display: block;
-        font-size: 16px;
         width: 18px;
         margin: 8px auto;
         cursor: pointer;
@@ -238,72 +257,65 @@
         background: #fff;
         display: block;
         cursor: pointer;
-        .mixin-height(32px);
-        .mixin-width(32px);
+        .adv-height(32px);
+        .adv-horizontal-center(32px);
       }
     }
   }
 
   @keyframes fadein {
     0% {
-      left: -368px;
+      left: -(@list-width + 10);
       width: 0px;
     }
     1%{
-      width: 358px;
+      width: @list-width;
     }
     100% {
       left: 0px;
     }
   }
   .fadein-left {
-    .mixin-animation(fadein;.55s;1;forwards);    
+    .adv-animation(fadein;.25s;1;forwards);    
   }
   @keyframes fadeout {
     0% {
-      left: -10px;
+      left: -142px;
     }
     99% {
-      width: 358px;
+      width: @list-width;
     }
     100% {
-      left: -368px;
+      left: -(@list-width + 10);
       width: 0px;
     }
   }
   .fadeout-left {
-    .mixin-animation(fadeout;.55s;1;forwards);
+    .adv-animation(fadeout;.25s;1;forwards);
   }
 
-  @keyframes toleft {
+  @keyframes list-menu-tol-eft {
     0% {
-      left: 350px;
+      left: @list-width - 8;
     }
     100% {
-      left: -10px;
+      left: 0px;
     }
   }
-  .left-tab .to-left {
-    width: 40px;
-    height: 40px;
-    .cf-back {
-      margin: 12px auto;
-      font-size: 20px;
-      transition: all .4s ease;
-    }
-    .mixin-animation(toleft;.4s;1;forwards);
+  .left-tab .list-menu-to-left {
+    .adv-animation(list-menu-tol-eft;.4s;1;forwards);
   }
   
-  @keyframes toright {
+  @keyframes list-menu-to-right {
     0% {
-      left: -10px;
+      left: 0px;
     }
     100% {
-      left: 358px;
+      left: @list-width;
     }
   }
-  .left-tab .to-right {
-    .mixin-animation(toright;.4s;1;forwards);
+  .left-tab .list-menu-to-right {
+    .adv-animation(list-menu-to-right;.4s;1;forwards);
   }
   
 </style>

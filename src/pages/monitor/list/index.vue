@@ -1,6 +1,6 @@
 <template>
   <div class="monitor-list">
-    <ul v-if="list.length > 0">
+    <ul v-if="list.length > 0" :style="{height: listHeight + 'px'}">
       <li 
         v-for="(item, index) in list"
         :class="curIndex === index ? 'gradient' : ''">
@@ -18,11 +18,12 @@
         <h2 class="check-detail" @click="indexChange(index)">{{curIndex === index ? '返回详情': '查看详情'}}</h2>
       </li>
     </ul>
-    <h3 v-else>－暂无数据－</h3>
+    <expect-data class="list-nodata-bg pr" :showSectionData="true" v-else-if="list.length === 0"></expect-data>
   </div>
 </template>
 
 <script type="text/javascript">
+import expectData from 'components/expectData/'
   export default {
     props: {
       list: {
@@ -30,6 +31,10 @@
         default: []
       },
       curIndex: {
+        type: Number,
+        default: 0
+      },
+      listHeight: {
         type: Number,
         default: 0
       }
@@ -56,6 +61,9 @@
         }
       }
     },
+    components: {
+      expectData
+    }
   }
 
 </script>
@@ -64,19 +72,18 @@
   lang="less"
   scoped
   >
-  @import '../../../assets/style/reset';
-  .monitor-list {
-    
+  @import '../../../assets/style/common';
+  .monitor-list { 
     ul {
-      width: 356px;
-      max-height: 585px;
-      overflow-x: hidden;
+      overflow: auto;
+      width: 358px;
+      max-height: 868px;
       background: #fff;
-      .mixin-common-border();
+      border-radius: 0px 0px 4px 4px;
       .gradient {
-        .mixin-gradient();
+        .adv-gradient();
         &:hover {
-          .mixin-gradient();
+          .adv-gradient();
         }
         .classification-title {
           font-weight: 600;
@@ -86,20 +93,27 @@
             color: #4e4c4c;
           }
         }  
+        .check-detail:hover{
+          color: @disabled-color;
+          border: 1px solid @disabled-color;
+        }
       }
       li {
         position: relative;
-        clear: both;
-        padding: 0 16px;
         height: 116px;
-        border-right: 1px solid #d2d2d2;
+        padding: 19px 16px 36px;
+        box-sizing: border-box;
         border-bottom: 1px solid #d2d2d2;
-        text-align: left;
+        &:last-child {
+          border-bottom: 1px solid #fff;
+        }
         &:hover {
           background: #eee;
         }
         span {
-          float: left;
+          position: absolute;
+          top: 0;
+          left: 16px;
           width: 56px;
           height: 56px;
           margin-top: 24px;
@@ -124,56 +138,42 @@
           background: url('@{imgurl}/monitor/listn6.png') no-repeat;
         }
         .list-txt {
-          float: left;
-          margin-left: 10px;
+          padding-left: 66px;
         }
         .check-detail {
+          .adv-fixed-small-btn();
           position: absolute;
-          bottom: 10px;
+          bottom: 7px;
           right: 18px;
-          font-size: 12px;
+          border: 1px solid @disabled-color;
           font-weight: normal;
+          color: @disabled-color;
           background: #fff;
-          color: #969696;
-          cursor: pointer;
-          .mixin-width(68px);
-          .mixin-height(24px);
-          .mixin-border(#969696;4px);
           &:hover {
             color: #6e9716;
-            .mixin-border(#6e9716;4px);
+            border: 1px solid #6e9716;
           }
         }
         .list-txt h3 {
-          font-size: 14px;
-          line-height: 40px;
-          position: relative;
-          width: 250px;
-          height: 32px;
-          margin-top: 6px;
+          .adv-title-normal();
           color: #484848;
         }
         .list-txt p {
-          line-height: 20px;
-          font-size: 12px;
-          width: 250px;
-          color: #989696;
+          .adv-text-line-height-small();
+          height: 36px;
+          margin-top: 10px;
+          margin-right: 10px;
+          overflow: hidden;
+          color: @disabled-color;
         }
       }
-      .gradient {
-        .check-detail:hover{
-          color: #969696;
-          .mixin-border(#969696;4px);
-        }
-      }
-      @media screen and (max-height: 830px) {
-        height: 500px;
-        overflow: scroll;
-      }
-      @media screen and (max-height: 678px) {
-        height: 448px;
-        overflow: scroll;
-      }
+    }
+
+    .list-nodata-bg {
+      width: 358px;
+      min-height: 300px; 
+      overflow-y: auto;
+      .adv-border-bottom-radius();
     }
   }
   .tips {

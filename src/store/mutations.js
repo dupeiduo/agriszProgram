@@ -20,7 +20,8 @@ export default {
       login: false,
       userName: '',
       errMsg: '',
-      showLoginModal: false
+      showLoginModal: false,
+      getScreenHeight: '',
     }
   },
   showLogin(state, isShow) {
@@ -37,5 +38,26 @@ export default {
   },
   showBlurModal(state, show) {
     state.showBlur = show
+  },
+  getScreenHeight(state,isResize){
+    state.screenHeight = isResize
+  },
+  getScreenWidth(state,isResize){
+    state.screenWidth = isResize
+  },
+  foldMenu(state){
+    state.menuWidth = 42
+  },
+  expandMenu(state) {
+    state.menuWidth = 132
+  },
+  showLeftHeader(state,show){
+    state.showLeftHeader = show
+  },
+  showLoading(state) {
+    state.loading = true
+  },
+  hideLoading(state) {
+    state.loading = false
   }
 }

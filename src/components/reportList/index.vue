@@ -1,6 +1,6 @@
 <template>
-  <div :style="{'height':clientH + 'px',paddingTop: '14px'}"  v-scroll="onScroll" class="report-list">
-    <ul v-show ="reportContent.length > 0"
+  <div :style="{'height':clientH + 'px',paddingTop: '14px'}"  v-scroll="onScroll" class="report-list pr">
+    <ul v-if ="reportContent.length > 0"
       >
       <li class="report-single" 
         v-for="(item,index) in reportContent"
@@ -17,7 +17,7 @@
         </div>
         <div class="report-content">
           <p class="report-h3">
-            <span class="report-title font14">
+            <span class="report-title">
               <!-- <el-tooltip :content="item.title"  placement="bottom" effect="light" v-if="styleCtl === ''"> -->
                 {{item.title}}
               <!-- </el-tooltip> -->
@@ -32,18 +32,20 @@
             <form :action="baseUrl + 'report/downPdf'"  method="post">
               <input type="hidden" name="pdfUrl" :value="item.pdf_url">
               <input type="hidden" name="pdfTitle" :value="item.title">
-              <input type="submit" class="animated fadeInRight" id="down-animated" value="点击下载">
+              <input type="submit" class="animated fadeInRight fade-animation" value="点击下载">
             </form>
            <span class="re-bj iconfont icon-xiazai1"></span>
           </a>
         </h3>
       </li>
     </ul>
-    <div  class="report-list none-data" 
-          v-show="reportContent.length === 0"
-          :style="{'height':clientH + 'px'}"
-          >暂无数据
-    </div>
+    <expect-data
+          v-else
+          :showPageData="true"
+          :left="false"
+          :top="false"
+          >
+    </expect-data>
     <p v-if="noMore" class="none-data">
       <span class="none-words">没有更多了</span>
     </p>
@@ -51,6 +53,7 @@
 </template>
 <script>
 import config from 'config/env/config.env.js';
+import expectData from 'components/expectData/'
   export default {
     props: {
       reportContent: {
@@ -72,7 +75,8 @@ import config from 'config/env/config.env.js';
     },
     data() {
       return {
-        baseUrl: config.phpUrl
+        baseUrl: config.phpUrl,
+        showPageData: false
       }
     },
     watch: {},
@@ -95,24 +99,30 @@ import config from 'config/env/config.env.js';
         this.$emit('scrollToBottom', (scrollHeight <= scrollTop + clientHeight), scrollTop);
       }
     },
-    components: {}
+    components: {
+      expectData
+    }
   }
 </script>
 <style
     lang="less"
     rel="stylesheet/less"
     scoped>
-    @import '../../assets/style/reset';
+    @import '../../assets/style/common';
 
   .report-list {
     overflow-x: hidden;
     padding: 0px 14px 14px;
     margin: 0 auto;
-    background: #fff;
-    .none-words {
-      display: block;
-      font-size: 14px;
-      color: #cfc9ca;
+    background: @assistant-bg;
+    min-height: 100px;
+    .none-data{
+      text-align: center;
+      .none-words {
+        .adv-font-normal();
+        display: block;
+        color: #cfc9ca;
+      }
     }
   }
   .report-list {
@@ -122,28 +132,27 @@ import config from 'config/env/config.env.js';
       .report-single {
         position: relative;
         float: left;
-        width: 99%;
+        width: 100%;
         margin-bottom: 16px;
-        border-top: 1px solid #e0e0e0;
-        border-right: 1px solid #e0e0e0;
+        border: 1px solid #e0e0e0;
         border-bottom: 2px solid #e0e0e0;
-        border-left: 1px solid #e0e0e0;
-        .mixin-boxshadow();
-
+        box-shadow: 0 1px 2px #e7e7e7;
+        box-sizing: border-box;
           #down-animated {
              -webkit-animation-duration: .34s;
              cursor: pointer;
           }
           .report-left {
-            position: relative;
-            float: left;
+            position: absolute;
+            top: 8px;
+            left: 8px;
             overflow: hidden;
-            width: 102px;
-            height: 106px;
+            width: 110px;
+            height: 104px;
             background: #eef3f0;
               img {
-                width: 102px;
-                height: 106px;
+                width: 110px;
+                height: 104px;
                 margin-right: 8px;
             }
               .re-orange {
@@ -170,37 +179,31 @@ import config from 'config/env/config.env.js';
         }
           .report-content {
             position: relative;
-            margin-left: 130px;
+            padding-left: 126px;
+            height: 120px;
               .report-h3 {
-                line-height: 32px;
-                height: 32px;
-                color: #333;
+                .adv-title-normal();
+                height: 44px;
+                font-weight: normal;
+                line-height: 44px;
                   .report-date {
-                    right: 10px;
+                    .adv-text-line-height-small;
+                    top: 6px;
+                    right: 8px;
                 }
               }
               .report-p {
-                overflow: hidden;
+                .adv-text-line-height-small();
                 height: 34px;
                 margin-right: 3px;
+                overflow: hidden;
               }
               a {
                   display: block;
                   width: 65px;
-                  margin-top: 20px;
+                  margin-top: 14px;
                   color: #428bca;
               }
-          }
-          h3:hover {
-            input {
-              display: block;
-            }
-            em {
-              display: block;
-            }
-            .re-bj {
-              display: none;
-            }
           }
           h3 {
             position: absolute;
@@ -209,7 +212,7 @@ import config from 'config/env/config.env.js';
               a {
                 position: absolute;
                 right: 4px;
-                bottom: 4px;
+                bottom: 6px;
                   input {
                     height: 25px;
                     color: #7089d2;
@@ -223,6 +226,17 @@ import config from 'config/env/config.env.js';
                   display: block;
               }
             }
+            &:hover {
+            input {
+              display: block;
+            }
+            em {
+              display: block;
+            }
+            .re-bj {
+              display: none;
+            }
+          }
           }
       }
       .vertical:hover {
@@ -235,7 +249,7 @@ import config from 'config/env/config.env.js';
         }
         .report-h3 {
           span {
-              font-size: 16px;
+              .adv-font-big();
               transition: all .4s ease-in-out;
           }
         }
@@ -253,6 +267,7 @@ import config from 'config/env/config.env.js';
                 top: -38px;
                 color: #fff;
                 .report-title {
+                    .adv-font-normal();
                     line-height: 36px;
                     display: inherit;
                     height: 36px;
@@ -260,10 +275,9 @@ import config from 'config/env/config.env.js';
                     background: rgba(0,0,0,.4); 
                 }
                 .report-date {
-                    line-height: 40px;
+                    .adv-height(40px);
                     position: static;
                     display: block;
-                    height: 40px;
                     background: #f0fcf2;
                     color: #676c68;
                 }
@@ -285,53 +299,4 @@ import config from 'config/env/config.env.js';
           }
       }
   }
-    @media screen and ( min-width: 1440px) {
-        .right-container {
-          .report-list,
-          .style-ctl {
-              width: 1088px;
-          }
-          .report-list {
-              box-shadow: 1px 4px 13px #d0d0d0;
-          }
-          .reports {
-              background: #dfdddd;
-          }
-        }
-    }
-    @media screen and ( max-width: 1256px) {
-      .right-container {
-        .report-list {
-            width: 858px;
-        }
-      }
-    }
-    @media screen and ( max-width: 1062px) {
-      .right-container {
-        .report-list {
-            width: 632px;
-        }
-      }
-    }
-    @media screen and ( max-width: 842px) {
-      .right-container {
-        .report-list {
-            overflow-x: scroll;
-        }
-      }
-    }
-    @media screen and ( max-width: 840px) {
-      .right-container {
-        .report-list {
-            width: 615px;
-        }
-      }
-    }
-    @media screen and ( max-width: 820px) {
-      .right-container {
-        .report-list {
-            width: 590px;
-        }
-      }
-    }
 </style>

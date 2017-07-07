@@ -1,9 +1,9 @@
 <template>
   <div>
-    <ul class="market-news">
+    <ul class="market-news pr">
         <li v-for="(item,index) in newsList" @click="newsContent(index)">
-          <img class="fl" :src="item.news_img" :alt="item.title">
-          <div class="new-container fl pr">
+          <img class="ps" :src="item.news_img" :alt="item.title">
+          <div class="new-container pr">
             <span class="market-news-title">{{item.title}}</span>
             <span class="market-news-time ps">{{item.publish_time}}</span>
             <p v-limitLine class="market-news-content" v-html="item.paragraph"></p>
@@ -59,43 +59,55 @@
 </script>
 <style 
   lang="less" 
-  rel="stylesheet/less" 
+  rel="stylesheet/less"
   scoped>
+  @import '../../../assets/style/common';
+  .market-news {
+    min-height: 500px;
+  }
   .market-news li:hover {
-   background: #eef8f3;
+   background: #eefbf4;
   }
   .market-news li {
-    height: 103px;
+    position: relative;
+    padding: 8px 0 8px 126px;
+    box-sizing: border-box;
+    height: 123px;
     margin: 16px 0;
-    padding: 8px;
     border-top: 1px solid #e0e0e0;
     border-right: 1px solid #e0e0e0;
     border-bottom: 2px solid #e0e0e0;
     border-left: 1px solid #e0e0e0;
     box-shadow: 0 1px 2px #e7e7e7;
     cursor: pointer;
-      img {
-        width: 110px;
-        height: 104px;
-        margin-right: 8px;
-        background: #eef3f0;
+    img {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 110px;
+      height: 104px;
+      margin-right: 8px;
+      background: #eef3f0;
     }
     .new-container {
+        height: 102px;
+        overflow: hidden;
         cursor: pointer;
           .market-news-title {
-            font-size: 14px;
-            line-height: 32px;
-            height: 32px;
+            .adv-title-normal();
+            .adv-height(32px);
+            display: inline-block;
+            font-weight: @font-weight-normal;
             color: #333;
+            overflow: hidden;
         }
         .market-news-time {
-            right: 0px;
+            top: 0;
+            right: 8px;
         }
         .market-news-content {
-          line-height: 24px;
-          font-size: 12px;
+          .adv-text-line-height-big();
           overflow: hidden;
-          width: 596px;
           height: 70px;
           margin-right: 8px;
           color: #333;

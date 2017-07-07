@@ -55,33 +55,37 @@ module.exports = {
     var xAxis = [], 
       yAxis = [], 
       icons = [],
+      tips= [],
       options = []
 
-    for (var i = 0; i < hourly.temperature.length; i++) {
+    for (var i = 0; i < 48; i++) {
       xAxis[i] = this.getHoursByDateStr(hourly.temperature[i].datetime)
       yAxis[i] = Number(hourly.temperature[i].value).toFixed(0)
     }
 
     icons = this.getIcons(hourly.skycon)
+    tips = this.getRainTips(hourly.precipitation)
     options = this.tempChart(xAxis, yAxis, icons)
 
-    return {options, icons}
+    return {options, icons, tips}
   },
   getWindChartData(wind) {
     var xAxis = [], 
       yAxis = []
 
-    for (var i = 0; i < wind.length; i++) {
-      var name = this.getWindContent(wind[i].direction, wind[i].speed),
-        value = this.getWindlevel(wind[i].speed)
+    for (var i = 0; i < 48; i++) {
+      var name = this.getWindDirection(wind[i].direction) + "风",
+        value = this.getWindlevel(wind[i].speed),
+        direction = wind[i].direction
 
       xAxis[i] = this.getHoursByDateStr(wind[i].datetime)
-      yAxis[i] = {name, value}
+      yAxis[i] = {name, value, direction}
     }
 
-    return this.windChart(xAxis, yAxis)
+    return yAxis
+    // return this.windChart(xAxis, yAxis)
   },
-  getFiveDaysChartData(daily) {
+  getFiveDaysChartData(daily,fifteenForecastOneListWidth) {
     var xAxis = [], 
       yAxisArr = [],
       xTitle = [],
@@ -95,22 +99,22 @@ module.exports = {
       yAxisArr[0][i] = Number(daily.temperature[i].max).toFixed(0)
       yAxisArr[1][i] = Number(daily.temperature[i].min).toFixed(0)
 
-      xTitle[i] = this.getXTitle(daily.skycon[i].date, daily.skycon[i].value)
+      xTitle[i] = this.getXTitle(daily.skycon[i].date, daily.skycon[i].value, daily.precipitation[i].avg)
     }
 
-    options = this.fiveDaysChart(xAxis, yAxisArr)
+    options = this.fiveDaysChart(xAxis, yAxisArr,fifteenForecastOneListWidth)
     return {options, xTitle}
   },
   getRainLevel(intensity) {
     var rain = null
     if (intensity <= 0.9 && intensity > 0.05) {
-      rain = {intensity: "小雨", level: 1, icon: "icon-tianqitubiao_xiaoyu", color: "#1291F9"}
+      rain = {intensity: "小雨", level: 1, icon: "icon-tianqitubiao_xiaoyu", color: "#1291F9", tips: "24小时降雨量＜10mm"}
 
     } else if (intensity > 0.9 && intensity < 2.87)  {
-      rain = {intensity: "中雨", level: 2, icon: "icon-tianqitubiao_zhongyu", color: "#1291F9"}
+      rain = {intensity: "中雨", level: 2, icon: "icon-tianqitubiao_zhongyu", color: "#1291F9", tips: "24小时降雨量10～25mm"}
 
     } else if (intensity > 2.87)  {
-      rain = {intensity: "大雨", level: 3, icon: "icon-tianqitubiao_dayu", color: "#1291F9"}
+      rain = {intensity: "大雨", level: 3, icon: "icon-tianqitubiao_dayu", color: "#1291F9", tips: "24小时降雨量＞25mm"}
 
     }
     return rain
@@ -124,17 +128,41 @@ module.exports = {
     var icons = [],
       pre = '',
       cur = ''
-    for (var i = 0; i < skycon.length; i++) {
+    for (var i = 0; i < 48; i++) {
       cur = skycon[i].value
-      if (cur === pre) {
-        icons.push('')
-      } else {
-        pre = cur
-        icons.push(cur)
-      }
+      // if (cur === pre) {
+      //   icons.push('')
+      // } else {
+      //   pre = cur
+      //   icons.push(cur)
+      // }
+      icons.push(cur)
     }
 
     return icons
+  },
+  getRainTips(precipitation) {
+    var rainTips = []
+    for (var i = 0; i < 48; i++) {
+      var tip = this.getRainLevel(precipitation[i].value)
+      rainTips.push(tip)
+    }
+
+    return rainTips
+  },
+  getBoldWindContent(direction, speed) {
+    var direc = this.getWindDirection(direction),
+      speedLevel = this.getWindlevel(speed),
+      content
+
+    if (speedLevel === 0) {
+      content = "无风"
+
+    } else {
+      content = direc + "风 <b>" + speedLevel + '</b>级'
+    }
+
+    return content
   },
   getWindContent(direction, speed) {
     var direc = this.getWindDirection(direction),
@@ -205,13 +233,21 @@ module.exports = {
 
     return dayStr + day
   },
-  getXTitle(date, skycon) {
+  getXTitle(date, skycon, intensity) {
     this.setCurrentSkycon(skycon)
     var week = this.getDayStr(date),
       date = date.substr(5).replace(/-/, '/'),
       name = this.getSkyconZh(),
       color = this.getSkyconColor(),
       icon = this.getSkyconIcon()
+
+    var rainInfo = this.getRainLevel(intensity)
+    
+    if (rainInfo) {
+      icon = rainInfo.icon
+      color = rainInfo.color
+      name = rainInfo.intensity
+    }
 
     return {week, date, name, color, icon}
   },
@@ -271,6 +307,8 @@ module.exports = {
     return {icon, color, skyconZh}
   },
   tempChart(xAxis, yAxis, icons) {
+    var min = Math.min.apply(null,yAxis)
+    var max = Math.max.apply(null,yAxis)
     var option = {
       tooltip: {
         show: false,
@@ -279,8 +317,10 @@ module.exports = {
       },
       color: ['#61afd1'],
       grid: {
-        bottom: '65px',
-        height: '100px',
+        top: 12,
+        bottom: 30,
+        left: 20,
+        right: 20
       },
       xAxis: {
         type: 'category',
@@ -291,38 +331,15 @@ module.exports = {
           interval: 0,
           lineStyle: {
             color: '#afafaf',
-            type: 'dotted'
+            type: 'dotted',
           }
         },
       },
       yAxis: {
-        show: false
+        show: false,
+        max: max + 3,
+        min: min - 3
       },
-      dataZoom: [{ 
-        type: 'slider',
-        start: 0,
-        end: 6.25,
-        backgroundColor: '#f6f6f6',
-        fillerColor: '#659be3',
-        borderColor: '#dee4e8',
-        bottom: '1%',
-        showDetail: false,
-        dataBackground: {
-          lineStyle: {
-            width:0,
-          },
-          areaStyle: {
-            opacity: 0
-          }
-        },
-        handleIcon: 'M8.2,13.6V3.9H6.3v9.7H3.1v14.9h3.3v9.7h1.8v-9.7h3.3V13.6H8.2z M9.7,24.4H4.8v-1.4h4.9V24.4z M9.7,19.1H4.8v-1.4h4.9V19.1z',
-        handleSize: '100%',
-        zoomLock: true,
-         handleStyle: {
-            opacity: 0,
-        }
-
-      }],
       label: {
         normal: {
           show: true,
@@ -409,14 +426,15 @@ module.exports = {
     };
     return option
   },
-  fiveDaysChart(xAxis, yAxisArr) {
+  fiveDaysChart(xAxis, yAxisArr,fifteenForecastOneListWidth) {
     var option = {
       tooltip: {
         trigger: 'axis'
       },
       grid: {
-        bottom: '20px',
-        height: '120px',
+        left: fifteenForecastOneListWidth,
+        top: 10,
+        right: fifteenForecastOneListWidth
       },
       xAxis: {
         show: true,

@@ -1,17 +1,16 @@
 <template>
   <div class="scale-atbottom">
     <my-map class="map" 
-      v-loading.lock="mapLoading"
       @initMap="initMap" 
       :switchCtl="true"
       :top="98"
       borderRadius="4px"
       :useWeather="false"
       :useTools="true"
-      :centerCtl="{use: true, bounds: bounds}"
-      :addTileAreas="{code: code, areas: tree, extent: bounds}" ref="map"></my-map>
+      :centerCtl="{use: true, bounds: offsetBounds}" ref="map">
+    </my-map>
     
-    <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi>
+    <!-- <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi> -->
 
     <div v-if="showTip" class="map-tooltip" :style="{top: tipInfo.top +'px', left: tipInfo.left + 'px'}">
       <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="30px" height="21.184px" viewBox="0 0 30 21.184" enable-background="new 0 0 30 21.184" xml:space="preserve">
@@ -26,78 +25,101 @@
       </div>
     </div>
     <my-dialog class="echart-dialog" 
-      v-loading.body="chartLoading"
       v-show="echartVisible"
       @close="echartVisible = false"
       :overFlow="'none'"
-      titleHeight="0"
-      titlePadding="0" >
+      titlePadding="0px 0px 0px 20px" >
 
-      <div class="chart-menu no-select" slot="title">
+      <div class="weather-chart-menu no-select" slot="title">
         <ul>
           <li @click="index='tem'" 
             :class="index ==='tem' ? 'active' : ''">
-            <p style="background: #ddebba"></p>
-            <i class="iconfont icon-qiwen" style="color: rgb(165, 194, 94)"></i> 气温</li>
+            <span class="tool-pop-arrow ps"></span>
+            <i class="iconfont icon-qiwen" :style="{color: index === 'tem' ? 'rgb(165, 194, 94)' : ''}"></i> 气温</li>
           <li @click="index='gst'"
             :class="index ==='gst' ? 'active' : ''">
-            <p style="background: #90dbd9"></p>
-            <i class="iconfont icon-diwen-" style="color: rgb(3, 150, 147)"></i> 地温</li>
+            <span class="tool-pop-arrow ps"></span>
+            <i class="iconfont icon-diwen-" :style="{color: index === 'gst' ? 'rgb(3, 150, 147)':''}"></i> 地温</li>
           <li @click="index='temacc'"
             :class="index ==='temacc' ? 'active' : ''">
-            <p style="background: #fae4ad"></p>
-            <i class="iconfont icon-jiwen-" style="color: rgb(229, 162, 0)"></i> 积温</li>
+            <span class="tool-pop-arrow ps"></span>
+            <i class="iconfont icon-jiwen-" :style="{color: index === 'temacc' ? ' rgb(229, 162, 0)':''}"></i> 积温</li>
           <li @click="index='ssd'"
             :class="index ==='ssd' ? 'active' : ''">
-            <p style="background: #fcd8d7"></p>
-            <i class="iconfont icon-rizhao-" style="color: rgb(214, 87, 93)"></i> 日照</li>
+            <span class="tool-pop-arrow ps"></span>
+            <i class="iconfont icon-rizhao-" :style="{color: index === 'ssd' ? 'rgb(214, 87, 93)':''}"></i> 日照</li>
           <li @click="index='pre'"
             :class="index ==='pre' ? 'active' : ''">
-            <p style="background: #a1e0fc;"></p>
-            <i class="iconfont icon-jiangshui-" style="color: rgb(10, 147, 212)"></i> 降水</li>
+            <span class="tool-pop-arrow ps"></span>
+            <i class="iconfont icon-jiangshui-" :style="{color: index === 'pre' ? ' rgb(10, 147, 212)':''}"></i> 降水</li>
         </ul>
       </div>
-
-      <my-echart class="pop-chart" slot="content"
+      <div slot="content" v-loading.lock="chartLoading">
+        <my-echart class="pop-chart" 
       :options="chartOption"></my-echart>
-        
+      </div>    
     </my-dialog>
 
     <left-list 
-      :currentDate="wpDate"
-      @dateChange="dateChange"
+      :loading="listLoading"
+      :addressLoading="addressLoading"
+      :currentDate="currentDate"
       :curPosition="curPosition"
-      @backtoDetail="backtoDetail"
-      @clearLayerStatus="clearLayerStatus"
       :opacity="opacity"
+      :echartHeight="echartHeight"
+      :showMe="showPopBottom"
+      @dateChange="dateChange"
+      @backtoDetail="backtoDetail"
+      @clearLayers="clearLayers"
       @opacityCtl="opacityCtl"
-      @addWpLayer="addWpLayer"></left-list>
+      @switchLayer="switchLayer"></left-list>
     
-    <div v-if="wpConfig" class="we-legend">
-      <p>50℃</p>
-      <ul class="we-legend-ul">
-        <el-tooltip
-          effect="dark" 
-          v-for="(item, index) in wpConfig.legend"
-          :content="item.value + '℃'" placement="left">
-          <li
-            :style="{background: item.color, height: 16.8 + 'px'}">
-          </li>
-        </el-tooltip>     
-      </ul>
-      <p>-40℃</p>
-    </div>
-
+    <weather-legend v-show="!isforecast" class="we-legend map-zIndex" :legendKey="selectedItem.styles" :lengthTitle="selectedItem.name"></weather-legend>
     <no-data :noLayer="noLayer"></no-data>
-    <viewreport @loadReport="loadReport" :reportName="reportName">
-        <reportlist 
-            slot="reportList"
-            :reportContent="reportContent"
-            @scrollToBottom="scrollToBottom" 
-            :clientH="clientH"
-            >
-       </reportlist>
-    </viewreport>
+
+    <pop-bottom 
+      @hideBottom="closePopBottom" 
+      :class="showPopBottom ? 'an-bottom-echart-in':'an-bottom-echart-out'">
+      <div slot="pop-echart" v-if="noWeatherChart">
+        <no-data :noLayer="noWeatherChart"></no-data>
+      </div>
+      <div slot="pop-echart" v-else>
+        <my-echart class="my-botttom-echart"
+                   v-loading.lock="bottomChartLoading"
+                   :options="weOptions"
+                   :style="{width: screenWidth - menuWidth - 10 + 'px', height: 212 + 'px'}"
+                   @datazoom="datazoomEvent">
+        </my-echart>
+      </div>
+    </pop-bottom>
+
+    <pop-bottom
+      class="abc"
+      :class="isforecast && curPosition.show ? 'an-bottom-weather-in':'an-bottom-weather-out'"  
+      @hideBottom="curPosition.show = false">
+      <div slot="pop-echart">
+        <weather-forecast
+          :width="screenWidth - menuWidth - 302"
+          :top="0" 
+          :right="0"
+          :centerInfo="curPosition">
+        </weather-forecast>
+      </div>
+    </pop-bottom>
+    
+    <pop-message :popTitle="popTitle" ref="popMessage"></pop-message>
+
+    <div id="atmostPop" class="atmos-popup">
+      <span class="w-popper-arrow ps"></span>
+      <h3 class="atmos-popup-title" v-loading.lock="addressLoading">{{atmosTitle}}</h3>
+      <span class="close-btn ps el-icon-close" @click="closeOverlay"></span>
+      <p class="atmos-popup-lonlat">{{lonlatStr}}</p>
+      <div class="atmos-histroy" @click="showBottomChart">
+        <div class="show-history" v-loading.lock="bottomChartLoading">
+          <span>查看历史数据</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -106,7 +128,7 @@
   import model from 'api/model.js'
   import mapctl from './mapctl/index.js'
   import echart from './echart/index.js'
-  import {dateUtil} from 'plugins/utils.js'
+  import {dateUtil, formatData} from 'plugins/utils.js'
   import weathProduct from './product'
   import configData from '../../config/data.js'
   import config from 'config/env/config.env.js'
@@ -115,16 +137,24 @@
   import reportlist from 'components/reportList'
   import leftList from './list'
   import noData from 'components/noData'
+  import {mapGetters} from 'vuex'
+  import weatherLegend from './legend'
+  import popBottom from './popbottom'
+
+  import './forecast/index.less'
+  import forecast from './forecast/index.js'
+  var _forecast = forecast(request)
+  var myweather = Vue.component(_forecast.name, _forecast.prop)
 
   export default{
     data(){
       return {
         map: null,
         styleCtl:'',
-        clientH:400,
         tree: [],
         code: null,
         bounds: [],
+        offsetBounds: [],
         showTip: false,
         tipInfo: {top: -100, left: -100, head: '', body: ''},
         stationId: null,
@@ -137,109 +167,586 @@
         chartOption: {},
         chartLoading: false,
         echartVisible: false,
+        echartHeight: 212,
         listData: configData.weatherProduct,
-        wpDate: "",
+        currentDate: "",
+        currentYear: '',
+        showDateTip: false,
         wpLayer: null,
-        wpConfig: null,
         noLayer: false,
         height: 0,
-        reportContent: [],
-        reportName: '气象数据报告',
-        perPage: 20,
-        curPage: 1,
-        total: -1,
-        mapLoading: false,
+
+        listLoading: true,
+        addressLoading: false,
         opacity: 90,
         curPosition: {show: false},
         lastPosition: {show: false},
-        forecastPointLayer: null
+        forecastPointLayer: null,
+        START_YEAR: 2010,
+        START_TENDAY: 1,
+        bottomChartLoading: false,
+        showPopBottom: false,
+        weOptions: null,
+        popTitle: '',
+        atmosPointLayer: null,
+
+        selectedItem: {styles: '', name: '', key: ''},
+
+        isforecast: true,
+        overlay: null,
+        atmosTitle: '',
+        lonlatStr: '',
+        lonlat: [],
+        resetBound: true,
+
+        clickTimeHan: null,
+        clickAtmos: false,
+        dataZoom: {},
+        noWeatherChart: false,
       }
     },
     mounted() {
-      request.cantonTree().then((response) => {
-        if (response && response.status === 200) {
-          this.tree = response.data
-          this.code = response.data[0].area_id
-          this.bounds =  model.formatBounds(response.data[0])
-        }
+      this.fetchAreaInfo()
+      this.fetchAtmosStations()
+      this.bindMapEvent()
+    },
+    computed: {
+      ...mapGetters({
+        menuWidth: 'menuWidth',
+        getScreenHeight: 'getScreenHeight',
+        screenWidth: 'screenWidth'
       })
-
-      request.weatherStations().then((response) => {
-        if (response && response.status === 200 && response.data.status === 0) {
-          mapctl.renderStations(response.data, this)
-        }
-      })
-
-      this.$on('hoverPoint', (tipInfo) => {
-        this.showTip = true
-        this.tipInfo = tipInfo
-      })
-      this.$on('outPoint', () => {
-        this.showTip = false
-      })
-      this.$on('clickPoint', (station) => {
-        this.stationId = station.stationId
-        this.stationInfo = station.currentStation
-        this.echartVisible = true
-      })
-      this.map.on('click', this.getPointInfo)
     },
     methods: {
-      loadReport() {
-        if (this.reportContent.length === 0) {
-          this.getReportList(this.perPage, 1)
+      datazoomEvent(params) {
+        this.dataZoom = {start: params.start, end: params.end}
+      },
+      closePopBottom(){
+        this.showPopBottom = false
+      },
+      setDefualtCenter(lonlat, zoom) {
+        if (!this.map) {
+          setTimeout(()=> {
+            this.setDefualtCenter(lonlat, zoom)
+          })
+
+        } else {
+          
+          if (lonlat) {
+            this.resetBound = false
+          } else {
+            this.resetBound = true
+          }
+
+          var view = this.map.getView()
+
+          lonlat = lonlat ? lonlat : view.getCenter()
+          zoom = zoom ? zoom : view.getZoom()
+
+          view.animate({zoom: zoom, center: lonlat, duration: 550, easing:  (t)=> Math.pow(t, 1.5)});
+          this.getAddress(lonlat)
         }
       },
       initMap (map) {
         this.map = map;
       },
+      bindMapEvent() {
+        this.$on('hoverPoint', (tipInfo) => {
+          this.showTip = true
+          this.tipInfo = tipInfo
+        })
+        this.$on("clickAtmosPoint", ()=> {
+          this.clickAtmos = true
+          setTimeout(()=> {
+            this.clickAtmos = false
+          }, 500)
+        })
+        this.$on('outPoint', () => {
+          this.showTip = false
+        })
+        this.$on('clickPoint', (station) => {
+          this.stationId = station.stationId
+          this.stationInfo = station.currentStation
+          this.echartVisible = true
+        })
+
+        this.map.on('click', this.getPointInfo)
+        vueBus.$on('mapDrawHandler', this.mapDrawHandler)
+      },
+      mapDrawHandler({maptool, ndvi}) {
+        if(maptool) {
+          this.map.un('click', this.fetchPointChart)
+          this.map.un('click', this.getPointInfo)
+
+        } else {
+          this.bindMapClickEvt(this.isforecast)
+        }
+      },
+      fetchAreaInfo() {
+        var data = { arealist: [ { "grade": '0', "area_code": '000000' } ] }
+
+        request.getPartAreas(data).then((response) => {
+          
+          if (response && response.status === 200 && response.data.status === 0) {
+            this.tree = response.data.data
+            this.code = this.tree[0].area_id
+            this.bounds = model.formatBounds(this.tree[0])
+
+            this.addAreaLayers([this.code])
+
+          } else {
+            console.log("接口返回:" + response.data.error_msg); 
+          }
+        });
+      },
+      fetchAtmosStations() {
+        request.weatherStations().then((response) => {
+          if (response && response.status === 200 && response.data.status === 0) {
+            mapctl.renderStations(response.data.data, this)
+          }
+        })
+      },
+      fetchAtmosConfig() {
+        request.atmosConfig().then((response) => {
+          if (response && response.status === 200 && response.data.status === 0) {
+            console.log(response.data)
+          }
+        })
+      },
+      fetchExistFt(year, name) {
+        if (year < this.START_YEAR) {
+          this.showPopMsgUnHide(`暂无数据`)
+          this.removeWpLayer()
+          console.log("no this layer data", name)
+
+        } else {
+          request.atmosExist(year, name).then((response) => {
+            if (response && response.status === 200 && response.data.status === 0) {
+              
+              this.dateToLatest(response.data.data, year)
+            } else {
+              console.log("no this layer data", year, name)
+            }
+          })
+        }
+      },
+      fetchExist(year, name, peroid, day) {
+        request.atmosExist(year, name).then((response) => {
+          if (response && response.status === 200 && response.data.status === 0) {
+            
+            this.dateExistPeriod(response.data.data, year, peroid, day)
+          }
+        })
+      },
+      setDateTips() {
+        var dateStr = ''
+        if (this.currentDate && this.showDateTip) {
+          if (this.selectedItem.date_tag === "tenday") {
+            var periodArray = ["上旬","中旬","下旬",]
+            var date = new Date(this.currentDate)
+            var period = dateUtil.dayToPeriod(date.getDate())
+            console.log(this.currentDate, date, period)
+            period = periodArray[period-1]
+            dateStr = `${date.getFullYear()}-${date.getMonth()+1}-${period}`
+
+          } else {
+            dateStr = this.currentDate + "日"
+          }
+        } 
+        return dateStr
+      },
+      fetchLayername(period) {
+        var dateStr = this.setDateTips()
+        var options = {
+          startYear: this.currentYear,
+          startTenday: period,
+          endYear: this.currentYear,
+          endTenday: period
+        }
+        request.atmosLayername(options).then((response) => {
+          if (response && response.status === 200 && response.data.status === 0) {
+            
+            if (this.selectedItem.date_tag === "tenday") {
+              var layerName = response.data.data[0].products[this.selectedItem.key]
+            
+            } else {
+              var data = response.data.data[0].products[this.selectedItem.key]
+              var layerName = this.getDayLayerName(data)
+            }
+            
+            this.addLayerByName(layerName)
+            dateStr = dateStr ? ` (${dateStr}) ` : ''
+            this.showPopMsg(`已切换至${dateStr}${this.selectedItem.name}`)
+
+            if (this.showPopBottom) {
+              this.fetchPointData(this.lonlat)
+            }
+
+          } else {
+            this.showPopMsgUnHide(`暂无数据`)
+            this.removeWpLayer()
+            console.log("no this peroid data", period)
+          }
+        })
+      },
+      getDayLayerName(data) {
+        var dateStr = this.currentDate.replace(/\//g,"-")
+        var layerName
+        for (var i = 0; i < data.length; i++) {
+          if (data[i].date === dateStr) {
+            layerName = data[i].layer_name
+            break
+          }
+        }
+        
+        return layerName
+      },
+      fetchPointData(lonlat) {
+        var END_TENDAY = dateUtil.dateToPeriod(new Date())
+        
+        if (this.selectedItem.styles === "atmos_tem_acc") {
+          this.fetchDayChartData(lonlat, END_TENDAY)
+
+        } else {
+          this.fetchPeriodChartData(lonlat, END_TENDAY)
+        }
+          
+      },
+      fetchDayChartData(lonlat, END_TENDAY) {
+        var END_YEAR = new Date().getFullYear()
+        var len = END_YEAR - this.START_YEAR
+        
+        var chartData = { X: [], Y: [] }
+
+        for (var i = len; i >= 0 ; i--) {
+          var endTenday = i !== len ? 36 : END_TENDAY
+
+          let currentYear = (this.START_YEAR+i).toString()
+
+          this.fetchPointByYear(lonlat, currentYear, currentYear, endTenday, (data)=> {
+            if (data) {
+              var startDate =  dateUtil.periodToDate(this.START_YEAR.toString() + this.START_TENDAY.toString())
+              var endDate = new Date()
+              
+              var formated = this.formatApiData(data, startDate, endDate)
+              this.concatExistData(chartData, formated, currentYear, startDate, endDate)
+              
+              this.setChartOptions(chartData)
+
+            } else {
+              this.noWeatherChart = true
+            }
+          }, true)
+        }
+      },
+      concatExistData(chartData, formated, currentYear, start, end) {
+        
+        if (chartData.Y.length === 0) {
+          chartData.X = formated.X
+          chartData.Y = formated.Y
+          
+        } else {
+          var indexs = this.getStartLength(currentYear, start, end)
+
+          var currentYearData = formated.Y.splice(indexs[0], indexs[1])
+          var params = indexs.concat(currentYearData)
+          
+          chartData.Y.splice.apply(chartData.Y, params)
+        }
+      },
+      getStartLength(currentYear, start, end) {
+        var totalDays = this.getDaysInTowDate(start, end)
+
+        var currentStart = new Date(currentYear + "-01-01")
+        var currentEdn = new Date(currentYear + "-12-31")
+
+        var arrLength = this.getDaysInTowDate(currentStart, currentEdn)
+        
+        var startIndex = this.getDaysInTowDate(start, currentStart)
+
+        return [startIndex, parseInt(arrLength) + 1]
+      },
+      getDaysInTowDate(start, end) {
+        var miliseconds = end - start 
+        var days = Number(miliseconds / 1000 / 60 / 60 / 24).toFixed(0)
+
+        return days
+      },
+      fetchPeriodChartData(lonlat, END_TENDAY) {
+        var END_YEAR = new Date().getFullYear()
+
+        this.fetchPointByYear(lonlat, this.START_YEAR, END_YEAR, END_TENDAY, (data)=> {
+          if (data) {
+            var formated = this.formatApiData(data)
+            this.setChartOptions(formated)
+
+          } else{
+            this.noWeatherChart = true
+          }
+        })
+      },
+      fetchPointByYear(lonlat, startYear, endYear, period, reqCb, disableCancel) {
+        var options = {
+          startYear: startYear,
+          startTenday: this.START_TENDAY,
+          endYear: endYear,
+          endTenday: period,
+          lon: lonlat[0],
+          lat: lonlat[1],
+          name: this.selectedItem.key
+        }
+
+        if (this.chartReqHandler && !disableCancel) {
+          this.chartReqHandler.cancelRequest("cancel request")
+          this.chartReqHandler = null
+        }
+
+        this.chartReqHandler = request.atmosAtPoint(options)
+
+        this.bottomChartLoading = true
+        this.chartReqHandler.then((response) => {
+          if (response && response.status === 200 && response.data.status === 0) {
+            reqCb(response.data.data)
+            this.noWeatherChart = false
+
+          } else {
+            // 出错或重新请求
+            reqCb(null)
+          }
+          this.bottomChartLoading = false
+
+          this.chartReqHandler = null
+        }).catch((e)=> {
+          this.showPopMsg("有点问题，请重试...")
+          this.chartReqHandler = null
+          reqCb(null)
+          console.log(e)
+        })
+      },
+      formatApiData(data, start, end) {
+        var date = dateUtil.periodToDate(`${this.START_YEAR}${this.START_TENDAY}`)
+        
+        if (this.selectedItem.date_tag == "tenday") {
+          var options = {
+            startDate: date,
+            endDate: new Date(),
+            ENCN: true,
+            data: data,
+            toFixed: 2
+          };
+          var formated = formatData.apiDataToPeriod(options);
+          
+        } else {
+          options = {
+            startDate: start,
+            endDate: end,
+            data: data,
+            toFixed: 2
+          };
+          var formated = formatData.apiDataToDay(options)
+        }
+        
+        return formated
+      },
+      setChartOptions(data) {
+        switch(this.selectedItem.styles) {
+          case "atmos_tem":
+            this.weOptions = echart.getTemChart(data.X, data.Y, this.selectedItem.name, this.dataZoom)
+            break
+          case "atmos_pre":
+          case "atmos_pre_acc":
+            this.weOptions = echart.getRainChart(data.X, data.Y, this.selectedItem.name, this.dataZoom)
+            break
+          case "atmos_pre_an":
+            this.weOptions = echart.getRainAnChart(data.X, data.Y, this.selectedItem.name, this.dataZoom)
+            break
+          case "atmos_pre_anp":
+            this.weOptions = echart.getRainAnpChart(data.X, data.Y, this.selectedItem.name, this.dataZoom)
+            break
+          case "atmos_tem_acc":
+            this.weOptions = echart.getTemAccChart(data.X, data.Y, this.selectedItem.name, this.dataZoom)
+            break
+          case "atmos_tem_an":
+            this.weOptions = echart.getTemAnChart(data.X, data.Y, this.selectedItem.name, this.dataZoom)
+            break
+          default :
+            this.noWeatherChart = true
+            break
+        }
+        
+      },
+      dateToLatest(data, year) {
+        if (this.selectedItem.date_tag === "tenday") {
+          this.periodToLatest(data, year)
+
+        } else {
+          this.dayToLatest(data, year)
+        }
+          
+      },
+      dayToLatest(data, year) {
+        var latest = ''
+        for (var i = 1; i <= 366; i++) {
+          var key = i < 10 ? '0' + i : i
+
+          if (data[year][key] && data[year][key] === 1) {
+            latest = key
+          }
+        }
+
+        if (latest === '') {
+          this.currentYear = this.currentYear - 1
+          this.fetchExistFt(this.currentYear - 1, this.selectedItem.key)
+
+        } else {
+          var date = dateUtil.periodToDate(this.currentYear.toString() + latest.toString())
+          this.currentDate = dateUtil.formatDate(date);
+          var period = dateUtil.daysToPeriod(year, latest)
+          console.log(period)
+          this.fetchLayername(period)
+        } 
+      },
+      periodToLatest(data, year) {
+        var latest = ''
+        for (var i = 1; i <= 36; i++) {
+          var key = i < 10 ? '0' + i : i
+
+          if (data[year][key] === 1) {
+            latest = key
+          }
+        }
+
+        if (latest === '') {
+          this.currentYear = this.currentYear - 1
+          this.fetchExistFt(this.currentYear - 1, this.selectedItem.key)
+
+        } else {
+          var date = dateUtil.periodToDate(this.currentYear.toString() + latest.toString())
+          this.currentDate = dateUtil.formatDate(date);
+
+          this.fetchLayername(latest)
+        } 
+      },
+      dateExistPeriod(data, year, peroid, day) {
+
+        if (this.selectedItem.date_tag === "tenday") {
+          if (data[year][peroid] === 1) {
+            this.fetchLayername(peroid)
+
+          } else {
+            this.showPopMsgUnHide(`暂无数据`)
+            this.removeWpLayer()
+          }
+        } else {
+          if (data[year][day] === 1) {
+            this.fetchLayername(peroid)
+
+          } else {
+            this.showPopMsgUnHide(`暂无数据`)
+            this.removeWpLayer()
+          }
+        }
+          
+      },
       setCenter() {
         this.$refs['map'].setCenter()
       },
       getPointInfo(event) {
-        var center = event.coordinate
-        this.getAdress(center)
+        this.$nextTick(() => {
+          if (event.drag  || this.clickAtmos) {
+            return
+          }
+
+          this.isforecast = true
+          if (this.clickTimeHan) {
+            clearTimeout(this.clickTimeHan)
+            this.clickTimeHan = null
+
+          } else {
+            this.clickTimeHan = setTimeout(() => {
+              this.clickTimeHan = null
+              var coordinate = event.coordinate
+              this.getAddress(coordinate)
+            }, 300)
+          }
+        })
+          
       },
-      getAdress(center) {
+      getAddress(center) {
+        this.addForecastLayer(center)
+
+        this.fetchTdtPoint(center, (content) => {
+          var zoom = this.map.getView().getZoom()
+          this.curPosition = {show: true, center, zoom, content}
+          this.lastPosition = {show: true, center, zoom, content}
+        })
+      },
+      fetchTdtPoint(center, callback) {
         var lonlat = ol.proj.toLonLat(center),
           params = { lon: lonlat[0], lat: lonlat[1] }
 
+        if (this.adsReqHandler) {
+          this.adsReqHandler.cancelRequest("cancel request")
+          this.adsReqHandler = null
+        }
+
+        this.addressLoading = true
+        this.adsReqHandler = request.tdtPoi(params)
         
+        this.adsReqHandler.then((response)=> {
+          this.adsReqHandler = null
+          if (!response) {
+            callback("暂无该点位置信息")
 
-        // var zoom = this.map.getView().getZoom()
-        // this.curPosition = {show: true, center, zoom, content:"aa"}
-        // this.lastPosition = {show: true, center, zoom, content:"aa"}
-
-        this.mapLoading = true
-        request.tdtPoi(params).then((response) => {
-          var formated = model.formatTdtPoi(response.data),
-            content;
-          
-          if (formated) {
-            if (formated.addressComponent.address) {
-              content = formated.addressComponent.address
-            } else {
-              content = formated.addressComponent.poi
+          } else {
+            var formated = model.formatTdtPoi(response.data),
+              content;
+            
+            if (formated) {
+              if (formated.addressComponent.address) {
+                content = formated.addressComponent.address
+              } else {
+                content = formated.addressComponent.poi
+              }
+              callback(content)
+              
             }
-            if (this.forecastPointLayer) {
-              this.map.removeLayer(this.forecastPointLayer)
-            }
-            this.forecastPointLayer = mapctl.addForecastPoint(center, this.map)
-            var zoom = this.map.getView().getZoom()
-            this.curPosition = {show: true, center, zoom, content}
-            this.lastPosition = {show: true, center, zoom, content}
           }
-          this.mapLoading = false
+            
+          this.addressLoading = false
+          this.listLoading = false
+        })
+      },
+      addForecastLayer(center) {
+        this.removeForcastLayer()
+        this.forecastPointLayer = mapctl.addPointByLonlat(center, this.map)
+      },
+      removeForcastLayer() {
+        if (this.forecastPointLayer) {
+          this.map.removeLayer(this.forecastPointLayer)
+        }
+      },
+      bindMapClickEvt(isforecast) {
+        if (isforecast) {
+          this.map.un('click', this.fetchPointChart)
+          this.map.on('click', this.getPointInfo)
 
-        }).catch( (error) => {
-          this.mapLoading = false
-          console.log(error);
-        });
+        } else {
+          this.map.un('click', this.getPointInfo)
+          this.map.on('click', this.fetchPointChart)
+        }
+        this.isforecast = isforecast
+      },
+      unbindMapClickEvt() {
+        this.map.un('click', this.getPointInfo)
+        this.map.un('click', this.fetchPointChart)
       },
       backtoDetail(isforecast) {
+        this.bindMapClickEvt(isforecast)
+
         if (isforecast) {
           this.opacity = 90
-          this.map.on('click', this.getPointInfo)
+
           if (this.forecastPointLayer) {
             this.map.addLayer(this.forecastPointLayer)
           }
@@ -250,26 +757,26 @@
         }
           
       },
-      dateChange(dateStr) {
-        this.wpDate = dateStr
-      },
-      clearLayerStatus(unforecast) {
-        this.noLayer = false
-
-        if (this.forecastPointLayer) {
-          this.map.removeLayer(this.forecastPointLayer)
-        }
-
+      clearLayers() {
+        this.removeForcastLayer()
+        this.removeAtmosLayer()
+        this.removeOverlay()
         if (this.wpLayer) {
           this.wpLayer.setOpacity(0)
         }
         
-        if (unforecast) {
-          this.map.un('click', this.getPointInfo)
-        } else {
-          this.map.on('click', this.getPointInfo)
-        }
+        this.unbindMapClickEvt()
         this.curPosition = {show: false, content: ""}
+        this.showPopBottom = false
+      },
+      dateChange(dateStr) {
+        this.currentDate = dateStr
+        this.currentYear = dateStr.substr(0, 4)
+        this.showDateTip = true
+
+        var day = dateUtil.dateToDay(new Date(dateStr))
+        var period = dateUtil.dateToPeriod(new Date(dateStr))
+        this.fetchExist(this.currentYear, this.selectedItem.key, period, day)
       },
       getChart() {
         var options = {
@@ -293,29 +800,37 @@
           this.chartConfig.head = `站点${this.stationInfo.name} - ${this.chartConfig.title}`;
         }
       },
-      addWpLayer(config) {
-        this.mapLoading = true
-        this.wpConfig = config
-        this.height = (100 / this.wpConfig.legend.length).toFixed(0)
+      switchLayer(item) {
+        /* 
+          if first time to load
+            set current exist date 
 
-        var options = {
-          areaCode: config.area_code,
-          type: config.source_type,
-          index: config.atomos_index,
-          grade: config.grade
+          set params
+          do exist request  
+            if have data then 
+              set current date
+              set legend
+              set sld
+              add layer
+            else show no data 
+        */
+       
+        var firstLoad = this.currentDate === ''
+        this.showPopMsgUnHide('数据加载中…')
+        this.showDateTip = false
+        this.selectedItem = item
+
+        if (firstLoad) {
+          this.currentYear = new Date().getFullYear()
+          this.fetchExistFt(this.currentYear, this.selectedItem.key)
+        
+        } else {
+          var year = this.currentDate.substr(0,4)
+          var period = dateUtil.dateToPeriod(new Date(this.currentDate))
+          var day = dateUtil.dateToDay(new Date(this.currentDate))
+          
+          this.fetchExist(year, this.selectedItem.key, period, day)
         }
-        request.atmosRecent(options).then((response) => {
-          if (response.status != 200 || response.data.status != 0 ) {
-            this.noLayer = true
-            this.mapLoading = false
-            this.removeWpLayer()
-          } else {
-            this.noLayer = false
-            this.mapLoading = false
-            var date = dateUtil.dayToDate(response.data.data.year, response.data.data.day)
-            this.wpDate = dateUtil.formatDate(date);
-          }
-        });
       },
       opacityCtl(value) {
         this.opacity = value
@@ -323,46 +838,17 @@
           this.wpLayer.setOpacity(value/100)
         }
       },
-      getLayerName(options) {
-        request.getLayerName(options).then((response) => {
-          if (response.status != 200 || response.data.status != 0) {
-            // no data
-            this.noLayer = true
-            this.mapLoading = false
-            this.removeWpLayer()
-          } else {
-            var layerName = model.formatWPLayerName(response.data);
-            this.getBounds(layerName, this.wpConfig);
-            this.noLayer = false
-          }
-        })
-      },
-      getBounds(layerName, wpConfig) {
-        request.areaBounds(wpConfig.area_code).then((response) => {
-          if (response.status !== 200 || response.data.status !== 0) {
-            console.log('Area bounds data wrong!' + response.data.error_msg);
-            this.addLayer(null, layerName);
-            this.mapLoading = false
-          } else {
-            var  bounds = model.formatBounds(response.data.data);
-            var sldBody = wpConfig.sldBody;
-            this.addLayer(bounds, layerName,  sldBody);
-          }
-          this.mapLoading = false
-        })
-      },
-      addLayer (bounds, layerName, sldBody) {
-        var extent = bounds ?
-           ol.extent.applyTransform(bounds, ol.proj.getTransform("EPSG:4326", "EPSG:3857"))
-           : null;
+      addLayerByName(layerName) {
+        var extent = ol.extent.applyTransform(this.bounds, ol.proj.getTransform("EPSG:4326", "EPSG:3857"))
 
         var layerOptions = {
-          serverUrl: config.mapUrl,
+          serverUrl: config.atomsMapUrl,
           visible: true,
           extent: extent,
           layerName: "map:" + layerName,
-          sld: this.sld("map:" + layerName, sldBody),
-          opacity: this.opacity/100
+          styles: this.selectedItem.styles,
+          opacity: this.opacity/100,
+          zIndex: 3
         }
 
         this.removeWpLayer()
@@ -373,48 +859,106 @@
           this.map.removeLayer(this.wpLayer)
         }
       },
-      sld (layerName, sldBody) {
-        var sld = '<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd">' +
-        '<NamedLayer>' +
-        '<Name>' + layerName + '</Name>' +
-        '<UserStyle>' +
-        '<Title>SLD Cook Book: Discrete colors</Title>' +
-        '<FeatureTypeStyle>' +
-        '<Rule>' +
-        '<RasterSymbolizer>' +
-        sldBody +
-        '</RasterSymbolizer>' +
-        '</Rule>' +
-        '</FeatureTypeStyle>' +
-        '</UserStyle>' +
-        '</NamedLayer>' +
-        '</StyledLayerDescriptor>';
-        return sld;
-      },
-      getReportList(perPage, curPage) {
-        var formated = format.formatReports,
-          params = new FormData();
-        params.append('section', 'weather');
-        params.append('perPage', perPage);
-        params.append('curPage', curPage);
-        request.sectionRepor(params).then((requestData) => {
-          this.total = requestData.data.total;
-          if (this.curPage == 1) {
-            this.reportContent = formated(requestData.data)
-          } else {
-            this.reportContent = this.reportContent.concat(formated(requestData.data))
-          }
-        })
-      },
-      scrollToBottom(toBottom) {
-        if(toBottom){
-          if (this.total && this.total <= this.perPage * this.curPage) {
-            return
-          }
-          this.curPage += 1;
-          this.getReportList(this.perPage, this.curPage)
+      fetchPointChart(event) {
+        if (event.drag || this.clickAtmos) {
+          return
         }
-      }
+
+
+        if (this.clickTimeHan) {
+          clearTimeout(this.clickTimeHan)
+          this.clickTimeHan = null
+
+        } else {
+          this.clickTimeHan = setTimeout(() => {
+            this.clickTimeHan = null
+            var coordinate = event.coordinate
+            this.renderPointByCoord(coordinate)
+          }, 300)
+        }
+      },
+      renderPointByCoord(coordinate) {
+        this.lonlatStr = this.coordinateToLonlat(coordinate)
+        
+        this.lonlat = ol.proj.toLonLat(coordinate)
+
+        this.removeAtmosLayer()
+        this.atmosPointLayer = mapctl.addPointByLonlat(coordinate, this.map)
+        
+        this.removeOverlay()
+        this.overlay = mapctl.addAtmosOverlay(this.lonlat, this.map)
+        
+        this.fetchTdtPoint(coordinate, (content) => {
+          this.atmosTitle = content
+          
+        })
+
+        if (this.showPopBottom) {
+          this.fetchPointData(this.lonlat)
+        }
+      },
+      coordinateToLonlat(coordinate) {
+        var lonlat = ol.coordinate.toStringHDMS(ol.proj.transform(
+          coordinate, 'EPSG:3857', 'EPSG:4326'));
+        if (lonlat.indexOf('N') > 0) {
+          var lon = '北纬' + lonlat.split('N')[0]
+          if (lonlat.indexOf('E') > 0) {
+            var lat = '东经' + lonlat.split('N')[1].split('E')[0]
+          } else {
+            var lat = '西经' + lonlat.split('N')[1].split('W')[0]
+          }
+        } else if (lonlat.indexOf('S') > 0) {
+          var lon =  '南纬' + lonlat.split('S')[0]
+          if (lonlat.indexOf('E') > 0) {
+            var lat = '东经' + lonlat.split('S')[1].split('E')[0]
+          } else {
+            var lat = '西经' + lonlat.split('S')[1].split('W')[0]
+          }
+        }
+        var lonlatStr = lat + '  ' + lon
+        return lonlatStr
+      },
+      removeAtmosLayer() {
+        if (this.atmosPointLayer) {
+          this.map.removeLayer(this.atmosPointLayer)
+          this.atmosPointLayer = null
+        }
+      },
+      removeOverlay() {
+        if (this.overlay) {
+          var popup = document.getElementById('atmostPop')
+          popup.style.display = 'none'
+        }
+      },
+      showBottomChart() {
+        this.showPopBottom = true
+        this.isforecast = false
+        this.fetchPointData(this.lonlat)
+      },
+      closeOverlay() {
+        this.removeAtmosLayer()
+        this.removeOverlay()
+      },
+      showPopMsg(msg) {
+        this.$refs['popMessage'].showDialog()
+        this.popTitle = msg
+      },
+      showPopMsgUnHide(msg) {
+        this.$refs['popMessage'].showUnAutoHideDialog()
+        this.popTitle = msg
+      },
+      removeAreaLayer() {
+        if (this.areaLayer) {
+          this.map.removeLayer(this.areaLayer)
+          this.areaLayer = null
+        }
+      },
+      addAreaLayers(codes) {
+        this.removeAreaLayer()
+
+        this.areaLayer = this.$refs.map.getMultyAreaLayer(config.mapUrl, codes, this.bounds)
+        this.map.addLayer(this.areaLayer)
+      },
     },
     watch: {
       stationId: function(id) {
@@ -432,35 +976,108 @@
           this.getChart()
         }
       },
-      wpDate(date) {
-        this.mapLoading = true
-        date = (date instanceof Date) ? dateUtil.formatDate(date) : date
-        var options = {
-          areaCode: this.wpConfig.area_code,
-          type: this.wpConfig.source_type,
-          index: this.wpConfig.atomos_index,
-          grade: this.wpConfig.grade,
-          date: date.replace(/\//g,'-')
+      bounds(bounds) {
+        if (this.resetBound) {
+          var size = this.map.getSize()
+          this.offsetBounds = this.$refs.map.getOffsetBounds(this.bounds, size)
         }
-        this.getLayerName(options);
+      },
+      $route:{
+        handler: function (route) {
+          var query = route.query
+          if(query.position) {
+            var position = query.position.split(',')
+            var zoom = query.zoom
+            this.setDefualtCenter(position, zoom)
+          } else {
+            this.setDefualtCenter(null)
+          }
+        },
+        immediate: true
       }
     },
     destroyed() {
       this.map.un('click', this.getPointInfo)
+      mapctl.overlay = null
     },
     components: {
       weathProduct,
       viewreport,
       reportlist,
       leftList,
-      noData
+      noData,
+      weatherLegend,
+      popBottom
     }
   }
 </script>
 <style 
-lang="less" 
-scoped>
-@import '../../assets/style/reset';
+lang="less" >
+@import '../../assets/style/common';
+  .atmos-popup {
+    position: absolute;
+    left: -124px;
+    top: -168px;
+    .adv-boxshadow();
+    .adv-common-border-radius();
+    background: @assistant-bg;
+    width: 248px;
+    padding-bottom: 16px;
+    cursor: default;
+    border: 1px solid #dedede;
+    .w-popper-arrow {
+      left: 50%;
+      bottom: -10px;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 10px solid #fff;
+      margin-left: -5px;
+    }
+    .atmos-popup-lonlat {
+      color: #8e8e8e;
+      padding-left: 14px;
+    }
+    .atmos-popup-title {
+      width: 210px;
+      padding: 14px 0 10px 14px;
+      .adv-font-big();
+    }
+    .close-btn {
+      right: 8px;
+      top: 8px;
+      cursor: pointer;  
+    }
+    .atmos-histroy {
+      color: #fff;
+      text-align: center;
+      margin-top: 16px;
+
+      .show-history {
+        .adv-btn(); 
+        .adv-btn-primary();
+        padding: 8px 38px;
+
+        .el-loading-mask {
+          width: 0;
+          top: 14px;
+          left: 5px;
+
+          .el-loading-spinner {
+            .circular {
+              width: 25px;
+              height: 25px;
+            }
+            .path {
+              stroke: #fff;
+              stroke-width: 4px;
+            }
+          }
+        }
+      }
+    }
+  }
   .map-tooltip {
     position: fixed;
     width: 180px;
@@ -480,7 +1097,7 @@ scoped>
       position: relative;
       top: 10px;
       h3 {
-        font-size: 12px;
+        .adv-font-small();
         font-weight: 400;
         color: #333;
       }
@@ -493,44 +1110,51 @@ scoped>
   }
   .pop-chart {
     width: 700px;
-    height: 350px;
+    height: 382px;
+    padding: 20px 0 0 10px;
   }
-  .chart-menu {
+  .weather-chart-menu {
     position: absolute;
-    left: 0;
-    top: -32px;
+    left: -1px;
+    top: 1px;
     overflow: hidden;
     height: 36px;
     border-radius: 8px 8px 0 0;
     background: #fff;
     ul {
+      margin-left: 20px;
+      margin-top: 6px;
+      overflow: hidden;
       li {
-        position: relative;
         float: right;
-        overflow: hidden;
+        box-sizing: border-box;
+        font-size: 14px;
+        color: #a4a4a4;
         cursor: pointer;
-        background: #f3f2f2;
-        .mixin-boxshadow();
-        font-size: 12px;
-        color: #333;
-        font-weight: 500;
-        .mixin-height(36px);
-        .mixin-width(116px);
-        p {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 136px;
-          height: 6px;
+        position: relative;
+        border-bottom: 4px solid #fff;
+        .adv-horizontal-center(80px);
+        height: 30px;
+        .tool-pop-arrow {
+          left: 33px;
+          bottom: 0px;
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-bottom: 5px solid #97cb6f;
+          display: none;
         }
-        i {
-          font-size: 20px;
-          margin: 0 5px;
-          vertical-align: middle;
+        &:hover {
+          color: #3e3e3e;
         }
       }
       .active {
-        background: #fff;
+        color: #333;
+        border-bottom: 4px solid #97cb6f;
+        .tool-pop-arrow {
+          display: block;
+        }
       }
     }
   }
@@ -546,23 +1170,24 @@ scoped>
     width: 200px;
     z-index: 1;
     h3 {
+      .adv-font-normal();
+      .adv-boxshadow();
+      .adv-height(35px);
+      .adv-horizontal-center(200px);
       position: relative;
       background: #fff;
       border-radius: 5px;
-      font-size: 14px;
-      .mixin-boxshadow();
-      .mixin-height(35px);
-      .mixin-width(200px);
     }
     .btn {
+      .adv-font-normal();
+      .adv-common-border-radius();
       display: inline-block;
       padding: 6px 11px;
       margin: 10px 0;
-      font-size: 14px;
       font-weight: 400;
       line-height: 1.42857143;
       cursor: pointer;
-      .mixin-border(transparent;4px);
+      border: 1px solid transparent;
     }
     .date-picker {
       position: relative;
@@ -571,34 +1196,48 @@ scoped>
       top: 10px;
     }
   }
-  .we-legend {
-    position: fixed;
-    right: 12px;
-    top: 210px;
-    width: 32px;
-    border-radius: 5px;
-    background: #fff;
-    .mixin-boxshadow();
-    p {
-      text-align: center;
-      height: 24px;
-      line-height: 24px;
+@keyframes bottom-in {
+    0% {
+      height: 0px;
     }
-    ul {
-      li {
-        position: relative;
-        width: 14px;
-        margin: 0 auto;
-        span {
-          position: absolute;
-          top: 0;
-          left: 34px;
-          display: none;
-          width: 150px;
-          text-align: left;
-          display: block;
-        }
-      }
+    100% {
+       height: 212px;
     }
-  }
+}
+.an-bottom-echart-in {
+  .adv-animation(bottom-in;.5s;1;forwards)
+}
+@keyframes bottom-out {
+    0% {
+      height: 212px;
+    }
+    100% {
+      height: 0px;
+    }
+}
+.an-bottom-echart-out {
+  .adv-animation(bottom-out;.5s;1;forwards)
+}
+@keyframes weather-bottom-in {
+    0% {
+      height: 0px;
+    }
+    100% {
+       height: 274px;
+    }
+}
+.an-bottom-weather-in {
+  .adv-animation(weather-bottom-in;.5s;1;forwards)
+}
+@keyframes weather-bottom-out {
+    0% {
+      height: 274px;
+    }
+    100% {
+      height: 0px;
+    }
+}
+.an-bottom-weather-out {
+  .adv-animation(weather-bottom-out;.5s;1;forwards)
+}
 </style>

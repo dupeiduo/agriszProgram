@@ -29,8 +29,9 @@ export default {
 }
 </script>
 
-<style lang="less" scoped>
-@import '../../../assets/style/reset';
+<style 
+lang="less" scoped>
+@import '../../../assets/style/common';
   .legend {
     position: fixed;
     z-index: 1;
@@ -41,7 +42,7 @@ export default {
     background: #fff;
     border-radius: 4px;
     overflow: hidden;
-    .mixin-boxshadow();
+    .adv-boxshadow();
 
     ul {
       margin: 5px 9px;

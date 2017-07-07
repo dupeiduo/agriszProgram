@@ -104,7 +104,21 @@ const dateUtil = {
     var days = date - firstDay;
     return Math.ceil(days / (24 * 3600 * 1000));
   },
-
+  daysToPeriod: function(year, days) {
+    var day
+    var period 
+    for (var i = 0; i < 12; i++) {
+      var date = new Date(`${year}-${i+1}-01`)
+      day += this.daysPerMonth(date)
+      if (days < day) {
+        var anvDays = days - (day - this.daysPerMonth(date))
+        var period = this.daysToPeriod(anvDays)
+        period += i * 3
+        break
+      }
+    }
+    return period
+  },
   dayToPeriod: function(day) {
     if (!day) {
       console.log('incorrect input params! ex: periodToDate(10)');
@@ -337,8 +351,13 @@ const formatData = {
       } else 
         keyOfDay = _startDay
       
-      if (options.data[_startYear] && options.data[_startYear][keyOfDay]) {
-        _data.Y.push(options.data[_startYear][keyOfDay]);
+      if (options.data[_startYear] && options.data[_startYear][keyOfDay] && options.data[_startYear][keyOfDay] !== -9999) {
+        if (typeof options.toFixed === "number") {
+          var value = Number(options.data[_startYear][keyOfDay]).toFixed(options.toFixed)
+        } else {
+          value = options.data[_startYear][keyOfDay]
+        }
+        _data.Y.push(value);
       } else if (options.data[_startYear] && options.data[_startYear][keyOfDay] == "0.0") {
         _data.Y.push(0);
       } else
@@ -373,6 +392,10 @@ const formatData = {
           periodContent = configData.dateItem.periodENCN[(parseInt(period) - 1)];
           periodContent = periodContent['0' + parseInt(period)];
           dateStr = year + '/' + periodContent;
+        } else if(options.ENZ) {
+          periodContent = configData.dateItem.periodENZ[(parseInt(period) - 1)];
+          periodContent = periodContent['0' + parseInt(period)];
+          dateStr = year + '-' + periodContent;
         } else {
           periodContent = configData.dateItem.periodEN[(parseInt(period) - 1)];
           periodContent = periodContent['0' + parseInt(period)];
@@ -387,6 +410,10 @@ const formatData = {
           periodContent = configData.dateItem.periodENCN[(parseInt(period) - 1)];
           periodContent = periodContent[parseInt(period)];
           dateStr = year + '/' + periodContent;
+        } else if(options.ENZ) {
+          periodContent = configData.dateItem.periodENZ[(parseInt(period) - 1)];
+          periodContent = periodContent[parseInt(period)];
+          dateStr = year + '-' + periodContent;
         } else {
           periodContent = configData.dateItem.periodEN[(parseInt(period) - 1)];
           periodContent = periodContent[parseInt(period)];
@@ -414,8 +441,15 @@ const formatData = {
 
     while(isEnd()) {
       var keyOfPeriod = (_startPeriod < 10) ? "0" + _startPeriod : _startPeriod;
-      if (options.data[_startYear] && options.data[_startYear][keyOfPeriod]) {
-        _data.Y.push(options.data[_startYear][keyOfPeriod]);
+      if (options.data[_startYear] && options.data[_startYear][keyOfPeriod]&& options.data[_startYear][keyOfPeriod] !== -9999) {
+        if (typeof options.toFixed === "number") {
+          var value = Number(options.data[_startYear][keyOfPeriod]).toFixed(options.toFixed)
+        } else {
+          value = options.data[_startYear][keyOfPeriod]
+        }
+        _data.Y.push(value);
+      } else if (options.data[_startYear] && options.data[_startYear][keyOfPeriod] == "0.0") {
+        _data.Y.push(0);
       } else 
         _data.Y.push(null);
       _data.X.push(setPeriodxAxis(_startYear, keyOfPeriod));
@@ -510,6 +544,11 @@ const elementUtil = {
     var alink = document.getElementById('download_file');
     alink.click();
     alink.parentNode.removeChild(a);
+  },
+  setDomStyle(dom, prop, style) {
+    for (var i = 0; i < dom.length; i++) {
+      dom[i].style[prop] = style
+    }
   }
 }
 export {

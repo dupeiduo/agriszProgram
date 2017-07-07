@@ -1,6 +1,7 @@
 @theme-color:#6ca3fc;
 @imgurl:"/static/assets/img/";
 @top: 47px;
+@linecolor: #dedede;
 
 
 /* ======== border ======== */ 
@@ -66,7 +67,9 @@
 .mixin-content-title-bg(){
   background: #f3f9eb;
 }
-
+.btn-color {
+  background: #8ec122;
+}
 /* ======== ellipsis ======== */
 .mixin-ellipsis(@width){
   width: @width;
@@ -105,14 +108,44 @@
   animation-fill-mode: @mode;
 }
 
-/* ======== afterborder ======== */
-.mixin-aferborder(@height;@bgcolor){
+/* ======== after ======== */
+.mixin-after(@width;@height;@bgcolor){
     position: absolute;
     right: 0;
     content: "";
-    width: 1px;
+    width: @width;
     height: @height;
     background: @bgcolor;
     vertical-align: middle;
     display: inline-block;
 }
+.mixin-before(@width;@height;@bgcolor){
+    position: absolute;
+    left: 0;
+    content: "";
+    width: @width;
+    height: @height;
+    background: @bgcolor;
+    vertical-align: middle;
+    display: inline-block;
+}
+/* ======== font ======== */
+.content-font {
+  font-size: 12px;
+}
+.small-title-font {
+  font-size: 14px;
+}
+.title-font {
+  font-size: 16px;
+}
+.large-title {
+  font-size: 18px;
+}
+.extra-large-title {
+  font-size: 20px;
+}
+
+
+
+

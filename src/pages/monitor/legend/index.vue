@@ -1,5 +1,5 @@
 <template>
-	<div class="common-legend">
+	<div class="common-legend map-zIndex">
     <div v-if="legendData.length > 0">
       <p class="length-name-top">{{legendData[0].words}}</p>
       <ul class="drought-ul">
@@ -28,9 +28,8 @@
 	lang="less"
    	rel="stylesheet/less"
    	scoped>
-    @import '../../../assets/style/reset';
+    @import '../../../assets/style/common';
 	.common-legend {
-		z-index: 1;
    		position: fixed;
    		top: 210px;
    		right: 12px;
@@ -39,8 +38,8 @@
    		background: #fff;
    		border-radius: 4px;
    		overflow: hidden;
-   		.mixin-common-border();
-   		.mixin-boxshadow();
+   		.adv-common-border-radius();
+   		.adv-boxshadow();
    			p {
    				text-align: center;
    				height: 24px;
@@ -71,6 +70,9 @@
 			    	font-size: 0px;
 			    }
 			}
+   	}
+   	.none-data {
+   		text-align: center;
    	}
 </style>
 <script>

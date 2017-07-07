@@ -1,31 +1,35 @@
 <template>
   <div class="al-wrap-tb">
     <table class="al-tb">
-          <thead class="table-title">
-            <tr>
-              <td><i class="iconfont icon-riqi icon-data"></i> 日期</td>
-              <td><i class="iconfont icon-pingjia icon-pj"></i> 评价</td>
-              <td><i class="iconfont icon-icon11-copy-copy-copy icon-port"></i> 环比</td>
-              <td>详情</td>
-            </tr>
-          </thead>
-          <tbody class="al-tb-tbody" :data-key="type">
-            <tr v-for="(item, index) in tabData">
-                <td>{{item.date}}</td>
-                <td :class="`al-status-color${item.levelClass}`">{{item.level}}</td>
-                <td>{{item.compare}}<span class="iconfont" :class="item.className"></span></td>
-                <td class="show-pie" >
-                  <span class="iconfont icon-bingtu compare-all"
-                        @mouseover="showEchart($event,index)"
-                        @mouseout="hideEchart"
-                  ></span>
-                </td>
-            </tr>
-          </tbody>
-          <tbody v-show="tabData.length == 0 && showNoData" class="al-nonedata none-data" >暂无数据</tbody>
+      <thead class="table-title">
+        <tr>
+          <td><i class="iconfont icon-riqi icon-data"></i> 日期</td>
+          <td><i class="iconfont icon-pingjia icon-pj"></i> 评价</td>
+          <td><i class="iconfont icon-icon11-copy-copy-copy icon-port"></i> 环比</td>
+          <td>详情</td>
+        </tr>
+      </thead>
+
+      <tbody class="al-tb-tbody" :data-key="type">
+        <tr v-for="(item, index) in tabData">
+            <td>{{item.date}}</td>
+            <td :class="`al-status-color${item.levelClass}`">{{item.level}}</td>
+            <td>{{item.compare}}<span class="iconfont" :class="item.className"></span></td>
+            <td class="show-pie" >
+              <span class="iconfont icon-bingtu compare-all"
+                    @mouseover="showEchart($event,index)"
+                    @mouseout="hideEchart"
+              ></span>
+            </td>
+        </tr>
+      </tbody>
     </table>
+
+    <expect-data v-show="tabData.length == 0 && showNoData" 
+      :showSectionData="true"></expect-data>
+
     <div class="statistics" id="statistics">
-        <my-echart class="analyze-statistics pr" :options="option"></my-echart>
+      <my-echart class="analyze-statistics pr" :options="option"></my-echart>
     </div>
   </div>
 </template>
@@ -33,6 +37,7 @@
 <script>
   import echart from '../echart/index.js'
   import configData from '../../../config/data.js'
+  import expectData from 'components/expectData/'
   export default {
     props: {
       tabData: {
@@ -55,7 +60,8 @@
     data() {
         return {
           statistics: null,
-          option: {}
+          option: {},
+          showSectionData: false
         }
       },
       mounted() {
@@ -90,6 +96,7 @@
         }
       },
       components: {
+        expectData
       }
   }
 </script>
@@ -97,6 +104,7 @@
     lang="less"
     rel="stylesheet/less"
     scoped>
+    
     .al-tb {
       width: 100%;
         td {

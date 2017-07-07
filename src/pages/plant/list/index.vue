@@ -1,5 +1,5 @@
 <template>
-  <div class="product-list" v-loading.lock="loading">
+  <div class="product-list" >
     <left-tab
       :leftTab="[]"
       :showList="showList"
@@ -7,116 +7,163 @@
       :title="'种植适宜性规划'"
       >
       
-      <div slot="list" class="crop-list-bg"  v-if="cropList.length > 0">
-        <div class="crop-list">
-          <my-button class="btns-con"
-            :buttons="cropList"
-            :curIndex="cropIndex"
-            @btnClick="productSelect"
-            ></my-button>
-        </div>
-        <div class="crop-desc">
-          {{description}}
-        </div>
-
-        <div class="show-affector">
-          <span @click="showEleSlider=true"><em>查看影响因素</em><i class="iconfont icon-icon-copy-copy"></i></span>
-        </div>
-
-        <div class="block slider-container pr plant-slider pl-opacity">
-          <opacity-ctl
-            :opacity="opacity"
-            @changeOpacity="changeOpacity"
-            :right="'44px'"
-            :title="'图层透明度'"
-            ></opacity-ctl>
-        </div>
-        <div class="download-bg">
-            <div class="download-btns">
-              <p @click="downloadImage">
-                  <i class="iconfont icon-xiazai1"></i>
-                  <span>{{cropName}}适宜性评价图</span>
-                  <em v-if="imageUrl" class="animated fadeInRight animation-time">点击下载</em>
-                  <em v-else class="animated fadeInRight animation-time no-file">暂无</em>
-              </p>
-              <p @click="downloadPdf">
-                  <i class="iconfont icon-xiazai1"></i>
-                  <span>适宜性报告</span>
-
-                  <em v-if="pdfUrl" class="animated fadeInRight animation-time">点击下载</em>
-                  <em v-else class="animated fadeInRight animation-time no-file">暂无</em>
-              </p>
+      <div slot="list" class="crop-list-bg" 
+        v-if="cropList.length > 0 || loading" 
+        v-loading.lock="loading">
+        <div class="crop-list-container" :style="{'max-height': getScreenHeight - 120 + 'px'}" >
+          <div class="crop-list">
+            <my-button class="btns-con"
+              :buttons="cropList"
+              :curIndex="cropIndex"
+              @btnClick="productSelect"
+              ></my-button>
+          </div>
+          <div class="crop-desc-container">
+            <div class="crop-desc">
+              {{description}}
             </div>
-
-            <div v-if="classifyList.length > 0"
-              class="overlay-classify">
-              <h3>作物分布</h3>
-
-              <el-select v-model="currentClassify" placeholder="请选择分布产品"
-                v-loading.lock="cfListLoading"
-                @change="chooseClassify" class="drop-down-menu">
-                <el-option
-                  v-for="(item, index) in classifyList"
-                  :label="item.title"
-                  :value="item.only_result">
-                  </el-option>
-              </el-select>
-
-              <div v-if="currentClassify">
-                <div class="block slider-container pr plant-slider pl14">
-                  <opacity-ctl
-                    :opacity="classifyOpacity"
-                    @changeOpacity="changeClassifyOpacity"
-                    :right="'44px'"
-                    :title="'图层透明度'"
-                    ></opacity-ctl>
-                </div>
-
-                <tb-detail
-                  :tableData="tableData"
-                  :loading="cfListLoading"
-                  :layerSld="layerSld"
-                  @setLayerVisible="setLayerVisible"
-                  @setLayerColor="setLayerColor"></tb-detail>
-              </div>
-                
-            </div>
-        </div>
-
-        <div class="element-slider"
-          :class="sliderAnimateClass"
-          >
-          
-          <div class="popup-header">
-            <h3 class="popup-header-title pr">{{cropName}}
-              <div class="close ps">
-                  <span class="el-icon-close"></span>
-                  <em class="back-result ps animated fadeInRight animation-time" @click="hideEleSlider"><i class="iconfont icon-icon-copy"></i>返回评价结果</em>
-              </div>
-            </h3>
-
-            <ul class="ele-group clear">
-              <li class="fl" v-for="(item, index) in eleGroup" :class="index === currentIndex  ? 'active':''">
-                <span @click="changeEleGroup(index)">{{item}}</span>
-              </li>
-            </ul>
-
-            <div class="element-item">
-              <my-button class="element-item-btns"
-                :buttons="filteredEle"
-                :curIndex="eleIndex"
-                @btnClick="eleClick"
-                ></my-button>
+            <div class="show-affector">
+              <span @click="showEleSlider=true"><em>查看影响因素</em><i class="iconfont icon-icon-copy-copy"></i></span>
             </div>
           </div>
-        </div>
+
+          <div class="area-tree" @click="stopHideTree">
+              <tree 
+              :treeData="treeData" 
+              :inputColor="inputColor"
+              :showTree="areaShowTree"
+              @getTreeNode="getTreeNode"
+              @treeConfirm="treeConfirm"
+              @changeShowTreeStatus="getAreaShowTreeStatus"></tree>
+
+          </div>
+         
+
+          <!-- pie echart -->
+          <div class="fit-classfication-area pr">
+            <span class="clssfication-information-btn" @click="showAreaStats">分级信息表</span>
+            <div class="fit-container">
+              <h3 class="fit-classfication-area-title">适宜性分级面积统计图</h3>
+                <ul class="legend clear">
+                  <li :style="{'background':item.background,'borderColor':item.color,'borderWidth':'1px','borderStyle': 'solid'}"  class="pr" v-for="(item,index) in legend">
+                     <span :style="{'color':item.color}" class="iconfont icon-yuan"></span>
+                     <span>{{item.displayName}}{{item.percent}}%</span>
+                  </li>
+                </ul>
+                <div class="fit-classfication-area-echart-bg" v-loading.lock="barLoading">
+                  <my-echart class="fit-echart" :options="cropHeathOption"></my-echart>
+                </div>
+            </div>
+          </div>
+
+          <div class="block slider-container pr plant-slider pl-opacity">
+            <opacity-ctl
+              :opacity="opacity"
+              @changeOpacity="changeOpacity"
+              :right="'44px'"
+              :title="'图层透明度'"
+              ></opacity-ctl>
+          </div>
+          <div class="download-bg">
+              <div class="download-btns">
+                <p @click="downloadImage">
+                    <i class="iconfont icon-xiazai1"></i>
+                    <span>{{cropName}}适宜性评价图</span>
+                    <em v-if="imageUrl" class="animated fadeInRight fade-animation">点击下载</em>
+                    <em v-else class="animated fadeInRight fade-animation no-file">暂无</em>
+                </p>
+                <p @click="downloadPdf">
+                    <i class="iconfont icon-xiazai1"></i>
+                    <span>适宜性报告</span>
+
+                    <em v-if="pdfUrl" class="animated fadeInRight fade-animation">点击下载</em>
+                    <em v-else class="animated fadeInRight fade-animation no-file">暂无</em>
+                </p>
+              </div>
+
+              <div v-show="!cfListLoading && filteredCflist.length > 0"
+                class="overlay-classify">
+                <h3>作物分布</h3>
+
+                <el-select v-model="currentClassify" placeholder="请选择分布产品"
+                  v-loading.lock="cfListLoading"
+                  @change="chooseClassify" class="drop-down-menu">
+                  <el-option
+                    v-for="(item, index) in filteredCflist"
+                    :label="item.title"
+                    :value="item.only_result">
+                    </el-option>
+                </el-select>
+
+                <div v-if="currentClassify">
+                  <div class="block slider-container pr plant-slider pl14">
+                    <opacity-ctl
+                      :opacity="classifyOpacity"
+                      @changeOpacity="changeClassifyOpacity"
+                      :right="'44px'"
+                      :title="'图层透明度'"
+                      ></opacity-ctl>
+                  </div>
+
+                  <tb-detail
+                    :tableData="tableData"
+                    :loading="cfListLoading"
+                    :layerSld="layerSld"
+                    @setLayerVisible="setLayerVisible"
+                    @setLayerColor="setLayerColor"></tb-detail>
+                </div>
+              </div>
+
+              <div v-show="!cfListLoading && filteredCflist.length===0" class="overlay-classify-no-data">
+                <h3>作物分布</h3>
+                <p>
+                  <span class="iconfont icon-iconfontgantanhao"></span>
+                  <span class="noProduct">{{areaName}}暂无分布产品</span>
+                </p>
+              </div>
+              <div v-show="cfListLoading" 
+                class="overlay-classify-loading"
+                v-loading.lock="cfListLoading">
+                <h3>作物分布</h3>
+                <p>
+                  加载中...
+                </p>
+              </div>
+          </div>
+
+          <div class="element-slider"
+            :class="sliderAnimateClass"
+            >
+            
+            <div class="popup-header pr">
+              <h3 class="popup-header-title pr">{{cropName}}
+                <div class="close ps">
+                    <span class="el-icon-close"></span>
+                    <em class="back-result ps animated fadeInRight fade-animation" @click="hideEleSlider"><i class="iconfont icon-icon-copy"></i>返回评价结果</em>
+                </div>
+              </h3>
+
+              <ul class="ele-group clear">
+                <li class="fl" v-for="(item, index) in eleGroup" :class="index === currentIndex  ? 'active':''">
+                  <span @click="changeEleGroup(index)">{{item}}</span>
+                </li>
+              </ul>
+
+              <div class="element-item">
+                <my-button class="element-item-btns"
+                  :buttons="filteredEle"
+                  :curIndex="eleIndex"
+                  @btnClick="eleClick"
+                  ></my-button>
+              </div>
+            </div>
+          </div>
         
+          
+        </div>  
       </div>    
 
-
-      <div v-else-if="!loading"  slot="list" class="plant-list-expect">
-        <i class="iconfont icon-jingqingqidai-"></i>敬请期待
-      </div>
+      <expect-data class="crop-list-bg pr" :showSectionData="true" v-else-if="cropList.length === 0 && !loading"  slot="list"></expect-data>
       
     </left-tab>
 
@@ -129,7 +176,12 @@ import model from 'api/model.js'
 import leftTab from 'components/leftTab'
 import {elementUtil} from 'plugins/utils.js'
 import configData from '../../../config/data.js'
-import tbDetail from '../tbdetail';
+import tbDetail from '../tbdetail'
+import echart from '../echart/index.js'
+import {mapGetters} from 'vuex'
+import expectData from 'components/expectData/'
+import tree from '../../../components/tree/'
+
 
 export default {
   props: {
@@ -152,6 +204,26 @@ export default {
     loading: {
       type: Boolean,
       default: true
+    },
+    barLoading: {
+      type: Boolean,
+      default: true
+    },
+    legend: {
+      type: Array,
+      default: []
+    },
+    cropFit: {
+      type: Array,
+      default: []
+    },
+    treeList: {
+      type: Array,
+      default:[]
+    },
+    hideTreeStatus: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -176,10 +248,11 @@ export default {
       filteredEle: [],
 
       imageUrl: '',
+      imageUrlList: null,
 
       classifyList: [],
       currentClassify: '',
-      cfListLoading: false,
+      cfListLoading: true,
 
       sliderAnimateClass: '',
       showEleSlider: false,
@@ -192,14 +265,50 @@ export default {
       currentExtend: [],
 
       tableData: [],
-      layerSld: {}
+      layerSld: {},
+
+      cropHeathOption:{},
+      treeData:[],
+      resultId: '',
+      toParentTreeData:'',
+      filteredCflist: [],
+
+      areaName: '所选区域',
+      TREE_ROOT_CODE: 0,
+
+      classifyCodes: [],
+      showSectionData: false,
+      firstLoad: true,
+      inputColor:'#fafafa',
+
+      areaShowTree:false,
     }
   },
+  computed: {
+    ...mapGetters({
+        getScreenHeight: 'getScreenHeight'
+      })
+  },
   mounted() {
+    this.changeLoadOpacity("rgba(255,255,255,1)")
     this.initElementInfo()
     this.initClassify()
   },
   methods: {
+    getAreaShowTreeStatus(status){
+      this.areaShowTree = status
+    },
+    stopHideTree(){
+      if (this.hideTreeStatus === true) {
+        this.$emit('initTreeStatus',false)
+      }
+    },
+    initHideTree(){
+      this.hideTreeBol = true
+    },
+    showAreaStats() {
+      this.$emit('showAreaStats')
+    },
     initElementInfo() {
       request.surElementInfo().then((response)=> {
         if (response && response.status === 200 && response.data.status === 0) {
@@ -231,7 +340,8 @@ export default {
     },
     renderProductInfo(index) {
       this.description = this.cropList[index].desc
-      this.imageUrl = this.cropList[index].imageUrl
+      this.imageUrlList = this.cropList[index].imageUrl
+      this.$emit('sendImageList', this.imageUrlList)
 
       var surId = this.cropList[index].surId
       this.getSurtableInfo(surId)
@@ -274,6 +384,8 @@ export default {
               this.eleLists.push(this.groupInfo[i])
 
               if (this.groupInfo[i].tag === "result") {
+                this.resultId = this.groupInfo[i].id
+
                 this.currentLayerName = srList[j].layerName
                 this.currentExtend = srList[j].extend
               }
@@ -294,6 +406,7 @@ export default {
       this.showEleSlider = false
       this.currentIndex = 0;
       this.eleIndex = -1
+
       this.addLayerByName(this.currentLayerName, this.currentExtend)
     },
     changeEleGroup(index) {
@@ -311,6 +424,10 @@ export default {
       this.addLayerByName(this.currentLayerName, this.currentExtend, cropInfo)
     },
     addLayerByName(layerName, extend, cropInfo) {
+      if (layerName === this.currentLayerName) {
+        this.$emit('getElementId', this.resultId)
+      }
+
       var opacity = this.opacity / 100
       this.$emit('changeLayer', {layerName, opacity, extend, cropInfo})
     },
@@ -340,28 +457,32 @@ export default {
           if (response.status !== 200 || response.data.status !== 0) {
             this.noClassifyData = true
           } else {
-            var formated = model.formatCpData(response.data, id, this.code)
+            var formated = model.formatCpData(response.data.data[id], this.code)
             if (!formated) {
               this.noClassifyData = true
             } else {
               this.noClassifyData = false
 
               this.tableData = this.getCpCrops(formated)
-
+              
               this.setSldAttr(formated.cp, id)
 
               var classifyLayerName = formated.cp.id
               this.addClassifyLayer(classifyLayerName, formated.cp.crops)
-              if (this.classifyList[0].only_result !== -1) {
-                this.classifyList.unshift({title: "取消叠加", only_result: -1})
+              this.currentClassify = true
+              if (this.filteredCflist[0].only_result !== -1) {
+                this.filteredCflist.unshift({title: "取消叠加", only_result: -1})
               }
+
+              this.$nextTick(() => {
+                this.scrollToBottom()
+              })
             }
           }
           this.cfListLoading = false
         })
       } else if (id === -1) {
-        this.classifyList.shift()
-        this.currentClassify = ''
+        this.filteredCflist.shift()
         this.closeClassifyLayer()
       }
     },
@@ -389,8 +510,23 @@ export default {
       }
       return data.cp.crops
     },
+    scrollToBottom() {
+      var dom = document.getElementsByClassName('crop-list-bg')[0]
+      var scrollHeight = dom.scrollHeight - dom.offsetHeight
+
+      this.scrollTimeHandler = setInterval(() => {
+        if (dom.scrollTop < scrollHeight) {
+          dom.scrollTop += 25
+
+        } else {
+          clearInterval(this.scrollTimeHandler)
+        }
+      }, 10)
+    },
     closeClassifyLayer() {
       if (this.classifyLayer) {
+        this.tableData = []
+        this.currentClassify = false
         this.$emit('removeClassifyLayer')
         this.showPopMsg('已隐藏所选分布图层')
       }
@@ -403,7 +539,10 @@ export default {
     eleClick(index) {
       this.eleIndex = index
       for (var i = 0; i < this.layerList.length; i++) {
-        if (this.layerList[i].id === this.eleLists[index].id) {
+        if (this.layerList[i].id === this.filteredEle[index].id) {
+          
+          this.$emit('getElementId', this.layerList[i].id)
+
           this.showPopMsg(`图层已切换至${this.filteredEle[index].name}适宜图层`)
           this.addLayerByName(this.layerList[i].layerName, this.layerList[i].extend)
           break
@@ -442,6 +581,120 @@ export default {
       this.cropIndex = this.getIndexById(id)
       this.tableData[this.cropIndex].color = color
       this.tableData[this.cropIndex].open = true
+    },
+    getEchart(){
+      this.cropHeathOption = echart.getPie(this.cropFit)
+    },
+    getTreeNode(data){
+      this.toParentTreeData = data
+    },
+    treeConfirm(data){
+      if (this.toParentTreeData === '全部区域') {
+        this.emitTreeClickEvent(this.treeData[0])
+      }else{
+        this.emitTreeClickEvent(this.toParentTreeData)
+      }
+    },
+    loopData(list) {
+      var treeData = []
+      var item = {}
+      for (var i = 0; i < list.length; i++) {
+        item = {
+          area_id: list[i].area_id,
+          area_name: list[i].area_name,
+          bounds: model.formatBounds(list[i]),
+          grade: list[i].grade,
+          parent_id: list[i].parent_id
+        }
+
+        if (list[i].contain) {
+          item.contain = this.loopData(list[i].contain)
+        }
+
+        treeData.push(item)
+      }
+      return treeData
+    },
+    filterClassifyList(code) {
+      if (this.classifyCodes.length > 0) {
+        this.setClassifyList(code)
+
+      } else {
+        this.fetchRelation(code, this.classifyList)
+      }
+    },
+    fetchRelation(code, list) {
+      var codes = []
+      let params = {
+        arealist: []
+      }
+      for (let i = 0; i < list.length; i++) {
+        codes.push(list[i].area_code)
+
+        let item = {
+          area_code: list[i].area_code,
+          grade: 5
+        }
+        params.arealist.push(item)
+      }
+      if (params.length > 0) {
+        this.cfListLoading = true
+        request.areaRelation(params).then((response) => {
+          if (response && response.status === 200 && response.data.status === 0) {
+            this.classifyCodes = model.formatRelation(response.data.data, codes)
+            
+            this.setClassifyList(code)
+          }
+          this.cfListLoading = false
+        })
+      } else {
+        this.classifyCodes = []
+        this.setClassifyList(code)
+        this.cfListLoading = false
+      }
+    },
+    setClassifyList(code) {
+      this.filteredCflist = []
+      if (code === this.TREE_ROOT_CODE) {
+        this.getRealCodes()
+
+      } else {
+        for (var i = 0; i < this.classifyList.length; i++) {
+          var existCode = this.classifyCodes[this.classifyList[i].area_code]
+          if (existCode.includes(code)) {
+            this.filteredCflist.push(this.classifyList[i])
+          }
+        }
+      } 
+    },
+    getRealCodes() {
+      var realNode = this.treeData[0].contain
+      for (var i = 0; i < realNode.length; i++) {
+        this.setClassifyList(realNode[i].area_id)
+      }
+    },
+    emitTreeClickEvent(node) {
+      var code = node.area_id
+      if (code === this.TREE_ROOT_CODE) {
+        this.areaName = '所选区域'
+        this.description = this.cropList[this.cropIndex].desc 
+        
+      } else {
+        this.areaName = node.area_name
+        this.description = this.areaName + "种植适宜性规划"
+      }
+      var parentCode = node.parent_id
+     
+      this.filterClassifyList(code)
+      this.imageUrl = this.imageUrlList[code]
+
+      this.$emit('treeClickEvent', node)
+    },
+    changeLoadOpacity(color) {
+      setTimeout(()=> {
+        var dom = document.getElementsByClassName('el-loading-mask')
+        elementUtil.setDomStyle(dom, 'backgroundColor', color)
+      })
     }
   },
   watch: {
@@ -458,6 +711,33 @@ export default {
           this.sliderAnimateClass = 'plant-animation-in-left'
         }
       }
+    },
+    treeList(list){
+      if(list && list.length > 0){
+        this.toParentTreeData = '全部区域'
+        this.treeData = list
+
+        this.emitTreeClickEvent(this.treeData[0])
+      }
+    },
+    cropFit(list) {
+      if (list && list.length > 0) {
+        this.getEchart()
+      }
+    },
+    loading(loading) {
+      if (!loading) {
+        this.firstLoad = false
+      }
+    },
+    firstLoad(loading) {
+      if (!loading) {
+        this.changeLoadOpacity("rgba(255,255,255,.9)")
+      }
+    },
+    hideTreeStatus(status){
+      this.areaShowTree = false
+      this.$emit('initTreeStatus',true)
     }
   },
   destroyed() {
@@ -465,72 +745,119 @@ export default {
   },
   components: {
     leftTab,
-    tbDetail
+    tbDetail,
+    expectData,
+    tree
   }
 }
 </script>
 
 <style 
 lang="less" scoped>
-@import '../../../assets/style/reset';
-@value: 358px;
-.animation-time {
-  animation-duration: .34s;
-   -webkit-animation-duration: .34s;
-}
+@import '../../../assets/style/common';
+@value: 100%;
 .pl-opacity {
-  margin-top: 6px;
+  padding-top: 6px;
   padding-left: 16px;
+  background: @assistant-bg;
 }
-.product-list {
-  position: relative;
-  top: 57px;
-  left: 10px;
-  width: 358px;
-  height: 400px;
+.product-list { 
   .crop-list-bg {
-    background: #f3fbeb;
-    .mixin-border-radius-bottom();
+    width: 100%;
+    min-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    .adv-border-bottom-radius();
 
     .crop-list {
       .btns-con {
         margin: 0;
         padding: 10px 16px 0;
-       .mixin-borderline(0;0;1px;0);
+        background: #f3fbeb;
+        border-bottom: 1px solid #dcdcdc;
       }
     }
-    .crop-desc {
-      line-height: 22px;
-      padding: 12px 16px 16px;
-    }
-    .show-affector {
-      text-align: right;
-      padding: 0 18px 12px 0;
-      .mixin-borderline(0;0;1px;0);
-      span {
-        padding: 8px 10px;
-        background: #8ec122;
-        color: #fff;
-        border-radius: 4px;
-        cursor: pointer;
-        &:hover { 
-          background: #7eb902;
-        }
-        i {
-          font-size: 12px;
-          margin-left: 4px;
+    .crop-desc-container{
+      padding: 12px 16px 0px;
+      box-sizing: border-box;
+      background: #f3fbeb;
+      border-bottom: 1px solid #dcdcdc;
+      .crop-desc {
+        .adv-text-line-height-normal();
+        .adv-font-normal();
+      }
+      .show-affector {
+        text-align: right;
+        padding: 0 8px 12px 0;
+        span {
+          .adv-normal-primary-btn();
+          line-height: 13px;
+          i {
+            font-size: 12px;
+            margin-left: 4px;
+          }
         }
       }
     }
+    .area-tree {
+      padding: 14px;
+    }
+
+ .fit-classfication-area {
+    line-height: normal;
+    background: @assistant-bg;
+    padding: 0px 14px;
+    border-bottom: 1px solid @border-color;
+    .clssfication-information-btn{
+      .adv-normal-primary-btn();
+      position: absolute;
+      top: 12px;
+      right: 29px;
+    }
+    .fit-container{
+      .adv-border-normal();
+      .adv-boxshadow-soft();
+
+      padding: 20px 14px 14px;
+      background: #fafafa;
+      margin-bottom: 15px;
+      .fit-classfication-area-title {
+        .adv-title-after-vertical-line-normal();
+        line-height: 28px;
+      }
+      .legend {
+        padding: 22px 0 20px 0;
+        margin-left: -11px;
+        li {
+          float: left;
+          margin-left: 11px;
+          padding: 2px 3px;
+          border: 1px solid @border-color;
+          border-radius: 2px;
+        }
+      }
+      .fit-classfication-area-echart-bg {
+        width: 100%;
+        height: 160px;
+        .fit-echart {
+          width: 300px;
+          height: 160px;
+          margin: auto;
+        }
+      }
+    }
+    
+ }
   }
   .download-bg {
-    background: #fff;
-    .mixin-border-radius-bottom();
+    background: @assistant-bg;
+    .adv-border-bottom-radius();
     
     .download-btns {
       line-height: 1;
-      .mixin-gradient-bg(#f1f4f4;#f0f5f4);
-      .mixin-borderline(1px;0px;1px;0);
+      .adv-gradient(#f1f4f4;#f0f5f4);
+      border-top: 1px solid #dcdcdc;
+      border-bottom: 1px solid #dcdcdc;
       p {
         width: 49%;
         position: relative;
@@ -578,34 +905,69 @@ lang="less" scoped>
   }
   .overlay-classify {
     padding-left: 16px;
+    padding-bottom: 4px;
     h3 {
       font-size: 14px;
       line-height: 45px;
     }
+    p {
+      text-align: center;
+    }
   }
-  .element-slider { 
+  .overlay-classify-no-data {
+    padding-left: 16px;
+    h3 {
+      font-size: 14px;
+      line-height: 14px;
+      margin-top: 16px;
+    }
+    p {
+      font-size: 14px;
+      color: #b9b8b8;
+      line-height: 14px;
+      margin: 16px 0 0;
+      text-align: center;
+      padding-bottom: 16px;
+      .noProduct{
+        margin-left: 6px;
+      }
+    }
+  }
+  .overlay-classify-loading {
+    padding-left: 16px;
+    h3 {
+      .adv-title-normal();
+      line-height: 14px;
+      margin-top: 16px;
+    }
+    p {
+      .adv-text-line-height-normal();
+      text-align: center;
+    }
+  }
+  .element-slider {
+
     width: 0px;
     position: absolute;
-    top: 50px;
+    top: 0px;
     z-index: 10002;
     margin-left: -10px;
-
     .popup-header {
+      .adv-border-normal();
+      .adv-boxshadow-soft();
+      overflow: hidden;
       height: 140px;
       margin: 0 10px;
-      background: #fff;
-      border-radius: 4px;
-      .mixin-boxshadow();
-      overflow: hidden;
+      background: @assistant-bg;
       .popup-header-title {
-        font-size: 14px;
+        .adv-title-normal();
         padding-left: 18px;
         line-height: 36px;
         background: #f3fbeb;
-        .mixin-borderline(0;0;1px;0);
+        border-bottom: 1px solid #dcdcdc;
         .close {
           width: 90px;
-          left: 238px;
+          right: 8px;
           top: 0px;
           text-align: right;
           cursor: pointer;
@@ -634,7 +996,7 @@ lang="less" scoped>
       }
       .ele-group {
         overflow: hidden;
-        .mixin-borderline(0;0;1px;0);
+        border-bottom: 1px solid #dcdcdc;
         .active {
           color: #9ed132;
           border-bottom: 3px solid #9ed132;
@@ -658,7 +1020,8 @@ lang="less" scoped>
    0% {
       left: 10px;
       width: @value;
-      display: block;    }
+      display: block; 
+     }
     100% {
       left: @value;
       width: 0px;
@@ -669,7 +1032,7 @@ lang="less" scoped>
     }
   }
 .plant-animation-in-left {
-  .mixin-animation(faderight;.38s;1;forwards)
+  .adv-animation(faderight;.38s;1;forwards)
 }
 @keyframes fadeleft {
     0% {
@@ -687,11 +1050,11 @@ lang="less" scoped>
     }
   }
 .plant-animation-out-left {
-  .mixin-animation(fadeleft;.38s;1;forwards)
+  .adv-animation(fadeleft;.38s;1;forwards)
 }
 .plant-list-expect {
   color: #496b01;
-  background: #fff;
+  background: @assistant-bg;
   z-index: 10000;
   position: absolute;
   width: 100%;

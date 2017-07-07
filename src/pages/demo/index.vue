@@ -1,6 +1,12 @@
 <template>
   <div>
-    
+    <my-map class="map" 
+      @initMap="initMap" 
+      :switchCtl="true"
+      :top="97"
+      borderRadius="4px"
+      :maxZoom="18" ref="map"></my-map>
+
     <div class="input-container">
       <el-input v-model="offsets[0]" placeholder="请输入边界0"></el-input>
       <el-input v-model="offsets[1]" placeholder="请输入边界1"></el-input>
@@ -25,6 +31,10 @@
 
       
       <el-button type="primary" @click="setOptions">刷新图表</el-button>
+
+      <el-button type="primary" @click="removeAll">清空</el-button>
+
+      <el-button type="primary" @click="startDraw">绘制</el-button>
     </div>
     <my-echart
       v-if="options"
@@ -36,6 +46,17 @@
 </template>
 
 <script>
+import drawCtl from 'agrisz-map-polygon'
+import request from 'api/request.js'
+import axios from 'axios'
+
+
+import modisLib from 'agrisz-lib-modis'
+import {formatData, dateUtil} from '../../plugins/utils.js'
+import config from 'config/env/config.env.js'
+import configData from '../../config/data.js'
+
+var layerCtl = modisLib(config.mapUrl, config.tileMapUrl, dateUtil, configData)
   export default {
     data() {
       return {
@@ -47,8 +68,116 @@
     },
     mounted() {
       this.setOptions()
+
+      this.initMarkeAreaRequest()
+      this.initTileLayer()
+
+      this.initAreaLayers()
     },
     methods: {
+      initMap (map) {
+        this.map = map;
+        
+        layerCtl.setRefrence(this.map, this.$refs.map)
+      },
+      initMarkeAreaRequest() {
+
+        drawCtl.setRefrence(this.map)
+        drawCtl.openClickEvent()
+
+        
+        drawCtl.drawPolygon((area, geom) => { 
+          console.log(area, geom) 
+          setTimeout(()=> {
+            vueBus.$emit('doubleClickZoom', true)
+          }, 1000)
+        },
+        ({id, index}) => { 
+          if (id) {
+            drawCtl.highlightById(id) 
+            
+          }
+        }
+        )
+
+        // drawCtl.endDraw()
+
+        var params = {
+          type: 10,
+          index: 'NDVI-1',
+          code: 451229,
+          start: '2016-02-1',
+          end: '2016-02-10',
+          status: 1
+        }
+
+        request.modisMarkerInfo(params).then((res) => {
+          if (res && res.status === 200 && res.data.status === 0) {
+            
+            var data = res.data.data
+            var geomtries = []
+            for(var year in data) {
+
+              for(var period in data[year]) {
+                
+                for (var i = 0; i < data[year][period].length; i++) {
+                  var item = {
+                    marker_id: data[year][period][i].marker_id,
+                    title: data[year][period][i].title,
+                    color: data[year][period][i].color,
+                    geom: data[year][period][i].geom,
+                    desc: data[year][period][i].desc
+                  }
+                  geomtries.push(item)
+                  
+                }
+              }
+            }
+            console.log(geomtries)
+            drawCtl.renderPolygons(geomtries)
+          }
+        })
+        
+      },
+      startDraw() {
+        drawCtl.setLineColor('red')
+        vueBus.$emit('doubleClickZoom', false)
+        drawCtl.startDraw()
+      },
+      removeAll() {
+        drawCtl.removeDrawLayer()
+        drawCtl.removePolygons()
+      },
+      initTileLayer() {
+        var product = 'NDVI-1'
+        var date = new Date('2016-06-12')
+        
+        var code = 451229
+        var bounds = {
+          lb_lat:23.5172919481806,
+          lb_lon:107.26955719021001,
+          rt_lat:24.4202728275966,
+          rt_lon:108.091679382182
+        }
+
+        var tileLayer = layerCtl.addTileLayer(product, date, code, bounds)
+      },
+      initAreaLayers() {
+        var areas = [
+          {
+            area_id:"451229",
+            area_name:"大化瑶族自治县",
+            bounds: {
+              lb_lat:23.5172919481806,
+              lb_lon:107.26955719021001,
+              rt_lat:24.4202728275966,
+              rt_lon:108.091679382182
+            },
+          }
+        ]
+
+        layerCtl.addAreaTileLayers(areas[0].area_id, areas)
+      },
       setOptions() {
         var formated = this.getApiData()
 
@@ -186,7 +315,7 @@
   .pie-chart-body {
     position: absolute;
     top: 200px;
-    width: 630px;
+    width: 230px;
     height: 460px;
   }
   .input-container {

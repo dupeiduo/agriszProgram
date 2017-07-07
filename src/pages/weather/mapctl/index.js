@@ -1,5 +1,22 @@
 export default {
-  addForecastPoint(coordinate, map, layer) {
+  addAtmosOverlay(coordinate, map) {
+    var popup = document.getElementById('atmostPop')
+    popup.style.display = 'block'
+    var position = ol.proj.transform(coordinate, 'EPSG:4326', 'EPSG:3857')
+    if (!this.overlay) {
+      this.overlay = new ol.Overlay({
+        element: popup
+      });
+      map.addOverlay(this.overlay);
+    }
+    
+    this.overlay.setPosition(position);
+    
+    map.renderSync()
+
+    return this.overlay
+  },
+  addPointByLonlat(coordinate, map) {
     var feature = new ol.Feature({
       geometry: new ol.geom.Point(coordinate)
     });
@@ -28,7 +45,7 @@ export default {
     return _altitudeLayer
   },
   renderStations(stations, parent) {
-    var features = this.initFeatures(stations.data)
+    var features = this.initFeatures(stations)
     var layer = this.addPoints(features, parent.map)
     this.bindEvents(parent, layer);
   },
@@ -134,21 +151,27 @@ export default {
 
       map.forEachFeatureAtPixel(pixel, function (feature, layer) {
         if (layer == clustersLayer) {
+          parent.$emit("clickAtmosPoint")
           var length = feature.getProperties().features.length;
           if (length > 1) {
               map.getView().setCenter(map.getCoordinateFromPixel(pixel));
               map.getView().setZoom(map.getView().getZoom() + 1);
-              return;
+              return true;
+
           } else {
-            _self.stationId = feature.getProperties().features[0].getProperties().id;
-            if (feature.getProperties().features[0].getProperties().name) {
-              _self.currentStation = { hasName: true, name: feature.getProperties().features[0].getProperties().name };
-            } else 
-              _self.currentStation = { hasName: false, name: feature.getProperties().features[0].getProperties().id };
+            var _feature = feature.getProperties().features[0].getProperties()
+            _self.stationId = _feature.id;
+            if (_feature.name) {
+              _self.currentStation = { hasName: true, name: _feature.name };
+
+            } else {
+              _self.currentStation = { hasName: false, name: _feature.id };
+            }
             parent.$emit('clickPoint', _self);
+            return true;
           }
         }
-      });
+      }); 
     });
 
     map.on('pointermove', function(event) {
@@ -162,9 +185,10 @@ export default {
         if (layer == clustersLayer && feature) {
           var length = feature.getProperties().features.length;
           if (length == 1) {
-            var body = "站点编号: " + feature.getProperties().features[0].getProperties().id;
-            if (feature.getProperties().features[0].getProperties().name) 
-              var head = feature.getProperties().features[0].getProperties().name + "气象站";
+            var _feature = feature.getProperties().features[0].getProperties()
+            var body = "站点编号: " + _feature.id;
+            if (_feature.name) 
+              var head = _feature.name + "气象站";
             else
               var head = "气象站";
 
@@ -173,7 +197,7 @@ export default {
             var top = parseInt(_point[1]) - 90;
             
             parent.$emit('hoverPoint', {body, head, left, top});
-            return;
+            return true;
           } 
         } 
       });

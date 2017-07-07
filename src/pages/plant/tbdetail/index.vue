@@ -4,23 +4,34 @@
       
       <div class="tb-detail">
         <el-table v-if="tableData.length > 0"
-          :stripe="true"
-          :data="tableData"
-          style="width: 100%">
+            :stripe="true"
+            :data="tableData"
+            style="width: 100%">
+
           <el-table-column label="作物" width="78">
             <template  scope="scope">
-              <span class="iconfont crop-icon" :class="icons[scope.row.id]"></span>
+              <svg class="icon crop-icon" aria-hidden="true">
+                <use :xlink:href="'#icon-crop-'+scope.row.id"></use>
+              </svg>
               {{scope.row.name}}
             </template>
           </el-table-column>
          
-          <el-table-column label="显示" width="204">
+          <el-table-column label="显示" width="195">
             <template  scope="scope">
-              <span class="eye-ctl iconfont" :class="scope.row.open ? ' icon-eye' : ' icon-hide'"
-                @click="setLayerVisible(scope.row)"></span>
-                <i class="animated fadeInRight fade-animation hide-animation"  @click="setLayerVisible(scope.row)">{{scope.row.open ? '隐藏图层' : '显示图层'}}</i>
+              <span 
+                  class="eye-ctl iconfont" 
+                  :class="scope.row.open ? ' icon-eye' : ' icon-hide'"
+                  @click="setLayerVisible(scope.row)">
+              </span>
+              <i
+                  class="animated fadeInRight fade-animation hide-animation"
+                  @click="setLayerVisible(scope.row)">
+                {{scope.row.open ? '隐藏图层' : '显示图层'}}
+              </i>
             </template>
           </el-table-column>
+
           <el-table-column label="图例" width="76">
             <template  scope="scope">
               <span class="selcolor"
@@ -37,7 +48,7 @@
       <div class="color-picker" v-if="showColorpicker"
         @mouseleave="removeColorPicker"
         @mouseenter="holdColorPicker" 
-        :style="{top: popTop}">
+        :style="{top: popTop, left: 384 + menuWidth+'px'}">
         <div class="wrap">
           <p class="triangle"></p>
           <h3>自定义作物颜色</h3>
@@ -56,8 +67,9 @@
   </div>
 </template>
 <script>
-import configData from '../../../config/data.js'
-
+import iconfonts from 'agrisz-iconfont'
+import 'agrisz-iconfont/index.less'
+import {mapGetters} from 'vuex'
 export default {
   props: {
     tableData: {
@@ -84,7 +96,7 @@ export default {
         value: 'h',
         label: '千公顷'
       }],
-      icons: configData.cropIcons,
+      icons: iconfonts,
 
       showColorpicker: false,
       popTop: '',
@@ -94,12 +106,18 @@ export default {
       value: 'm',
     }
   },
+  computed: {
+    ...mapGetters({
+        getScreenHeight: 'getScreenHeight',
+        menuWidth: 'menuWidth',
+      })
+  },
   methods: {
     changeColor(ev, index) {
       this.holdColorPicker()
 
       var oEvent = ev|| window.event;
-      var y = oEvent.clientY - 494
+      var y = oEvent.clientY - 20
       this.popTop = `${y}px`
       this.showColorpicker = true
       this.cropIndex = index
@@ -134,15 +152,17 @@ export default {
 
 </script>
 
-<style lang="less" scoped>
-@import '../../../assets/style/reset';
+<style
+ lang="less" scoped>
+@import '../../../assets/style/common';
+
 .detail-container {
   left: -16px;
-  width: 358px;
+  width: 352px;
 }
   .crop-detail {
     .tb-detail {
-      background: #fff;
+      background: @assistant-bg;
       table {
         width: 100%;
         padding-left: 5px;
@@ -180,10 +200,9 @@ export default {
     color: #a1a8ae;
   }
   .color-picker {
-    position: absolute;
-    left: 370px;
+    position: fixed;
     border: 1px solid #d3d3d3;
-    background: #fff;
+    background: @assistant-bg;
     box-shadow: 2px 1px 8px #8a8a89;
     padding-left: 8px;
     .wrap {

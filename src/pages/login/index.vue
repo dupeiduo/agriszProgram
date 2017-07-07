@@ -1,5 +1,5 @@
 <template>
-  <div id="loginContainer" class="login-container">
+  <div id="loginContainer" class="login-container login-zIndex">
     <div class="login">
       <div class="login-bj">
         <h3>用户登录</h3>
@@ -150,9 +150,8 @@
     lang="less"
     rel="stylesheet/less"
     scoped>
-    @import '../../assets/style/reset';
+    @import '../../assets/style/common';
     .login-container {
-      z-index: 10001;
       position: fixed;
       top: 0;
       width: 100%;
@@ -165,7 +164,7 @@
         display: block;
         width: 410px;
         transform: translate(-50%, -50%);
-        background: #fff;
+        background: @assistant-bg;
         box-shadow: 10px 10px 5px rgba(0,0,0,.2);
         h3 {
           font-size: 22px;
@@ -190,7 +189,7 @@
             input {
               width: 100%;
               color: #fff;
-              font-size: 18px;
+              font-size: @font-large;
               cursor: pointer;
               background: #8ec421;
             }
@@ -200,7 +199,7 @@
             p {
               border: 1px solid #e4e7e7;
               background: #fff;
-              .mixin-boxshadow();
+              .adv-boxshadow();
             }
             b {
               opacity: 0;
@@ -223,25 +222,26 @@
             padding: 0px 38px;
             span {
               line-height: 40px;
-              font-size: 18px;
+              font-size: @font-large;
               margin: 0 10px;
               color: #abbd96;
             }
             input {
-              font-size: 14px;
+              .adv-font-normal();
               width: 284px;
               height: 40px;
               padding-left: 10px;
               vertical-align: middle;
             }
             .login-error {
-              font-size: 14px;
+              .adv-font-normal();
               line-height: 40px;
               color: #e08302;
             }
           }
         }
         .login-delete {
+          .adv-horizontal-center(25px);
           position: absolute;
           top: 14px;
           right: 14px;
@@ -250,7 +250,6 @@
           border-radius: 2px;
           height: 25px;
           line-height: 27px;
-          .mixin-width(25px);
           &:hover {
             border: 1px solid #8ec421;
             .login-close { 
@@ -258,7 +257,7 @@
             }
           }
           .login-close {
-            font-size: 14px;
+            .adv-font-normal();
             cursor: pointer;
           }
         }
@@ -280,8 +279,9 @@
                 display: inline-block;
                 height: 40px;
                 color: #accf4a;
-                .mixin-width(40px);
-                .mixin-border(#accf4a;50%);
+                .adv-horizontal-center(40px);
+                border: 1px solid #accf4a;
+                border-radius: 50%;
               }
               div {
                 position: absolute;
@@ -290,7 +290,7 @@
                 width: 172px;
                 margin-left: 10px;
                 p {
-                  font-size: 12px;
+                  .adv-font-small();
                   line-height: 20px;
                 }
               }

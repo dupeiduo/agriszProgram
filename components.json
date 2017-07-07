@@ -1,6 +1,17 @@
 {
-    "agrisz-map" : "2.0.0",
-    "agrisz-searchpoi" : "2.0.0",
-    "agrisz-button" : "2.0.0",
-    "agrisz-opactl" : "2.0.0"
+    "agrisz-button": "2.0.0",
+    "agrisz-dialog": "1.0.0",
+    "agrisz-echart": "1.0.0",
+    "agrisz-iconfont": "1.0.0",
+    "agrisz-lib-model": "1.0.0",
+    "agrisz-lib-modis": "1.0.0",
+    "agrisz-lib-piccluster": "1.0.0",
+    "agrisz-lib-request": "1.0.0",
+    "agrisz-map": "2.0.0",
+    "agrisz-map-polygon": "1.0.0",
+    "agrisz-opactl": "2.0.0",
+    "agrisz-photozoom": "1.0.0",
+    "agrisz-popmsg": "1.0.0",
+    "agrisz-searchpoi": "2.0.0",
+    "agrisz-weather": "1.0.0"
 }

@@ -5,6 +5,11 @@ const showBlur = state => state.showBlur
 const errMsg = state => state.user.errMsg
 const drawing = state => state.map.drawing
 const headerOpacity = state => state.headerOpacity
+const getScreenHeight = state => state.screenHeight
+const screenWidth = state => state.screenWidth
+const menuWidth = state => state.menuWidth
+const showLeftHeader = state => state.showLeftHeader
+const loading = state => state.loading
 
 export {
   userName,
@@ -13,5 +18,10 @@ export {
   errMsg,
   drawing,
   headerOpacity,
-  showBlur
+  showBlur,
+  getScreenHeight,
+  screenWidth,
+  menuWidth,
+  showLeftHeader,
+  loading
 }

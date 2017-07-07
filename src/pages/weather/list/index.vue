@@ -31,55 +31,83 @@
         </ul>
       </div>
 
-      <div slot="detail">
+      <div slot="detail" v-loading.lock="loading">
         <div class="detail-container" v-if="curIndex >= 0">
-         <div class="detail-container-bg">
-          <div class="clear">
-            <h3 class="detail-title fl">
-             {{listData[curIndex].title}}
-            </h3>
-            <div v-if="curIndex !== 0" class="fr">
-            <div class="block weather-test-time" v-if="diffIndex >= 0">
-              <el-date-picker
-                v-model="dateStr"
-                format="yyyy/MM/dd"
-                type="date"
-                :clearable="false"
-                placeholder="选择日期"
-                @change="dateChange">
-              </el-date-picker>
+          <div class="detail-container-bg">
+            <div class="clear">
+              <h3 class="detail-title fl">
+               {{listData[curIndex].title}}
+              </h3>
+              <div v-if="curIndex !== 0" class="fr">
+                
+                <div class="block weather-test-time" v-show="dateUnit==='tenday'">
+                  <i v-if="disablePre" class="phase pre-period el-icon-arrow-left disable-phase"></i>
+                  <el-tooltip class="item" effect="dark" content="上一期" placement="top">
+                    <i class="phase pre-period el-icon-arrow-left" @click="jumpPeriod(-1)"></i>
+                  </el-tooltip>
+                  <date-period @click.native="stopEvent"
+                    :curDate="curDate" 
+                    :showPop="showTime"
+                    :startDate="new Date('2010-01-01')"
+                    @showPanel="showTime = true"
+                    @changeDate="changeDate">
+                  </date-period>
+                  <i v-if="disableNext" class="phase next-period el-icon-arrow-right disable-phase"></i>
+                  <el-tooltip v-else class="item" effect="dark" 
+                    content="下一期" placement="top">
+                    <i class="phase next-period el-icon-arrow-right" @click="jumpPeriod(1)"></i>
+                  </el-tooltip>
+                </div>
+
+                <div class="block weather-test-time" v-show="dateUnit==='day'">
+                  <i v-if="disablePre" class="phase pre-day el-icon-arrow-left disable-phase"></i>
+                  <el-tooltip v-else class="item" effect="dark" content="上一期" placement="top">
+                    <i class="phase pre-day el-icon-arrow-left" @click="jumpDay(-1)"></i>
+                  </el-tooltip>
+                  <el-date-picker
+                    v-model="dateStr"
+                    format="yyyy-MM-dd"
+                    type="date"
+                    :clearable="false"
+                    placeholder="选择日期"
+                    :picker-options="pickerOptions"
+                    @change="dateChange">
+                  </el-date-picker>
+                  <i v-if="disableNext" class="phase next-day el-icon-arrow-right disable-phase"></i>
+                  <el-tooltip v-else class="item" effect="dark" content="下一期" placement="top">
+                    <i class="phase next-day el-icon-arrow-right" @click="jumpDay(1)"></i>
+                  </el-tooltip>
+                </div>
+
+              </div>
             </div>
+
+            <p class="desc">{{listData[curIndex].desc}}</p>
+          </div>
+
+          <div v-if="curIndex === 0">
+            <div class="tip-content" v-loading.lock="addressLoading">
+              <span class="current-positon-icon"></span>{{tipContent}}
             </div>
-          </div>
-          <p class="desc">{{listData[curIndex].desc}}</p>
-          <div class="tip-content"><span v-if="curPosition && curPosition.show" 
-            class="current-positon-icon"></span>{{tipContent}}</div>
-          </div>
-          <div v-if="curIndex === 0 && curPosition.show">
-            <weather-forecast
-              :top="0" 
-              :right="0"
-              :centerInfo="centerInfo"
-              ></weather-forecast>
+            <p class="veiw-detail-text">请点击地图上任意一点，查看详细信息</p>
+            <!-- <template v-if="curPosition.show">
+              <weather-forecast
+                :top="0" 
+                :right="0"
+                :centerInfo="centerInfo">
+              </weather-forecast>
+            </template>
+            <div v-else class="first-loading"></div> -->
           </div>
 
           <div v-else-if="curIndex !== 0" class="weather-all-detail">
             <div class="menu-container">
-              <ul class="menu-list">
-                <li v-for="(item, _index) in diffList" class="main-li" 
-                  @mouseleave="mouseleaveMenu"
-                  @mouseover="parentIndex = _index">
-                  <i class="iconfont" :class="item.icon" :style="{color: item.color}"></i>
-                  <i>{{item.name}}</i>
-                  <span class="el-icon-arrow-down"></span>
-                  <ul class="sub-menu" 
-                    v-show="parentIndex === _index"
-                    :style="{left: 267 / (diffList.length - 1) * _index + 'px'}">
-                    <li v-for="(menu, index) in item.child"
-                      @click="addDiffProduct(menu, index)">{{menu.name}}</li>
-                  </ul>
-                </li>
-              </ul>
+             <detail-list
+              :showMe="showMe"
+              :echartHeight="echartHeight"
+              @getCategory="getCategory"
+              ></detail-list>
+              
             </div>
 
             <div class="block slider-container plant-slider pr ml12">
@@ -110,7 +138,10 @@ var _forecast = forecast(request)
 var myweather = Vue.component(_forecast.name, _forecast.prop)
 
 import configData from '../../../config/data.js'
-
+import {elementUtil, dateUtil} from 'plugins/utils.js'
+import detailList from './detail/'
+import datePeriod from './period.vue'
+import {mapGetters} from 'vuex'
 
 export default {
   props: {
@@ -125,6 +156,22 @@ export default {
     opacity: {
       type: Number,
       default: 90
+    },
+    loading: {
+      type: Boolean,
+      default: false
+    },
+    addressLoading: {
+      type: Boolean,
+      default: false
+    },
+    echartHeight: {
+      type: Number,
+      default: 212
+    },
+    showMe: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -132,7 +179,6 @@ export default {
       backList: false,
       showList: true,
       curIndex: -1,
-      parentIndex: -1,
       listData: [
         {
           title: "全国天气预报产品",
@@ -141,7 +187,7 @@ export default {
           help: "利用公开气象数据，提供基于GPS位置的未来一小时分钟级别的精准天气预报。天气预报范围覆盖中国绝大部分地区，并提供PM2.5指标实时监控。"
         },
         {
-          title: "全国气象差值产品",
+          title: "全国气象插值产品",
           desc: "应用大气的变化规律，根据当前及近期的天气形势，对不同地区的某一段时期内的天气状况进行预测，为工农业生产和群众生活服务。",
           img: "list-weather2.jpg",
           help: `气象插值产品是利用了数据插值的科学方法，加工气象站点的气象数据后得到的气象数据产品。
@@ -150,87 +196,168 @@ export default {
                 插值：用来填充图像变换时像素之间的空隙。早在6世纪，中国的刘焯已将等距二次插值用于天文计算。17世纪之后，I.牛顿，J.-L.拉格朗日分别讨论了等距和非等距的一般插值公式。在近代，插值法仍然是数据处理和编制函数表的常用工具，又是数值积分、数值微分、非线性方程求根和微分方程数值解法的重要基础，许多求解计算公式都是以插值为基础导出的。`
         }
       ],
-      diffList: [
-        {
-          name: "气温",
-          icon: "icon-qiwen",
-          color: "rgb(165, 194, 94)",
-          child: configData.weatherProduct[0].value
-        },
-        {
-          name: "日照",
-          icon: "icon-rizhao-",
-          color: "rgb(214, 87, 93)",
-          child: [{name: "敬请期待", wait: true}]
-        },
-        {
-          name: "降水",
-          icon: "icon-jiangshui-",
-          color: "rgb(10, 147, 212)",
-          child: [{name: "敬请期待", wait: true}]
-        },
-        {
-          name: "地温",
-          icon: "icon-diwen-",
-          color: "rgb(3, 150, 147)",
-          child: [{name: "敬请期待", wait: true}]
-        }
-      ],
       tipContent: '',
       centerInfo: null,
       dateStr: '',
+      curDate: new Date(),
+      showTime: false,
       diffIndex: -1,
-
-
+      firstLoading: true,
+      dateUnit: 'tenday',
+      pickerOptions: {
+        disabledDate: (time)=> {
+          var  oldDate = new Date(2010,1,1,0,0,0).getTime(),  
+                newDate = new Date().getTime();  
+          if (time.getTime() > newDate) {
+            return true
+          } else if(time.getTime() < oldDate){
+            return true
+          }
+        }
+      },
+      START_DATE: "2010-01-01",
+      END_DATE: dateUtil.formatDate(new Date()),
+      disablePre: false,
+      disableNext: false
     }
   },
   mounted() {
     this.showDetail(0)
   },
+  computed: {
+    ...mapGetters({
+      screenHeight: 'getScreenHeight'
+    })
+  },
   methods: {
+    stopEvent(event) {
+      event.stopPropagation()
+    },
     toggleListStatus(isShow) {
       this.showList = isShow;
     },
     switchList() {
       this.backList = !this.backList; 
 
-      !this.backList && this.$emit('clearLayerStatus', true)
+      !this.backList && this.$emit('clearLayers')
     },
     showDetail(index) {
       if (this.curIndex === index) {
-        this.$emit('backtoDetail', this.curIndex === 0)
+        var isforecast = this.curIndex === 0
+        this.$emit('backtoDetail', isforecast)
+
       } else {
         this.curIndex = index
-        this.tipContent = index === 0 
-                          ? "请点击地图上任意一点，查看详细信息。"
-                          : "请选择具体气象要素，查看详细信息。"
-
-        this.$emit('clearLayerStatus', index === 1)
+        var isforecast = this.curIndex === 0
+        this.$emit('backtoDetail', isforecast)
       }
       this.backList = true
     },
     getCenterInfo(center, zoom) {
       return {center, zoom}
     },
-    addDiffProduct(config, index) {
-      if (!config.wait) {
-        this.diffIndex = index
-        this.$emit('addWpLayer', config)
-      } else {
-        this.diffIndex = -1
-      }
-    },
     dateChange(currentDate) {
       this.$emit('dateChange', currentDate)
+    },
+    jumpDay(step) {
+      if (this.disableNext && step > 0 || this.disablePre && step < 0) {
+
+        return
+      }
+      var date = new Date(this.currentDate)
+      date = this.getDayDate(date, step)
+      
+      var dateStr = dateUtil.formatDate(date)
+      this.$emit('dateChange', dateStr)
+    },
+    getDayDate(date, step) {
+      var day = date.getDate()
+      date.setDate(day + step)
+      this.checkDayEnable(date)
+
+      return date
+    },
+    checkDayEnable(date) {
+      var _date = new Date(dateUtil.formatDate(date))
+      var day = _date.getDate()
+      _date.setDate(day + 1)
+      this.disableNext = _date >= new Date(this.END_DATE)
+      
+      _date.setDate(day - 1)
+      this.disablePre = _date <= new Date(this.START_DATE)
+    },
+    changeDate(date) {
+      date = date > new Date() ? new Date() : date
+      var dateStr = dateUtil.formatDate(date)
+      this.$emit('dateChange', dateStr)
+    },
+    jumpPeriod(step) {
+      var date = new Date(this.currentDate)
+
+      date = this.getPeriodDate(date, step)
+      var dateStr = dateUtil.formatDate(date)
+
+      this.$emit('dateChange', dateStr)
+    },
+    getPeriodDate(date, step) {
+      var year = date.getFullYear()
+      var period = parseInt(dateUtil.dateToPeriod(date))
+      
+      period = step + period
+      
+      var _date = this.getDateByPeriod(year, period)
+      this.checkPeriodEnable(year, period)
+
+      return _date
+    },
+    checkPeriodEnable(year, period) {
+      var _period = period - 1 
+      var date = this.getDateByPeriod(year, _period)
+      this.disablePre = date <= new Date(this.START_DATE)
+
+      _period = period + 1
+      date = this.getDateByPeriod(year, _period)
+
+      this.disableNext = date >= new Date(this.END_DATE)
+    },
+    getDateByPeriod(year, period) {
+      if (period > 36) {
+        period = "01"
+        year = year + 1
+
+      } else if (period < 0) {
+        period = "36"
+        year = year - 1
+      }
+
+      var dateStr = year.toString() + period.toString()
+      var date = dateUtil.periodToDate(dateStr)
+
+      return date
     },
     changeOpacity(value) {
       this.$emit('opacityCtl', value)
     },
-    showChild(index) {
-
+    getCategory(item) {
+      this.dateUnit = item.date_tag   // tenday | day
+      this.$emit('switchLayer', item)
     },
-    mouseleaveMenu() {
-      this.parentIndex = -1
+    changeLoadOpacity(color) {
+      setTimeout(()=> {
+        var dom = document.getElementsByClassName('el-loading-mask')
+        elementUtil.setDomStyle(dom, 'backgroundColor', color)
+      })
+    },
+    toogleList(){
+      var menuContainer = document.getElementsByClassName('menu-container')[0]
+        var menuContainerHeight = menuContainer.clientHeight
+        var listChildContainerHeight = this.screenHeight - 100 - 574
+
+          if (listChildContainerHeight <= 0 ) {
+            this.showList = false
+          }else{
+            this.showList = true
+          } 
     }
   },
   directives: {
@@ -251,161 +378,180 @@ export default {
       }
     },
     currentDate(dateStr) {
-      this.dateStr = dateStr
+      if (dateStr === "") {
+        this.curDate = new Date()
+        
+      } else {
+        this.curDate = new Date(dateStr)
+        this.dateStr = dateStr
+      }
+    },
+    loading:{
+      handler: function (loading) {
+        if (loading && this.firstLoading) {
+          this.changeLoadOpacity("rgba(255,255,255,1)")
+        } else {
+          this.firstLoading = false
+          this.changeLoadOpacity("rgba(255,255,255,.9)")
+        }
+      },
+      immediate: true
+    },
+    showMe(change) {
+      if (change === true) {
+        this.toogleList()
+      }else{
+        this.showList = true
+      }
+    },
+    dateUnit(key) {
+      if (key === "tenday") {
+        var period = dateUtil.dateToPeriod(this.curDate)
+        var year = this.curDate.getFullYear()
+        this.checkPeriodEnable(year, period)
+
+      } else {
+        this.checkDayEnable(this.curDate)
+      }
     }
   },
   components: {
-    leftTab
+    leftTab,
+    detailList,
+    datePeriod
   }
 }
   
 </script>
 
-<style lang="less" scoped>
- @import '../../../assets/style/reset';
+<style 
+lang="less" scoped>
+ @import '../../../assets/style/common';
  .ml12 {
   margin-left: 12px;
  }
   .weather-list {
+    position:absolute;
+    top:0;
+    left:0;
     .wl-list {
+      .adv-border-bottom-radius;
       max-height: 585px;
       overflow-x: hidden;
-      background: #fff;
-      .mixin-border-radius-bottom();
+      background: @assistant-bg;
+      padding-bottom: 2px;
       .gradient,
       .gradient:hover {
-        .mixin-gradient-bg(#effdd7;#e3f8bc);
+        .adv-gradient(#effdd7;#e3f8bc);
       }
       li {
         position: relative;
-        clear: both;
-        padding: 0 16px;
+        box-sizing: border-box;
+        padding: 12px 16px 16px 72px;
         height: 116px;
-        border-right: 1px solid #d2d2d2;
         border-bottom: 1px solid #d2d2d2;
-        text-align: left;
+        &:last-child {
+          border-bottom: 1px solid #fff;
+        }
         &:hover {
           background: #eee;
         }
         span {
-          float: left;
+          position: absolute;
+          top: 24px;
+          left: 16px;
           width: 56px;
           height: 56px;
-          margin-top: 24px;
           border-radius: 50%;
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
         }
         .list-txt {
-          float: left;
           margin-left: 10px;
           h3 {
-              font-size: 14px;
-              line-height: 40px;
-              position: relative;
-              width: 250px;
-              height: 32px;
+              .adv-font-normal();
               margin-top: 6px;
+              line-height: 14px;
+              position: relative;
               color: #484848;
+          }
+          p {
+            .adv-text();
+            height: 37px;
+            margin-top: 5px;
+            margin-right: 10px;
+            line-height: 20px;
+            color: #989696;
+            overflow: hidden;
           }
           .tips {
                 position: absolute;
-                right: 0px;
+                right: 10px;
                 top: 0px;
-                font-size: 20px;
+                font-size: @font-super;
+                font-weight: @font-weight-normal;
                 color: #989898;
-                font-weight: normal;
-          }
-          p {
-            line-height: 20px;
-            font-size: 12px;
-            width: 250px;
-            color: #989696;
           }
         }
         .detail-btn {
+          .adv-btn-fixed-small();
+          .adv-common-border-radius();
           position: absolute;
           bottom: 10px;
           right: 18px;
-          font-size: 12px;
-          font-weight: normal;
           background: #fff;
+          font-weight: @font-weight-normal;
           color: #969696;
-          cursor: pointer;
-          .mixin-height(24px);
-          .mixin-width(68px);
-          .mixin-border(#969696;4px);
+          border: 1px solid #969696;
+          &:hover{
+            color: #6e9716;
+            border: 1px solid #6e9716;
+          }
         }
       }
     }
 
     .detail-container {
+      .adv-border-bottom-radius();
+      overflow: hidden;
       .detail-container-bg {
         padding: 0 14px;
         background: #9fd032;
       }
       .desc {
+        .adv-text-line-height-normal();
         color: #fff;
-        line-height: 22px;
         padding-bottom: 14px;
       }
       .tip-content {
-        font-size: 14px;
+        .adv-font-normal();
         position: relative;
-        left: -14px;
-        width: 343px;
         display: block;
         line-height: 42px;
         background: #f4fcec;
         padding-left: 15px;
+        font-weight: bolder;
+      }
+      .veiw-detail-text{
+          .adv-text();
+          line-height: 32px;
+          text-align: center;
+          font-weight: @font-weight-normal;
+          border-top: 1px solid #eee;
+          background: @assistant-bg;
+        }
+      .first-loading {
+        width: 358px;
+        height: 182px;
       }
       .weather-all-detail {
         width: 100%;
       }
-      .menu-container {
-        .menu-list {
-          overflow: hidden;
-          .main-li {
-            float: left;
-            width: 68px;
-            padding: 0 10px;
-            border-left: 1px solid #eee;
-            border-top: 1px solid #eee;
-            border-bottom: 1px solid #eee;
-            cursor: default;
-            .mixin-height(44px);
-            &:hover {
-              background: #f4fcec;
-            }
-            .sub-menu {
-              position: absolute;
-              width: 90px;
-              z-index: 10003;
-              background: #fff;
-              border-radius: 2px;
-              left: 0px;
-              .mixin-boxshadow();
-              li {
-                cursor: pointer;
-                text-align: center;
-                border-bottom: 1px solid #eee;
-                .mixin-height(36px);
-                &:hover {
-                  color: #739a6e;
-                  background: #f5f2f6;
-                }
-              }
-            }
-          }
-        }
-      }
         
       .detail-title {
-        font-size: 16px;
-        margin: 12px 0 4px;
-        font-weight: 700;
-        color: #fff;
+        .adv-title-list();
+        margin: 12px 0 0;
       }
       .current-positon-icon {
         display: inline-block;
@@ -413,6 +559,31 @@ export default {
         height: 24px;
         background: url(/static/assets/img/map/altitude-little.png) center center no-repeat;
         vertical-align: middle;
+      }
+      .weather-test-time {
+        .phase {
+          position: absolute;
+          padding: 8px 6px;
+          background: #fff;
+          border-radius: 2px;
+          cursor: pointer;
+        }
+        .pre-period {
+          margin: 14px 0 0 -28px;
+        }
+        .next-period {
+          margin: 14px 119px;
+        }
+        .pre-day {
+          margin: 14px 0 0 -47px;
+        }
+        .next-day {
+          margin: 14px 100px;
+        }
+        .disable-phase {
+          cursor: not-allowed;
+          color: #a3a3a3;
+        }
       }
     }
   }

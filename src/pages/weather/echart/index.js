@@ -3,6 +3,500 @@ import {
 } from 'plugins/utils.js'
 
 export default {
+  getRainChart(xData,yData, name, dataZoom) {
+    var  option = {
+      title: {
+        text: name,
+        left: 'center',
+        top: 5
+      },
+      tooltip : {
+        trigger: 'axis',
+        formatter: function (params) {
+          var a = params[0].seriesName
+          var b = params[0].axisValue
+          var c = (params[0].value || typeof params[0].value === "number") ? Number(params[0].value).toFixed(0) : "-"
+          
+          return `${b}<br/>${a} : ${c} mm`
+        }
+      },
+      grid: {
+        top: 20,
+        bottom: 60,
+        left: 40,
+        right: 2
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          start: dataZoom && dataZoom.start ? dataZoom.start : 80,
+          end: dataZoom && dataZoom.end ? dataZoom.end : 100
+        }
+      ],
+      xAxis : [
+        {
+          type : 'category',
+          boundaryGap : true,
+          data : xData
+        }
+      ],
+      yAxis : [
+        {
+          type : 'value',
+          splitLine: {
+            show: false
+          }
+        }
+      ],
+      series : [
+        {
+          name: name,
+          type: 'line',
+          stack: '总量',
+          smooth: true,
+          symbol: 'none',
+          lineStyle: {
+            normal: {
+              width: 1
+            }
+        },
+        markArea: {
+          silent: true,
+          itemStyle: {
+            normal: {
+              color: '#eef6fa',
+              opacity: 0.8
+            }
+          },
+        },
+        itemStyle: {
+          normal: {
+            color: 'rgb(0, 80, 251)',
+            width: 100
+          }
+        },
+        areaStyle: {
+          normal: {
+            color: new echarts.graphic.LinearGradient(0, 0.5, 0, 1, [{
+              offset: 0,
+              color: '#a1dffd',
+            }, {
+              offset: 1,
+              color: '#57c1f4',
+            }])
+          }
+        },
+          data: yData
+        },
+      ]
+    }; 
+    return option;
+  },
+  getTemAnChart(xData,yData, name, dataZoom) {
+    var  option = {
+      color: ['#739d0c'],
+      title: {
+        text: name,
+        left: 'center',
+        top: 5
+      },
+      tooltip : {
+        trigger: 'axis',
+        formatter: function (params) {
+          var a = params[0].seriesName
+          var b = params[0].axisValue
+          var c = (params[0].value || typeof params[0].value === "number") ? Number(params[0].value).toFixed(0) : "-"
+          
+          return `${b}<br/>${a} : ${c} ℃`
+        }
+      },
+      grid: {
+        top: 20,
+        bottom: 60,
+        left: 40,
+        right: 0
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          start: dataZoom && dataZoom.start ? dataZoom.start : 80,
+          end: dataZoom && dataZoom.end ? dataZoom.end : 100
+        }
+      ],
+      xAxis : [
+        {
+          type : 'category',
+          boundaryGap : true,
+          data : xData
+        }
+      ],
+      yAxis : [
+        {
+          type : 'value',
+          splitLine: {
+            show: false
+          }
+        }
+      ],
+      visualMap: {
+        show: false,
+        pieces: [{
+            gt: -20,
+            lte: 0,
+            color: '#2f0ee1'
+        },{
+            gt: 0,
+            lte: 20,
+            color: '#f60000'
+        }]
+      },
+      series: [
+        {
+          name: name,
+          type:'line',
+          stack: '总量',
+          smooth: true,
+          symbol: 'none',
+          lineStyle: {
+            normal: {
+              width: 1
+            }
+          },
+          data: yData
+        }
+      ]
+    };
+    return option
+  },
+  getTemChart(xData,yData, name, dataZoom) {
+    var  option = {
+      title: {
+        text: name,
+        left: 'center',
+        top: 5
+      },
+      tooltip : {
+        trigger: 'axis',
+        formatter: function (params) {
+          var a = params[0].seriesName
+          var b = params[0].axisValue
+          var c = (params[0].value || typeof params[0].value === "number") ? Number(params[0].value).toFixed(0) : "-"
+          
+          return `${b}<br/>${a} : ${c} ℃`
+        }
+      },
+      grid: {
+        top: 20,
+        bottom: 60,
+        left: 40,
+        right: 2
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          start: dataZoom && dataZoom.start ? dataZoom.start : 80,
+          end: dataZoom && dataZoom.end ? dataZoom.end : 100
+        }
+      ],
+      xAxis : [
+        {
+          type : 'category',
+          boundaryGap : true,
+          data : xData
+        }
+      ],
+      yAxis : [
+        {
+          type : 'value',
+          splitLine: {
+            show: false
+          }
+        }
+      ],
+      series : [
+        {
+          name: name,
+          type: 'line',
+          stack: '总量',
+          smooth: true,
+          symbol: 'none',
+          lineStyle: {
+            normal: {
+              width: 1
+            }
+          },
+          data: yData
+        },
+      ]
+    };
+    return option;
+  },
+  getRainAnpChart(xData,yData, name, dataZoom) {
+    var  option = {
+      title: {
+        text: name,
+        left: 'center',
+        top: 5
+      },
+      tooltip : {
+        trigger: 'axis',
+        formatter: function (params) {
+          var a = params[0].seriesName
+          var b = params[0].axisValue
+          var c = (params[0].value || typeof params[0].value === "number") ? Number(params[0].value * 100).toFixed(0) : "-"
+          var c = c + " %"
+          return `${b}<br/>${a} : ${c}`
+        }
+      },
+      grid: {
+        top: 20,
+        bottom: 60,
+        left: 40,
+        right: 2
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          start: dataZoom && dataZoom.start ? dataZoom.start : 80,
+          end: dataZoom && dataZoom.end ? dataZoom.end : 100
+        }
+      ],
+      xAxis : [
+        {
+          type : 'category',
+          boundaryGap : false,
+          data : xData
+        }
+      ],
+      yAxis : [
+        {
+          type : 'value',
+          boundaryGap: [0, '100%'],
+          splitLine: {
+            show: false
+          }
+        }
+      ],
+      visualMap: {
+        show: false,
+        pieces: [{
+            gt: -200,
+            lte: 0,
+            color: '#f60000'
+        },{
+            gt: 0,
+            lte: 500,
+            color: '#2f0ee1'
+        }]
+      },
+      series : [
+        {
+          name: name,
+          type: 'line',
+          stack: '总量',
+          smooth: true,
+          symbol: 'none',
+          sampling: 'average',
+          lineStyle: {
+            normal: {
+              width: 1
+            }
+        },
+        markArea: {
+          itemStyle: {
+            normal: {
+              color: '#000',
+            }
+          },
+        },
+          data: yData
+        },
+      ]
+    };
+    return option
+  },
+  getRainAnChart(xData,yData, name, dataZoom) {
+    var  option = {
+      title: {
+        text: name,
+        left: 'center',
+        top: 5
+      },
+      tooltip : {
+        trigger: 'axis',
+        formatter: function (params) {
+          var a = params[0].seriesName
+          var b = params[0].axisValue
+          var c = (params[0].value || typeof params[0].value === "number") ? Number(params[0].value).toFixed(0) : "-"
+
+          return `${b}<br/>${a} : ${c} mm`
+        }
+      },
+      grid: {
+        top: 20,
+        bottom: 60,
+        left: 40,
+        right: 2
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          start: dataZoom && dataZoom.start ? dataZoom.start : 80,
+          end: dataZoom && dataZoom.end ? dataZoom.end : 100
+        }
+      ],
+      xAxis : [
+        {
+          type : 'category',
+          boundaryGap : false,
+          data : xData
+        }
+      ],
+      yAxis : [
+        {
+          type : 'value',
+          boundaryGap: [0, '100%'],
+          splitLine: {
+            show: false
+          }
+        }
+      ],
+      visualMap: {
+        show: false,
+        pieces: [{
+            gt: -200,
+            lte: 0,
+            color: '#f60000'
+        },{
+            gt: 0,
+            lte: 200,
+            color: '#2f0ee1'
+        }]
+      },
+      series : [
+        {
+          name: name,
+          type: 'line',
+          stack: '总量',
+          smooth: true,
+          symbol: 'none',
+          sampling: 'average',
+          lineStyle: {
+            normal: {
+              width: 1
+            }
+        },
+        markArea: {
+          itemStyle: {
+            normal: {
+              color: '#000',
+            }
+          },
+        },
+          data: yData
+        },
+      ]
+    };
+    return option
+  },
+  getTemAccChart(xData, yData, name, dataZoom) {
+    var  option = {
+      title: {
+        text: name,
+        left: 'center',
+        top: 5
+      },
+      tooltip : {
+        trigger: 'axis',
+        formatter: function (params) {
+          var a = params[0].seriesName
+          var b = params[0].axisValue
+          var c = (params[0].value || typeof params[0].value === "number") ? Number(params[0].value).toFixed(0) : "-"
+          
+          return `${b}<br/>${a} : ${c} ℃`
+        }
+      },
+      grid: {
+        top: 20,
+        bottom: 60,
+        left: 40,
+        right: 20
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          start: dataZoom && dataZoom.start ? dataZoom.start : 80,
+          end: dataZoom && dataZoom.end ? dataZoom.end : 100
+        }
+      ],
+      xAxis : [
+        {
+          type : 'category',
+          boundaryGap : false,
+          data : xData
+        }
+      ],
+      yAxis : [
+        {
+          type : 'value',
+          splitLine: {
+            show: false
+          }
+        }
+      ],
+      series : [
+        {
+          animation: false,
+          name: name,
+          type: 'line',
+          stack: '总量',
+          smooth: true,
+          symbol: 'none',
+          sampling: 'average',
+          lineStyle: {
+            normal: {
+              width: 1
+            }
+          },
+          markArea: {
+            itemStyle: {
+              normal: {
+                color: '#000',
+              }
+            },
+          },
+          itemStyle: {
+            normal: {
+              color: '#d6575d',
+            }
+          },
+          areaStyle: {
+            normal: {
+              color: new echarts.graphic.LinearGradient(0, 0.5, 0, 1, [{
+                offset: 0,
+                color: '#e55100',
+              }, {
+                offset: 1,
+                color: '#fada8d',
+              }])
+            }
+          },
+          data: yData
+        },
+      ]
+    };
+    return option
+  },
+  getNumberByColor(color) {
+    var num = parseInt(color, 16)
+    
+    return num
+  },
+  getColorByNumber(num) {
+    var color = '0x0'+num.toString(16)
+
+    return color
+  },
   setChartConfig(index, config) {
     config.index = index
     switch (index) {
@@ -88,6 +582,7 @@ export default {
     }
   },
   getOption: function(series, config, xdata) {
+    // diwen
     var formatter = ''
     if (config.index == 'gst') {
       formatter = '{b0}<br/>{a0} : {c0} <br/>{a1} : {c1} <br/>{a2} : {c2}'
@@ -122,7 +617,7 @@ export default {
         data: xdata
       },
       dataZoom: [{
-        type: 'inside',
+        type: 'slider',
         start: 85,
         end: 100
       }, {
@@ -249,6 +744,7 @@ export default {
         else
           _ydata.push("-");
       }
+      // qiwen
       var series = [{
         name: config.title,
         type: 'line',
@@ -385,5 +881,6 @@ export default {
     }
     return yearColor
     
-  }
+  },
+
 }

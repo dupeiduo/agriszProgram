@@ -1,6 +1,8 @@
 <template>
-  <div class="market">
-    <div class="menu">
+  <div class="market" 
+       :class="animationClassName"
+       :style="{'padding-left': menuWidth + 2 + 'px','backgroundColor': cropBtns.length > 0 ?'#f0f0f0': '#fff'}">
+    <div class="menu pr">
       <ul class="market-list">
         <li v-for="(menu, index) in menus" 
           :class="menuIndex === index ? 'active': ''" 
@@ -10,26 +12,25 @@
       <div v-if="menuIndex === 0 && !showPriceMain" class="bread-crumb pr" style="background: #fff">
         <span class="bread-main" @click="showPriceMain=true">全国{{mainBread}}</span>
         <span class="bread-sub" :style="{color: '#10ad33'}">&nbsp;&nbsp;&gt;&nbsp;&nbsp;{{subBread}}</span>
-        <i class="go-back" @click="showPriceMain=true">返回</i>
+        <i class="go-back" @click="showPriceMain=true" :style="{left: screenWidth - 160 - menuWidth + 'px'}">返回</i>
       </div>
       <div v-if="menuIndex === 1" class="bread-crumb" style="background: #fff">
         <span class="bread-main-market" @click="showPriceMain=true">市场信息</span>&nbsp;&nbsp;&gt;&nbsp;&nbsp;
         <span class="bread-sub" :class="showNewsMain ? '' : 'bread-main'" :style="{color: !showNewsMain ? '#9b9b9b': '#10ad33'}" @click="showNewsMain=true">资讯</span>
         <span v-if="!showNewsMain" :style="{color: '#10ad33'}" class="bread-third">&nbsp;&nbsp;&gt;&nbsp;&nbsp;正文</span>
 
-        <i class="go-back" @click="newsBack">返回</i>
+        <i class="go-back" @click="newsBack" :style="{left: screenWidth - 160 - menuWidth + 'px'}">返回</i>
       </div>
-      <hr class="hr-bold pf" v-if="(menuIndex === 0 && !showPriceMain) || menuIndex === 1" 
-      :style="{'top':'149px','z-index':4}">
+      <hr class="hr-bold pf" v-if="(menuIndex === 0 && !showPriceMain) || menuIndex === 1" :style="{'top':'149px','z-index':4}">
     </div>
 
-    <div v-if="menuIndex === 0" class="price">
+    <div v-if="menuIndex === 0 " class="price">
       <div v-if="showPriceMain" class="price-main">
         <div v-if="cropIndex >= 0">
           <div class="select-bg">
-             <div class="crops clear" v-loading.lock="cropLoading">
-              <p class="fl">选择农产品:</p>
-              <my-button 
+            <div class="crops clear" v-loading.lock="cropLoading">
+               <p class="fl">选择农产品:</p>
+               <my-button 
                 :buttons="cropBtns" 
                 @btnClick="cropClick"
                 :curIndex="cropIndex"
@@ -49,59 +50,83 @@
             </div>
           </div>
           <div class="markets"  v-loading.lock="marketLoading">
-            <market-table 
-              :tableData="tableData" 
-              :changeEchart="showPriceDetail"
-              v-loading.lock="tbLoading"
-              :showNoData="showNoData"
-              class="mt15">
-            </market-table>
-            <el-pagination
-               small
-               class="market-pager"
-               layout="prev, pager, next"
-               :current-page="pageIndex"
-               :page-size="pageCount"
-               :page-count="totalPage"
-               @current-change ="changePage">
-            </el-pagination>
-              <div class="price-line pr">
+            <div class="market-tab-list pr" v-loading.lock="tbLoading">
+              <market-table 
+                v-if="tableData.length > 0"
+                :tableData="tableData" 
+                :changeEchart="showPriceDetail"
+                :showNoData="showNoData"
+                class="mt15">
+              </market-table>
+              <el-pagination
+                 v-if="tableData.length > 0"
+                 small
+                 class="market-pager"
+                 layout="prev, pager, next"
+                 :current-page="pageIndex"
+                 :page-size="pageCount"
+                 :page-count="totalPage"
+                 @current-change ="changePage">
+              </el-pagination>
+              <expect-data 
+                 v-show="(tableData.length == 0) && showNoData && !marketLoading" 
+                 :showSectionData="true">
+              </expect-data>
+            </div>
+
+            <div class="price-line pr">
               <p class="crop-title">全国{{cropBtns[cropIndex].name}}价格走势</p>
-              <p class="market-legend ps"><i class="iconfont icon-tuli"></i>近七日均价</p>
+              <p class="market-legend ps" v-show="chartData"><i class="iconfont icon-tuli"></i>近七日均价</p>
               <div class="chart-none-data" id="chart-none-data"></div>
-              <my-echart 
+              <my-echart
+                v-if="chartData" 
                 class="crop-chart" 
                 :options="chartData" 
-                :style="{'width': eWidth}"
+                :style="{'width': screenWidth - 199 - menuWidth + 'px'}"
                 v-loading.lock="lineLoading"
                 ></my-echart>
+                <expect-data 
+                    v-else-if="!lineLoading"
+                    class="crop-chart" 
+                    :showSectionData="true" 
+                    :style="{'width': screenWidth - 199 - menuWidth + 'px'}"></expect-data>
             </div>
 
             <div class="price-bar pr">
               <p class="crop-title">全国{{cropBtns[cropIndex].name}}价格分布</p>
-              <p class="market-legend ps"><i class="iconfont icon-block"></i>近七日均价</p>
+              <p class="market-legend ps" v-if="barchartData"><i class="iconfont icon-block"></i>近七日均价</p>
               <div class="chart-none-data" id="chart-none-data"></div>
-              <my-echart 
+              <my-echart
+                v-if="barchartData" 
                 class="price-chart" 
                 :options="barchartData" 
-                :style="{'width': eWidth}"
+                :style="{'width': screenWidth - 199 - menuWidth + 'px'}"
                 v-loading.lock="barLoading"
                 ></my-echart>
+                <expect-data 
+                    v-else-if="!barLoading"
+                    class="price-chart" 
+                    :showSectionData="true" 
+                    :style="{'width': screenWidth - 199 - menuWidth + 'px'}"></expect-data>
             </div>
           </div>
         </div>
-          
+        <expect-data 
+          v-else-if="!cropLoading && showNoMarketData" 
+          :showPageData="true"
+          ></expect-data>
       </div>
 
-      <div v-else class="price-detail">
+      <div v-else class="price-detail pr" v-loading.lock="popLoading">
         <pop-echart
+          v-if="detChart"
           :eTableData="popTbData"
           :options="detChart"
           :baroptions="bardetChart"
           :exportExcel="exportExcel"
-          v-loading.lock="popLoading"
           >  
         </pop-echart>
+        <expect-data v-else-if="!popLoading" :showSectionData="true"></expect-data>
       </div>
     </div>
 
@@ -117,7 +142,8 @@
             </el-breadcrumb>
           </p>
           <hr class="hr-bold">
-          <report-list
+          <report-list 
+            v-if ="reportContent.length > 0"
             :reportContent="reportContent" 
           ></report-list>
         </div>
@@ -130,10 +156,17 @@
           <hr class="hr-bold">
           <market-news v-if="newsList.length > 0"
             :newsList="newsList" 
+            v-loading.lock="newsLoading"
             :newsContent="newsContent" 
             @scrollToBottom="scrollToBottom">
           </market-news>
-          <h3 v-else-if="newsList.length == 0 && popLoading" style="text-align:center">－暂无数据－</h3>
+          <expect-data
+              class="market-news pr" 
+              v-else-if="newsList.length == 0 && !newsLoading" 
+              :showPageData="true"
+              :left="false"
+              :top="false"
+              ></expect-data>
         </div>
       </div>
 
@@ -158,11 +191,12 @@ import reportList from 'components/reportList/'
 import chart from './echart/index.js'
 import configData from '../../config/data.js'
 import footerLite from 'components/footerlite/'
+import {mapGetters} from 'vuex'
+import expectData from 'components/expectData/'
 
   export default {
     data() {
       return {
-        eWidth: '',
         dataType: '',
 
         menus: ["市场行情", "资讯简报"],
@@ -174,7 +208,7 @@ import footerLite from 'components/footerlite/'
 
         cropBtns: [],
         cropIndex: -1,
-        cropLoading: false,
+        cropLoading: true,
 
         areaBtns: [],
         areaIndex: -1,
@@ -219,13 +253,24 @@ import footerLite from 'components/footerlite/'
         popNewsData: [],
 
         showNoData: false,
+        animationClassName: '',
+
+        showSectionData: false,
+        showPageData: false,
+        showNoMarketData: false,
+
+        newsLoading: false,
+        reportLoading: false
       }
     },
+    computed: {
+     ...mapGetters({
+        menuWidth: 'menuWidth',
+        screenWidth: 'screenWidth',
+        getScreenHeight: 'getScreenHeight'
+      })},
     mounted() {
       this.getCrops();
-      var eWidth = document.documentElement.clientWidth || document.body.clientWidth;
-      this.eWidth = (eWidth - 196) + 'px';
-
       this.dataType = configData.market.dateType.value;
     },
     methods: {
@@ -251,9 +296,16 @@ import footerLite from 'components/footerlite/'
         this.areaIndex = index
       },
       getCrops() {
+        this.cropLoading = true
         request.cropList().then((data) => {
           this.cropBtns = data.data.data;
-          this.cropIndex = 0
+          if(this.cropBtns.length > 0){
+            this.cropIndex = 0
+            this.cropLoading = false
+          }else {
+            this.cropLoading = false
+            this.showNoMarketData = true
+          }
         })
       },
       getAreas(index) {
@@ -354,6 +406,7 @@ import footerLite from 'components/footerlite/'
         }
         var cropName = this.cropBtns[this.cropIndex].name;
         this.popLoading = true;
+        
         request.cropSingleLine(options).then((requestData) => {
           this.popLoading = false;
           if (requestData.status != 200 || requestData.data.status != 0) {
@@ -398,6 +451,8 @@ import footerLite from 'components/footerlite/'
           params = new FormData();
         params.append('perPage', this.pageSize);
         params.append('curPage', pageIndex);
+
+        this.newsLoading = true
         request.marketNews(params).then((newsData) => {
           this.total = newsData.data.total;
           var newsData = formated(newsData.data);
@@ -408,6 +463,8 @@ import footerLite from 'components/footerlite/'
             this.newsContext = this.newsContext.concat(newsData.content)
             this.newsList = this.newsList.concat(newsData.data)
           }
+
+          this.newsLoading = false
         })
       },
       scrollToBottom() {
@@ -420,9 +477,13 @@ import footerLite from 'components/footerlite/'
       },
     },
     watch: {
+      menuWidth(width){
+        if(width){
+          this.animationClassName = 'menu-left-animation'
+        }
+      },
       cropIndex(index) {
         this.mainBread = this.cropBtns[index].name + '价格行情'
-
         this.getAreas(index);
         this.getMarkets();
         this.initLineChart(index)
@@ -450,6 +511,12 @@ import footerLite from 'components/footerlite/'
           this.$router.push('/market?target=news')
         } else if (this.menuIndex === 1 ) {
           this.$router.push('/market?target=detail')
+        }
+      },
+      screenWidth(change){
+        if (change) {
+          this.initLineChart(this.cropIndex)
+          this.initBarChart(this.cropIndex)
         }
       },
       $route:{
@@ -490,18 +557,20 @@ import footerLite from 'components/footerlite/'
       reportList,
       marketNews,
       marketTable,
-      popNews
+      popNews,
+      expectData
     }
   }
 </script>
 <style 
 lang="less" scoped>
 @import '../../assets/style/reset';
+@import '../../assets/style/common';
 .market {
     height: auto;
     padding-top: @top;
-    background: #f0f0f0;
   .menu {
+    z-index: 16500;
     .market-list {
       z-index: 4;
         position: fixed;
@@ -514,7 +583,7 @@ lang="less" scoped>
           background: #9ed132;
         }
         li {
-          font-size: 14px;
+          .adv-font-normal();
           float: left;
           padding: 20px 22px;
           cursor: pointer;
@@ -551,29 +620,32 @@ lang="less" scoped>
         cursor: pointer;
       }
       .go-back {
-        color: #fff;
+        .adv-btn();
+        .adv-btn-primary();
         position: absolute;
         top: 10px;
-        right: 242px;
-        background: #92c42c;
-        padding: 3px 10px;
-        border-radius: 2px;
         z-index: 10;
-        cursor: pointer;
+        padding: 3px 10px;
+        line-height: 17px;
+        color: @btn-color;
+        border-radius: 2px;
+        &:hover {
+          background: #9bca3b;
+        }
       }
     }
   }
 
   .price {
     .price-main {
-      .areas {
+      /*.areas {
         height: 144px;
-      }
+      }*/
     }
     padding: 109px 80px 0;
     .select-bg {
-      border-radius: 4px;
-      background: #fff;
+      .adv-common-border-radius();
+      background: @assistant-bg;
       overflow: hidden;
       div {
         margin: 10px 14px 0;
@@ -588,41 +660,46 @@ lang="less" scoped>
     }
     .price-line {
       .crop-chart,.price-chart {
+        .adv-common-border-radius();
         position: relative;
         width: 600px;
         margin: 0 18px;
         height: 524px;
         padding-bottom: 10px;
-        .mixin-border(#dcdcdc;4px);
+        border: 1px solid #dcdcdc;
       }
     }
 
     .price-bar {
       .price-chart {
+        .adv-common-border-radius();
         position: relative;
         width: 600px;
         margin: 0 18px;
         height: 395px;
-        .mixin-border(#dcdcdc;4px);
+        border: 1px solid #dcdcdc;
       }
     }
   }
   .news {
-    background: #fff;
+    background: @assistant-bg;
     .news-main {
       position: relative;
       top: 118px;
-      width: 742px;
+      padding: 0 80px;
       margin: 0 auto 30px;
+      .market-news {
+        min-height: 500px;
+      }
       .market-content-report {
         padding-bottom: 20px;
       }
       .market-content-p {
-          font-size: 14px;
+          .adv-font-normal();
           position: relative;
           padding-left: 12px;
           color: #125f6d;
-          .mixin-height(30px);
+          .adv-height(30px);
             .market-report-block {
               top: 0;
               left: 0;
@@ -631,7 +708,7 @@ lang="less" scoped>
               background: #9dd2da;
           }
           .report-more {
-            font-size: 14px;
+              .adv-font-normal();
               right: 0;
               top: 10px;
               cursor: pointer;
@@ -657,7 +734,10 @@ lang="less" scoped>
     margin: 8px 0 36px;
     padding-bottom: 20px;
     background: #fff;
-    border-radius: 4px;
+    .adv-common-border-radius();
+    .market-tab-list {
+      min-height: 100px;
+    }
   }
   .market-pager {
     width: 100%;
@@ -666,27 +746,19 @@ lang="less" scoped>
     text-align: center;
   }
   .crop-title {
+    .adv-title-after-vertical-line-normal();
+    .adv-font-big();
     line-height: 56px;
-    font-size: 16px;
     padding-left: 26px;
-    &:before {
-      position: absolute;
-      left: 14px;
-      top: 14px;
-      width: 5px;
-      height: 26px;
-      content: "";
-      display: inline-block;
-      background: #9ed132;
-    }
+    font-weight: normal;
   }
   .market-legend {
+    .adv-font-small();
     z-index: 3;
-    font-size: 12px;
     top: 77px;
     right: 42px;
     i {
-      font-size: 12px;
+      .adv-font-small();
       margin-right: 6px;
       color: #6688da;
     }
@@ -695,5 +767,9 @@ lang="less" scoped>
 .hr-bold {
   width: 100%;
   border: 1px solid #e5e5e5;
+}
+.price-detail {
+  width: 100%;
+  height: 600px;
 }
 </style>

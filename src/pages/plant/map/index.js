@@ -24,9 +24,9 @@ export default {
     
     return layer
   },
-  getSource(lonlat) {
+  getSource(coordinate) {
     var feature = new ol.Feature({
-      geometry: new ol.geom.Point(ol.proj.transform(lonlat, 'EPSG:4326', 'EPSG:3857'))
+      geometry: new ol.geom.Point(coordinate)
     });
 
 
@@ -48,7 +48,7 @@ export default {
     
     _sld = '<StyledLayerDescriptor xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd">' +
             '<NamedLayer>' +
-            '<Name>map:' + layerName + '</Name>' +
+            '<Name>' + layerName + '</Name>' +
             '<UserStyle>' +
             '<Title>SLD Cook Book: Discrete colors</Title>' +
             '<FeatureTypeStyle>' +
@@ -86,4 +86,50 @@ export default {
     }
     return lon +'  '+ lat
   },
+  getClipFeature(geom) {
+    var gsForamt = new ol.format.GeoJSON();
+    var features = [{'type': 'Feature', 'geometry': geom}];
+
+    var geojsonObject = {
+      'type': 'FeatureCollection',
+      'crs': {
+          'type': 'name',
+          'properties': {
+              'name': 'EPSG:3857'
+          }
+      },
+      'features': features
+    };
+
+    var fs = gsForamt.readFeatures(geojsonObject);
+    return fs;
+  },
+  getClipStyle() {
+    var style = new ol.style.Style({
+        stroke: new ol.style.Stroke({
+            color: 'rgba(255, 0, 0, 0)',
+            width: 1
+        }),
+        fill: new ol.style.Fill({
+            color: 'rgba(255, 0, 0, 0)'
+        })
+    })
+    return style;
+  },
+  clipLayer(curlayer, features) {
+    curlayer.on('precompose', (event)=> {
+        var ctx = event.context;
+        var vecCtx = event.vectorContext;
+        ctx.save();
+        var len = features.length;
+        for (var i = 0; i < len; i++) {
+            vecCtx.drawFeature(features[i], this.getClipStyle());
+        }
+        ctx.clip();
+    });
+    curlayer.on('postcompose', function(event) {
+        var ctx = event.context;
+        ctx.restore();
+    });
+  }
 }

@@ -1,9 +1,13 @@
 <template>
-  <div class="report clear">
+  <div class="report clear" 
+      :style="{width: screenWidth - menuWidth + 'px',left: menuWidth + 'px'}"
+      :class="animationClassName"
+      >
     <v-leftList
       :leftList="leftList" 
       :loading="leftLoading"
-      @changeTopic="changeState"></v-leftList>
+      @changeTopic="changeState">
+    </v-leftList>
     <div class="right-container">
       <div class="reports">
         <div class="style-ctl" :class="className">
@@ -22,18 +26,18 @@
             :reportContent="reportContent" 
             @scrollToBottom="scrollToBottom"
             :styleCtl="styleCtl"
-            :clientH="clientH + 20"
+            :clientH="getScreenHeight - 135"
             :noMore="noMore"
-            class="report-bottom"
             >
             </reportList>
-        <v-list v-else
-            :reportObject="reportVContent" 
+        <v-list 
+            v-else
+            :loading="listLoading"
             @scrollToBottom="scrollToBottom"
+            :reportObject="reportVContent" 
             :styleCtl="styleCtl"
-            :clientH="clientH + 30"
+            :clientH="getScreenHeight - 130"
             :noMore="noMore"
-            class="report-bottom"
         ></v-list>
       </div>
     </div> 
@@ -46,6 +50,7 @@
   import format from 'api/model.js';
   import reportList from 'components/reportList/';
   import vList from 'pages/report/vList/';
+  import {mapGetters} from 'vuex'
   export default {
     data() {
         return {
@@ -61,15 +66,30 @@
           styleCtl:'vertical',
           clientH: -1,
           noMore: false,
-          className: ''
+          className: '',
+          clientW: '',
+          animationClassName: '',
+          listLoading: true
         }
       },
+      computed: {
+      ...mapGetters({
+        menuWidth: 'menuWidth',
+        screenWidth: 'screenWidth',
+        getScreenHeight: 'getScreenHeight'
+      })},
       mounted() {
         this.clientH = document.documentElement.clientHeight - 153 || document.body.clientHeight - 153;
+        this.clientW = document.documentElement.clientWidth || document.body.clientclientWidth;
         var formatedType = format.formatRepType
         this.leftLoading = true
-        request.reportType().then((requestData)=> {
-          this.leftList = formatedType(requestData.data);
+        request.reportType().then((response)=> {
+          if (response && response.status === 200 && response.data.status === 200) {
+            this.leftList = formatedType(response.data.data);
+            
+          } else {
+            // 无报告专题数据
+          }
           this.leftLoading = false
         })
       },
@@ -87,23 +107,33 @@
           params.append('curPage', curPage);
           params.append('perPage', perPage);
           params.append('topicId', topicId);
-          request.reportList(params).then((requestData) => {
-            this.total = requestData.data.total;
-            if (this.styleCtl === '') {
-              if (curPage == 1) {
-                this.reportContent = format.formatReportList(requestData.data.data);
+
+          this.listLoading = true
+          
+          request.reportList(params).then((response) => {
+            if (response && response.status === 200 && response.data.status === 200) {
+              
+              this.total = response.data.total;
+              if (this.styleCtl === '') {
+                if (curPage == 1) {
+                  this.reportContent = format.formatReportList(response.data.data);
+                } else {
+                  this.reportContent = this.reportContent.concat(format.formatReportList(response.data.data));
+                }
               } else {
-                this.reportContent = this.reportContent.concat(format.formatReportList(requestData.data.data));
+                if (curPage == 1) {
+                  this.reportData = format.formatReportVList(response.data.data);
+                  this.reportVContent = this.reportData.datastore
+                } else {
+                  this.reportData = format.formatReportVList(response.data.data, this.reportData);
+                  this.reportVContent = this.reportData.datastore
+                }
               }
+              this.listLoading = false
             } else {
-              if (curPage == 1) {
-                this.reportData = format.formatReportVList(requestData.data.data);
-                this.reportVContent = this.reportData.datastore
-              } else {
-                this.reportData = format.formatReportVList(requestData.data.data, this.reportData);
-                this.reportVContent = this.reportData.datastore
-              }
-            }
+              this.listLoading = false
+            } 
+              
           })
         },
         scrollToBottom(toBottom, scrollTop) {
@@ -123,6 +153,11 @@
         }
       },
       watch: {
+        menuWidth(width){
+          if(width){
+            this.animationClassName = 'menu-left-animation'
+          }
+       },
         styleCtl() {
           this.curPage = 1
           this.getReportList(this.curPage, this.perPage, this.topicId)
@@ -139,7 +174,7 @@
     lang="less"
     rel="stylesheet/less"
     scoped>
-    @import '../../assets/style/reset';
+    @import '../../assets/style/common';
     .report {
       position: relative;
     }
@@ -147,7 +182,7 @@
       margin-left: 176px;
       .reports {
         position: relative;
-        top: @top;
+        top: @header-height - 1;
         background: #f0f0f0;
       }
     }
@@ -158,8 +193,9 @@
         position: relative;
         margin: 0 auto;
         padding: 0 14px;
-        background: #fff;
-        .mixin-height(54px);
+        background: @assistant-bg;
+        z-index: 2;
+        .adv-height(54px);
           .right-svg {
             position: absolute;
             right: 38px;
@@ -169,7 +205,7 @@
                   text-decoration: none;
               }
               span {
-                font-size: 16px;
+                .adv-font-big();
                 margin-left: 15px;
                 cursor: default;
                 color: #90a2a9;
@@ -180,24 +216,5 @@
                 }
               }
           }
-       @media screen and ( min-width: 1440px) {
-        width: 1088px;
-       }
-      @media screen and ( max-width: 1062px) {
-        width: 632px;
-      }
-      @media screen and ( max-width: 840px) {
-         width: 615px;
-      }
-      @media screen and ( max-width: 820px) {
-         width: 590px;
-      }
      }
-    @media screen and ( max-width: 1256px) {
-      .right-container {
-        .report-list {
-            width: 858px;
-        }
-      }
-    }
 </style>

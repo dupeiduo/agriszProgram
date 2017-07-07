@@ -163,7 +163,7 @@
     </div>
     <div id="popup" title="土地确权信息"></div>
     <pop-message :popTitle="popTitle" ref="popMessage"></pop-message>
-    <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi>
+    <!-- <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi> -->
   </div>
 </template>
 

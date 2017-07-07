@@ -1,5 +1,5 @@
 <template>
-  <div class="market-table-wrap">
+  <div class="market-table-wrap pr">
   	<table class="market-table market-change">
   		<tbody>
   			<tr v-for="(item,index) in tableData" @click="changeEchart(index)">
@@ -7,15 +7,16 @@
   					<p class="market-big-title">{{item.market_name}}</p>
   				</td>
   				<td width="15%">
-  					<h3 class="font14">{{item.farm_product_name}}</h3>
+  					<h3 class="market-table-crop">{{item.farm_product_name}}</h3>
   				</td>
   				<td width="25%">
   					<h3 class="market-table-price">最新价格<i><b>{{item.price}}</b>元/kg</i></h3>
   				</td>
   				<td width="40%" class="market-table-compare">
-  					<h3>相比于{{item.rateFlag}}
+  					<h3>
+              <span class="market-table-compare-content">相比于{{item.rateFlag}}</span>
   						<span class="market-compare">
-  							<i :class="item.color" class="font24">{{item.delta}}</i>
+  							<i :class="item.color" style="font-size:24px">{{item.delta}}</i>
   							<i class="rate-unit" :class="item.color">元/kg</i>
   							<span id="priceIcon" class="iconfont" :class="item.image"></span>
   							<span class="change-percent" :class="item.color">{{item.desc}}</span>
@@ -28,11 +29,11 @@
 			</tr>
 		</tbody>
 	</table>
-	<div class="none-data" v-show="tableData.length == 0 && showNoData" >-暂无数据-</div>
   </div>
 </template>
 
 <script>
+import {mapGetters} from 'vuex'
   export default{
   	props: {
   		tableData: {
@@ -52,8 +53,11 @@
       }
     },
     computed: {
-
-    },
+    	...mapGetters({
+    		menuWidth: 'menuWidth',
+    		screenWidth: 'screenWidth',
+    		getScreenHeight: 'getScreenHeight'
+    	})},
     methods: {
     },
     components: {
@@ -64,6 +68,8 @@
   lang="less" 
   rel="stylesheet/less" 
   scoped>
+@import '../../../assets/style/common';
+
   .market-table-wrap {
   	width: 100%;
   	min-height: 80px;
@@ -72,6 +78,7 @@
     border-radius: 4px;
        .none-data {
        	line-height: 30px;
+        text-align: center;
        }
     	.market-table {
 		    width: 100%;
@@ -97,6 +104,9 @@
 										 	color: #24b5b0;
 										 }
 								}
+                .market-table-compare-content {
+                  .adv-font-small();
+                }
 						}
 						.market-check-detail {
 							position: relative;
@@ -114,6 +124,7 @@
 						    height: 74px;
 						    text-align: center;
 						    .market-table-price {
+                  .adv-font-small();
 						    	i {
 						    		margin-left: 10px;
     								color: #f7a302;
@@ -123,9 +134,13 @@
 						    	}
 						    }
 						    .market-big-title {
+                    .adv-text();
 						        text-align: left;
 						        margin-left: 10%;
 						     }
+                .market-table-crop {
+                    .adv-font-normal();
+                }
 						}
 						&:nth-child(2n) {
 							background: #f3f9eb;

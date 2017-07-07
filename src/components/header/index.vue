@@ -121,7 +121,7 @@
                 parent: 2
               },
               {
-                name: "高清长势",
+                name: "农田管理",
                 href: "/ndvi",
                 parent: 2
               }
@@ -253,7 +253,6 @@
         if (this.animatIndex === index) {
           this.className = 'header-fadein-right'
           this.showMenu = true
-          console.log("doAnimate")
         }
         this.animatIndex = index
       },
@@ -261,7 +260,6 @@
         clearTimeout(this.inTimeHan)
       },
       clickSubMenu(item, index){
-        console.log(item, index)
         this.curIndex = item.parent - 1
         this.subIndex = index
       },
@@ -402,23 +400,23 @@
 lang="less"
 rel="stylesheet/less"
 scoped>
-@import '../../assets/style/reset';
+@import '../../assets/style/common';
 
 .index-header {
+  .adv-font-normal();
   z-index: 10000;
   position: fixed;
   left: 0;
   top: 0;
-  font-size: 14px;
   width: 100%;
-  height: 48px;
+  height: @header-height;
   background: #313131;
   box-shadow: 0px 0px 4px #000;
   .header-navbar-left {
     left: 3%;
     top: 2px;
     a {
-      font-size: 20px;
+      .adv-font-super();
       color: #fff;
       line-height: 46px;
     }
@@ -444,9 +442,9 @@ scoped>
     li {
       position: relative;
       float: left;
-      height: 48px;
+      height: @header-height;
       h3 {
-        font-size: 16px;
+        .adv-font-big();
         margin: 0 14px;
         padding: 12px 0;
         color: #fff;
@@ -493,7 +491,7 @@ scoped>
   .header-navbar-right {
     right: 22px;
     color: #fff;
-    .mixin-height(48px);
+    .adv-height(@header-height);
     span {
       cursor: default;
       float: left;
@@ -524,7 +522,7 @@ scoped>
   }
   .seond-bg {
     position: fixed;
-    top: 48px;
+    top: @header-height;
     left: 0;
     width: 100%;
     height: 36px;
@@ -555,7 +553,7 @@ scoped>
     }
   }
   .header-fadein-right {
-    .mixin-animation(headerFadeInRight;.5s;1;forwards);
+    .adv-animation(headerFadeInRight;.5s;1;forwards);
     animation-delay: .1s;
   }
 
@@ -574,7 +572,7 @@ scoped>
     }
   }
   .header-fadeout-right {
-    .mixin-animation(fadeOutRight;.5s;1;forwards);
+    .adv-animation(fadeOutRight;.5s;1;forwards);
     animation-delay: .1s;
   }
 }
@@ -585,7 +583,7 @@ scoped>
   right: 0;
   margin-right: -168px;
   z-index: 100001;
-  height: 48px;
+  height: @header-height;
   background: #566931;
   text-align: center;
 
@@ -618,7 +616,7 @@ scoped>
     .login-bj {
       img {
         width: 120px;
-        .mixin-position(50%;50%);
+        .adv-position-center();
       }
     }
 
@@ -631,7 +629,7 @@ scoped>
       border-radius: 2px;
       height: 25px;
       line-height: 27px;
-      .mixin-width(25px);
+      .adv-horizontal-center(25px);
       &:hover {
         border: 1px solid #8ec421;
         .login-close { 
@@ -656,7 +654,7 @@ scoped>
     }
   }
   .login-sucess-fadeout {
-    .mixin-animation(loginSucessFadeout;.2s;1;forwards)
+    .adv-animation(loginSucessFadeout;.2s;1;forwards)
   }
 
   @keyframes loginTip {
@@ -674,7 +672,7 @@ scoped>
     }
   }
   .animation-login-tip {
-    .mixin-animation(loginTip;2.05s;1;forwards)
+    .adv-animation(loginTip;2.05s;1;forwards)
   }
   @keyframes logoutTip {
     0% {
@@ -691,6 +689,6 @@ scoped>
     }
   }
   .animation-logout-tip {
-    .mixin-animation(logoutTip;1.6s;1;forwards)
+    .adv-animation(logoutTip;1.6s;1;forwards)
   }
 </style>

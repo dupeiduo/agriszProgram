@@ -4,8 +4,8 @@
       <li v-for="(item, index) in list"
         class="clear"
         :class="curIndex === index ? 'gradient' : ''">
-          <span class="fl list-img" :class="'list-n' + (index + 1)"></span>
-          <div class="fl select-product">
+          <span class="list-img" :class="'list-n' +index%3"></span>
+          <div class="select-product">
             <div class="classification-title pr">
               {{item.title}}
               <span class="iconfont icon-tongjitu btn-chart"
@@ -14,15 +14,18 @@
                 >
               </span>
             </div>
-            <p v-limitLine>{{item.summary}}</p>
-            <p class="release-date ps">发布日期 ： {{item.publish_time | formatDatetime}}
-              <i class="btn-detail"
-                @click="indexChange(index)">{{curIndex === index ? '返回详情': '查看详情'}}</i>
+            <p v-limitLine class="product-txt">{{item.summary}}</p>
+            <p class="release-date">发布日期 ： {{item.publish_time | formatDatetime}}
             </p>
+            <i class="btn-detail"
+                @click="indexChange(index)">{{curIndex === index ? '返回详情': '查看详情'}}</i>
           </div>
       </li>
     </ul>
-    <h3 v-else-if="list.length == 0 && showNoData">－暂无数据－</h3>
+
+    <expect-data class="list-nodata-bg pr" 
+      :showSectionData="true" 
+      v-else-if="list.length == 0 && showNoData"></expect-data>
     
     <div class="chart-popover">
       <my-echart class="echart" 
@@ -32,6 +35,7 @@
 </template>
 
 <script>
+import expectData from 'components/expectData/'
   export default {
     props: {
       list: {
@@ -75,6 +79,9 @@
         var y = event.clientY - 80
         this.popTarg.style.top = `${y}px`
         this.popTarg.style.display = 'block'
+        if (this.hoverIndex === index) {
+          this.$emit('getChartData', index)
+        }
         this.hoverIndex = index
       },
       hidePopup() {
@@ -99,99 +106,103 @@
         }
       }
     },
+    components: {
+      expectData
+    }
   }
 </script>
-<style lang="less" rel="stylesheet/less" scoped>
-@import '../../../assets/style/reset';
+<style
+ lang="less" rel="stylesheet/less" scoped>
+@import '../../../assets/style/common';
   .classify-list {
     h3 {
       text-align: center;
     }
     ul {
-      overflow-x: hidden;
+      width: 100%;
       max-height: 540px;
       background: #fff;
-      border-radius: 4px;
+      border-radius: 0px 0px 4px 4px;
+      overflow: auto;
       .gradient {
-        .mixin-gradient-bg(#effdd7;#e3f8bc);
+        .adv-gradient(#effdd7;#e3f8bc);
         &:hover {
-          .mixin-gradient-bg(#effdd7;#e3f8bc);
+          .adv-gradient(#effdd7;#e3f8bc);
         }
       }
       li {
         position: relative;
-        clear: both;
-        padding: 0 16px;
-        height: 115px;
-        border-right: 1px solid #bbbec2;
+        height: 116px;
+        box-sizing: border-box;
+        padding: 20px 16px 10px;
         border-bottom: 1px solid #bbbec2;
-        border-left: 1px solid #bbbec2;
+        &:last-child {
+          border-bottom: 1px solid #fff;
+        }
         .list-img {
-          display: block;
+          position: absolute;
+          top: 24px;
+          left: 16px;
           width: 56px;
           height: 56px;
-          margin-top: 24px;
           border-radius: 50%;
         }
-        .list-n1 {
+        .list-n0 {
           background: url('/static/assets/img/classify/list1.png') no-repeat;
         }
-        .list-n2 {
+        .list-n1 {
           background: url('/static/assets/img/classify/list2.png') no-repeat;
         }
-        .list-n3 {
+        .list-n2 {
           background: url('/static/assets/img/classify/list3.png') no-repeat;
         }
         .select-product {
-          width: 256px;
-          margin-left: 10px;
+          padding-left: 68px;
           .release-date {
-            width: 250px;
-            bottom: 10px;
+            .adv-text-line-height-small();
+            line-height: 20px;
+            color: #4e4c4c;
+            margin-top: 6px;
           }
           .btn-detail {
             position: absolute;
-            right: 0px;
-            bottom: 0;
-            background: #fff;
-            color: #969696;
-            cursor: pointer;
-            .mixin-width(68px);
-            .mixin-height(24px);
-            .mixin-border(#969696;4px);
-            &:hover {
-              color: #6e9716;
-              border: 1px solid #6e9716;
-            }
+            right: 18px;
+            bottom: 4px;
+            .adv-fixed-small-btn();
           }
           .classification-title {
-            font-size: 14px;
-            width: 250px;
-            height: 32px;
-            margin-top: 6px;
-            font-weight: bold;
+            .adv-title-normal();
+            margin-bottom: 10px;
+          }
+          .product-txt{
+            height: 37px;
+            .adv-text-line-height-small();
+            line-height: 20px;
+            color: #4e4c4c;
           }
         }
         &:hover {
           background: #eee;
         }
-          .btn-chart {
-            position: absolute;
-            font-size: 16px;
-            top: 0;
-            right: 0px;
-            color: #b5b5b5;
-            cursor: default;
-          }
-        p {
-          line-height: 20px;
-          color: #4e4c4c;
+        .btn-chart {
+          position: absolute;
+          font-size: 16px;
+          top: 0;
+          right: 0;
+          color: #b5b5b5;
+          cursor: default;
         }
       }
     }
     .tip-chart, .echart {
       width: 288px;
       height: 238px;
+    }
+    .list-nodata-bg {
+      width: 358px;
+      min-height: 300px; 
+      overflow-y: auto;
+      .adv-border-bottom-radius();
     }
     .chart-popover {
       display: none;
@@ -202,7 +213,7 @@
       top: 0;
       background: #fff;
       border-radius: 5px;
-      .mixin-boxshadow();
+      .adv-boxshadow();
     }
   }
 </style>

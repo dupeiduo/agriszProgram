@@ -1,65 +1,76 @@
 <template>
-    <div class="v-list" v-scroll="onScroll" :style="{'height':clientH + 20 + 'px'}">
-    <div v-for="data in reportObject">
-      <div v-for="(year, yIndex) in data.value">
-        <h3 class="vertical-title" :class="year.quarter === 0 ? 'ver-active':''">{{data.year + '年' + quarters[year.quarter]}}</h3>
-        <ul class="report-list"
-          v-if="year.value && year.value.length > 0">
-          <li class="report-single" 
-            v-for="(item,index) in year.value"
-            v-if="!!item"
-            :class="styleCtl"
-            >
-            <div class="report-left">
-              <a v-if="styleCtl !== ''" :href="item.pdf_url" target="_blank">
-                  <img @mouseenter="showAllTitle(index, yIndex, item.title)" @mouseleave="hideAllTitle" :src="item.img_url">
-              </a>
-              <img v-else :src="item.img_url">
-              <span :class="item.report_class">
-                <em>{{item.report_label}}</em>
-              </span>
-            </div>
-            <div class="report-content">
-              <p class="report-h3">
-                <span class="report-title font14" :class="(hoverIndex === index && yIndex === yearIndex) ? 'hover-title-class' : ''">{{item.title}}</span>
-                <span class="report-date ps">{{item.time}}</span>
-              </p>
-              <p class="report-p" v-limitLine>{{item.misc}}</p>
-              <a :href="item.pdf_url" target="_blank">浏览全文 &gt;</a>
-            </div>
-            <h3>
-              <a>
-                <form :action="baseUrl + 'report/downPdf'"  method="post">
-                  <input type="hidden" name="pdfUrl" :value="item.pdf_url">
-                  <input type="hidden" name="pdfTitle" :value="item.title">
-                  <input type="submit" class="animated fadeInRight" id="down-animated" value="点击下载">
-                </form>
-               <span class="re-bj iconfont icon-xiazai1"></span>
-              </a>
-            </h3>
-          </li>
-        </ul>
-
-        <div class="report-list wait-report" 
-          v-if="year.value && year.value.length === 0 && year.isNew">
-          <i class="iconfont icon-jingqingqidai-"></i><br/>敬请期待…
+    <div class="v-list" 
+      v-loading.lock="loading"
+      v-scroll="onScroll" 
+      :style="{'height':getScreenHeight - 102 + 'px'}">
+    <template  v-if="reportObject && reportObject.length > 0">
+      <div v-for="data in reportObject">
+        <div v-for="(year, yIndex) in data.value">
+          <h3 class="vertical-title" :class="year.isNew ? 'ver-active':''">{{data.year + '年' + quarters[year.quarter]}}</h3>
+          <ul class="report-list"
+            v-if="year.value && year.value.length > 0">
+            <li class="report-single" 
+              v-for="(item,index) in year.value"
+              v-if="!!item"
+              :class="styleCtl"
+              >
+              <div class="report-left">
+                <a v-if="styleCtl !== ''" :href="item.pdf_url" target="_blank">
+                    <img @mouseenter="showAllTitle(index, yIndex, item.title)" @mouseleave="hideAllTitle" :src="item.img_url">
+                </a>
+                <img v-else :src="item.img_url">
+                <span :class="item.report_class">
+                  <em>{{item.report_label}}</em>
+                </span>
+              </div>
+              <div class="report-content">
+                <p class="report-h3">
+                  <span class="report-title" :class="(hoverIndex === index && yIndex === yearIndex) ? 'hover-title-class' : ''">{{item.title}}</span>
+                  <span class="report-date ps">{{item.time}}</span>
+                </p>
+                <p class="report-p" v-limitLine>{{item.misc}}</p>
+                <a :href="item.pdf_url" target="_blank">浏览全文 &gt;</a>
+              </div>
+              <h3>
+                <a>
+                  <form :action="baseUrl + 'report/downPdf'"  method="post">
+                    <input type="hidden" name="pdfUrl" :value="item.pdf_url">
+                    <input type="hidden" name="pdfTitle" :value="item.title">
+                    <input type="submit" class="animated fadeInRight fade-animation" value="点击下载">
+                  </form>
+                 <span class="re-bj iconfont icon-xiazai1"></span>
+                </a>
+              </h3>
+            </li>
+          </ul>
+          <expect-data 
+              class=" wait-report pr"
+              v-if="year.value && year.value.length === 0 && year.isNew"
+              :showSectionData="true" 
+          ></expect-data>
+          <div class="none-data" 
+            v-if="year.value && year.value.length === 0 && !year.isNew"
+            ><i class="iconfont icon-baogao-1"></i><br/>暂无报告
+          </div>
         </div>
-
-        <div class="report-list none-data" 
-          v-if="year.value && year.value.length === 0 && !year.isNew"
-          ><i class="iconfont icon-baogao-1"></i><br/>暂无报告
-        </div>
-
       </div>
-    </div>
-
-    <p v-if="noMore" class="no-more">
-      <span class="none-words">没有更多了</span>
-    </p>
+      <p v-if="noMore" class="no-more">
+        <span class="none-words">没有更多了</span>
+      </p>
+    </template>
+    <template v-else-if="!loading">
+      <expect-data 
+            :showPageData="true" 
+            :left="false"
+            :top="false"></expect-data>
+    </template>
   </div> 
 </template>
 <script>
 import config from 'config/env/config.env.js';
+import expectData from 'components/expectData/'
+import {mapGetters} from 'vuex'
+
   export default {
     props: {
       reportObject: {
@@ -77,7 +88,11 @@ import config from 'config/env/config.env.js';
       noMore: {
         type: Boolean,
         default: false
-      }
+      },
+      loading: {
+        type: Boolean,
+        default: true
+      },
     },
     data() {
       return {
@@ -85,8 +100,16 @@ import config from 'config/env/config.env.js';
         quarters: ["第一季度","第二季度","第三季度","第四季度"],
         hoverIndex: -1,
         yearIndex: -1,
+        showSectionData: false,
+        showPageData: false
       }
     },
+    computed: {
+      ...mapGetters({
+        menuWidth: 'menuWidth',
+        screenWidth: 'screenWidth',
+        getScreenHeight: 'getScreenHeight'
+      })},
     directives: {
       limitLine: {
         bind: function(el) {
@@ -109,12 +132,16 @@ import config from 'config/env/config.env.js';
         if (title.length > 11) {
           this.hoverIndex = index
           this.yearIndex = yIndex
+
         }
       },
       hideAllTitle() {
         this.hoverIndex = -1
         this.yearIndex = -1
       }
+    },
+    components: {
+      expectData
     }
   }
 </script>
@@ -122,24 +149,7 @@ import config from 'config/env/config.env.js';
     lang="less"
     rel="stylesheet/less"
     scoped>
-    @import '../../../assets/style/reset';
-    .v-list {
-      @media screen and ( min-width: 1440px) {
-        width: 1088px;
-      }
-      @media screen and ( max-width: 1256px) {
-        width: 858px;
-      }
-      @media screen and ( max-width: 1062px) {
-        width: 632px;
-      }
-      @media screen and ( max-width: 840px) {
-        width: 615px;
-      }
-      @media screen and ( max-width: 820px) {
-        width: 590px;
-      }
-    }
+    @import '../../../assets/style/common';
     .no-more {
       height: 30px;
       font-size: 18px;
@@ -148,7 +158,7 @@ import config from 'config/env/config.env.js';
       text-align: center;
     }
     .v-list {
-      background: #fff;
+      background: @assistant-bg;
       overflow-x: hidden;
       margin: 0 auto;
       padding: 0 14px;
@@ -160,21 +170,25 @@ import config from 'config/env/config.env.js';
       .none-data,.wait-report {
         position: relative;
         top: 10px;
-        font-size: 18px;
+        font-size: 20px;
         color: #dfdad9;
         text-align: center;
         padding-bottom: 12px;
+        min-height: 100px;
         i {
           font-size: 44px;
           color: #dfdad9;
         }
       }
       .none-words {
+        .adv-font-normal();
         display: block;
-        font-size: 14px;
         color: #cfc9ca;
       }
       .ver-active:after {
+          .adv-horizontal-center(18px);
+          .adv-height(18px);
+          .adv-font-small();
           position: relative;
           top: -2px;
           left: 5px;
@@ -183,12 +197,9 @@ import config from 'config/env/config.env.js';
           background: #fa9f01;
           display: inline-block;
           color: #fff;
-          font-size: 12px;
-          .mixin-width(18px);
-          .mixin-height(18px);
         }
       .vertical-title {
-        font-size: 16px;
+        .adv-font-big();
         width: 96%;
         height: 38px;
         line-height: 42px;
@@ -199,16 +210,7 @@ import config from 'config/env/config.env.js';
       }
       .report-list {
         overflow: hidden;
-        margin: 0 auto 0 45px;
-        @media screen and ( min-width: 1440px){
-          margin: 0 auto 0 64px;
-        }
-        @media screen and ( max-width: 1280px){
-          margin: 0 auto 0 56px;
-        }
-        @media screen and ( max-width: 800px){
-          margin: 0 auto 0 105px;
-        }
+        padding: 0 0 0 45px;
         .report-single:hover {
           background: #eefbf4;
         }
@@ -221,20 +223,21 @@ import config from 'config/env/config.env.js';
           border-right: 1px solid #e0e0e0;
           border-bottom: 2px solid #e0e0e0;
           border-left: 1px solid #e0e0e0;
-          .mixin-boxshadow();
+          box-shadow: 0 1px 2px #e7e7e7;
+          box-sizing: border-box;
           #down-animated {
-           cursor: pointer;
-           .mixin-animation-duration();
-         }
-         .report-left {
+            cursor: pointer;
+            -webkit-animation-duration: .35s;
+          }
+        .report-left {
           position: relative;
           float: left;
           overflow: hidden;
           width: 120px;
-          height: 106px;
+          height: 103px;
           img {
               width: 174px;
-              height: 182px;
+              height: 170px;
               margin-right: 8px;
               background: #eef3f0;
           }
@@ -263,9 +266,10 @@ import config from 'config/env/config.env.js';
         .report-content {
           position: relative;
           margin-left: 130px;
+          height: 103px;
           .report-h3 {
             color: #333;
-            .mixin-height(32px);
+            .adv-height(32px);
             .report-date {
               right: 10px;
             }
@@ -276,9 +280,9 @@ import config from 'config/env/config.env.js';
             margin-right: 3px;
           }
           a {
-            display: block;
+            position: absolute;
+            bottom: 8px;
             width: 65px;
-            margin-top: 20px;
             color: #428bca;
           }
         }
@@ -343,11 +347,12 @@ import config from 'config/env/config.env.js';
             color: #fff;
 
             .report-title {
+              .adv-font-normal();
               display: inherit;
               color: #fff;
               background: rgba(0,0,0,.4); 
-              .mixin-height(36px);
-              .mixin-ellipsis(160px);
+              .adv-height(36px);
+              .adv-ellipsis(160px);
             }
             .hover-title-class {
               margin-top: -10px;

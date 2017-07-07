@@ -1,4 +1,38 @@
 export default {
+  DETAULT_ZOOM: 4,
+  setDetaultZoom(map) {
+    map.getView().setZoom(this.DETAULT_ZOOM)
+    map.renderSync()
+  },
+  showBarLayer() {
+    this.badLayer.setVisible(false)
+    this.goodLayer.setVisible(false)
+    var charts = document.getElementsByClassName('map-chart')
+    for (var i = 0; i < charts.length; i++) {
+      charts[i].style.display = "block"
+    }
+  },
+  showElementLayer() {
+    this.badLayer.setVisible(true)
+    this.goodLayer.setVisible(true)
+
+    var charts = document.getElementsByClassName('map-chart')
+    for (var i = 0; i < charts.length; i++) {
+      charts[i].style.display = "none"
+    }
+  },
+  addBarTomap(bars, map) {
+    for (var i = 0; i < bars.length; i++) {
+
+      var position = ol.proj.transform(bars[i].position, 'EPSG:4326', 'EPSG:3857')
+      var popup = new ol.Overlay({
+        element: document.getElementById(bars[i].code)
+      });
+      popup.setPosition(position);
+      map.addOverlay(popup);
+    }
+    this.setDetaultZoom(map)
+  },
   addEntFeature(souPoint, entPoint, overlayInfo, map, entLayer, id) {
     this.entLayer = entLayer ? entLayer : null
     id = id ? id : new Date().getTime()
@@ -114,6 +148,7 @@ export default {
       insertFirst: false
     });
     map.addOverlay(pop);
+
     pop.setPosition(entPoint)
     $clamp(address, {
       clamp: 2
@@ -154,47 +189,31 @@ export default {
       }
     }
   },
+  removeLayer(map) {
+    if (this.badLayer) {
+      map.removeLayer(this.badLayer)
+      this.badLayer = null
+    }
+    if (this.goodLayer) {
+      map.removeLayer(this.goodLayer)
+      this.goodLayer = null
+    }
+  },
   addPoints(points, map, outof) {
+    this.removeLayer(map)
+    var features = this.getFeaturs(points, outof)
 
-    var getStyle = (text, outof, zoomLevel) => {
-      var img = this.getImg(outof, zoomLevel)
-      return this.getIconStyle(img)
+    this.goodLayer = addClusterLayer(features.goodFs, map)
+    this.badLayer = addBadLayer(features.badFs, map)
+
+    if (map.getView().getZoom() <= 5) {
+      this.badLayer.setVisible(false)
+      this.goodLayer.setVisible(false)
     }
 
-    var features = turnToFeaturs(points, outof)
-    var pointLayer = addPoints(features, map)
+    return this.badLayer
 
-    return pointLayer
-
-    function turnToFeaturs(data, outof) {
-      let _data = data
-      _data.sort(sortByoutof)
-      var len = _data.length;
-      if (len > 0) {
-        var features = new Array(len);
-        for (var i = 0; i < len; i++) {
-          var coordinates = _data[i].lonlat;
-          coordinates = ol.proj.transform(coordinates, 'EPSG:4326', 'EPSG:3857')
-          features[i] = new ol.Feature({
-            geometry: new ol.geom.Point(coordinates),
-            id: _data[i].id,
-            name: _data[i].name,
-            station: _data[i].station,
-            outof: (typeof outof === "boolean") ? outof : _data[i].outof,
-            maxValue: Number(_data[i].maxValue).toFixed(0),
-            coordinates: coordinates
-          });
-        }
-        _data = null
-        return features;
-      }
-    }
-
-    function sortByoutof(obj1, obj2) {
-      return obj1.outof - obj2.outof
-    }
-
-    function addPoints(features, map) {
+    function addBadLayer(features, map) {
       var source = new ol.source.Vector({
         features: features
       });
@@ -202,79 +221,210 @@ export default {
       let pointLayer = new ol.layer.Vector({
         source: source,
         style: function(feature) {
-          return getStyle(feature.getProperties().maxValue, 
-              feature.getProperties().outof, 
-              map.getView().getZoom());
+          return getBadStyle(feature.getProperties().index, 
+              feature.getProperties().outof,
+              feature.getProperties().element);
         }
       });
 
       map.addLayer(pointLayer);
       pointLayer.setZIndex(10);
+
       return pointLayer
     }
-  },
-  getIconStyle(img) {
-    this.iconCache = this.iconCache ? this.iconCache : {}
-    var imgObject = null
-    if (this.iconCache.img) {
-      imgObject = this.iconCache[img] 
-    } else {
-      imgObject = this.iconCache[img] = new ol.style.Style({
-        image: new ol.style.Icon(({
-          src: '/static/assets/img/map/' + img
-        }))
-      });
-    }
-    return imgObject
-  },
-  getImg (outof, zoomLevel) {
-    var img = 'map-red.png'
 
-    if (zoomLevel >= 8) {
-      img = outof == 1 ? 'map-red.png' : 'map-blue.png'
-    } else if (zoomLevel >= 7) {
-      img = outof == 1 ? 'mon7-red.png' : 'mon7-blue.png'
-    } else if (zoomLevel >= 6) {
-      img = outof == 1 ? 'mon7-red.png' : 'mon-blue.png'
-    } else {
-      img = outof == 1 ? 'mon6-red.png' : 'mon6-blue.png'
+    function getBadStyle(index, outof, element) {
+      var style = new ol.style.Style({
+        image: new ol.style.Icon({
+          anchor: [0.5, 0.5],
+          src: '/static/assets/img/map/soil-bad.png',
+          imgSize: [22, 22]
+        }),
+        text: new ol.style.Text({
+          font: 14 + ' Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei,微软雅黑,Arial,sans-serif',
+          text: element.toString().substr(0,1),
+          fill: new ol.style.Fill({
+            color: '#fff'
+          }),
+          offsetX: -1
+        }),
+        zIndex: index + 1
+      })
+
+      return style
     }
-    return img
+
+    function addClusterLayer(features, map) {
+      var source = new ol.source.Vector({
+        features: features
+      });
+
+      var clusterSource = new ol.source.Cluster({
+        distance: 100,
+        source: source
+      });
+
+      var clustersLayer = new ol.layer.Vector({
+        source: clusterSource,
+        style: function(feature) {
+          var size = feature.get('features').length;
+          var style
+          if (size == 1) {
+            style = singlePointStyle();
+          } else {
+            style = multifyPointStyle(size);
+          }
+
+          return style;
+        }
+      });
+      map.addLayer(clustersLayer);
+      clustersLayer.setZIndex(10);
+      return clustersLayer
+    }
+
+    function singlePointStyle() {
+      var style = new ol.style.Style({
+        image: new ol.style.Icon({
+          anchor: [0.5, 0.5],
+          src: '/static/assets/img/map/soil-good.png',
+          imgSize: [22, 22]
+        }),
+        zIndex: 1
+      });
+
+      return style
+    }
+
+    function multifyPointStyle(size) {
+      var icon = ''
+      var imgSize = []
+      if (size <= 9 ) {
+        icon = 'soil-good-small.png'
+        imgSize = [38, 38]
+
+      } else if (size >= 10 && size < 99) {
+        icon = 'soil-good-normal.png'
+        imgSize = [47, 47]
+
+      } else if (size >= 100) {
+        icon = 'soil-good-large.png'
+        imgSize = [59, 59]
+
+      } 
+      var style = new ol.style.Style({
+        image: new ol.style.Icon(({
+          anchor: [0.5, 0.5],
+          src: '/static/assets/img/map/' + icon,
+          imgSize: imgSize
+        })),
+        text: new ol.style.Text({
+          font: 16 + ' Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei,微软雅黑,Arial,sans-serif',
+          text: size.toString(),
+          fill: new ol.style.Fill({
+            color: '#fff'
+          }),
+          offsetX: -1
+        }),
+        zIndex: 1
+      });
+      return style;
+    }
   },
-  mapEvents(parent, unbind) {
+  getFeaturs(data, outof) {
+    let _data = data
+
+    var goodFs = []
+    var badFs = []
+
+    var len = _data.length;
+    if (len > 0) {
+      for (var i = 0; i < len; i++) {
+        var coordinates = _data[i].lonlat;
+        coordinates = ol.proj.transform(coordinates, 'EPSG:4326', 'EPSG:3857')
+        var item = new ol.Feature({
+          geometry: new ol.geom.Point(coordinates),
+          id: _data[i].id,
+          name: _data[i].name,
+          station: _data[i].station,
+          outof: (typeof outof === "boolean") ? outof : _data[i].outof,
+          maxValue: Number(_data[i].maxValue).toFixed(0),
+          coordinates: coordinates,
+          index: i,
+          element: _data[i].element
+        });
+
+        if (_data[i].outof === 0) {
+          goodFs.push(item)
+
+        } else {
+          badFs.push(item)
+        }
+      }
+      _data = null
+      
+      return {goodFs, badFs};
+    }
+  },
+  mapEvents(parent) {
+    let map = parent.map 
+    
+    if (!this.clickListener) {
+      this.initEventHandlers(parent)
+    }
+    
+    map.on('click', this.clickListener);
+    map.on('pointerdrag', this.dragListener);
+    map.on('pointerdown', this.downListener);
+    map.on('pointermove', this.moveListener)
+    map.getView().on('change:resolution', this.zoomListener)
+  },
+  mapUnbindEvents(parent) {
+    let map = parent.map 
+    
+    map.un('click', this.clickListener);
+    map.un('pointerdrag', this.dragListener);
+    map.un('pointerdown', this.downListener);
+    map.un('pointermove', this.moveListener)
+  },
+  initEventHandlers(parent) {
     let map = parent.map,
       pointLayer = parent.pointLayer,
+      goodLayer = this.goodLayer,
       beginPoi = [],
       curZoomLevel = 4
-  
-    var clickListener = (event) => {
+
+    this.clickListener = (event) => {
       var pixel =  map.getEventPixel(event.originalEvent);
       map.forEachFeatureAtPixel(pixel, (feature, layer) => {
         if (layer == pointLayer) {
           var _point = map.getPixelFromCoordinate(feature.getGeometry().getCoordinates());
           
-          var position = this.getPositionInfo(_point, map)
-          if (position.doPan) {
-            this.panToPoint(position.point, map)
+          this.featureClick(parent, _point, feature, map)
+          
+          return true
+
+        } else if (layer == goodLayer) {
+          var length = feature.getProperties().features.length;
+          
+          if (length > 1) {
+            map.getView().setCenter(map.getCoordinateFromPixel(pixel));
+            map.getView().setZoom(map.getView().getZoom() + 1);
+            return true;
+
+          } else {
+            var _point = map.getPixelFromCoordinate(feature.getGeometry().getCoordinates());
+            
+            var _feature = feature.getProperties().features[0]
+            
+            this.featureClick(parent, _point, _feature, map)
+            return true
           }
-          
-          _point = position.position
-          var left = parseInt(_point[0]) - 50,
-            top = parseInt(_point[1]) - 50,
-            station = feature.getProperties().station,
-            outof = feature.getProperties().outof,
-            name = feature.getProperties().name,
-            id = feature.getProperties().id,
-            coordinates = feature.getProperties().coordinates
-          
-          setTimeout( () => {
-            parent.$emit('featureInfo', {station, outof, name, id, left, top, coordinates})
-          }, 10)
         }
       });
     }
 
-    var dragListener = (event) => {
+    this.dragListener = (event) => {
       if (event.dragging) {
         var pixel =  map.getEventPixel(event.originalEvent),
           left = beginPoi[0] - pixel[0],
@@ -284,11 +434,11 @@ export default {
       }
     }
 
-    var downListener = (event) => {
+    this.downListener = (event) => {
       beginPoi =  map.getEventPixel(event.originalEvent)
     }
 
-    var moveListener = (event) => {
+    this.moveListener = (event) => {
       if (event.dragging) {
         return;
       }
@@ -297,54 +447,36 @@ export default {
       map.getViewport().style.cursor = hit ? 'pointer' : '';
     }
 
-    var resetIcon = (zoomLevel, layer) => {
-      if (layer !== pointLayer) {
-        return
-      }
-
-      layer.getSource().forEachFeature((feature) => {
-        let img = this.getImg(feature.getProperties().outof, zoomLevel),
-          iconStyle = this.getIconStyle(img)
-        feature.setStyle(iconStyle)
-      })
-    }
-
-    var changeIcon = (zoomLevel) => {
-      var result = true
-      if (curZoomLevel >= 8 && zoomLevel >= 8) {
-        result = false
-      } else if (zoomLevel < 6 && curZoomLevel <= 6) {
-        result = false
-      } 
-      return result
-    }
-
-    var resolutListener = (event) => {
+    this.zoomListener = (event) => {
       var zoomLevel = map.getView().getZoom()
-      if (!changeIcon(zoomLevel)) {
-        return
+
+      if (zoomLevel <= this.DETAULT_ZOOM) {
+        this.setDetaultZoom(map)
+        this.showBarLayer()
+
+      } else {
+        this.showElementLayer()
       }
-
-      curZoomLevel = zoomLevel
-      let _layer = pointLayer
-      resetIcon(zoomLevel, _layer)
-      _layer = null
     }
-
-    if (unbind) {
-      map.un('click', clickListener);
-      map.un('pointerdrag', dragListener);
-      map.un('pointerdown', downListener);
-      map.un('pointermove', moveListener)
-      // map.getView().un('change:resolution', resolutListener)
+  },
+  featureClick(parent, _point, feature, map) {
+    var position = this.getPositionInfo(_point, map)
+    if (position.doPan) {
+      this.panToPoint(position.point, map)
     }
+    _point = position.position
 
-    map.on('click', clickListener);
-    map.on('pointerdrag', dragListener);
-    map.on('pointerdown', downListener);
-    map.on('pointermove', moveListener)
-    // map.getView().on('change:resolution', resolutListener)
-
+    var left = parseInt(_point[0]) - 50,
+      top = parseInt(_point[1]) - 50,
+      station = feature.getProperties().station,
+      outof = feature.getProperties().outof,
+      name = feature.getProperties().name,
+      id = feature.getProperties().id,
+      coordinates = feature.getProperties().coordinates
+    
+    setTimeout( () => {
+      parent.$emit('featureInfo', {station, outof, name, id, left, top, coordinates})
+    }, 10)
   },
   getPositionInfo(position, map) {
     var center = ol.proj.transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326'),

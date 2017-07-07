@@ -58,12 +58,16 @@ export default [{
   },
   {
     path: '/ndvi', 
-    component: resolve => require(['../pages/ndvi/'], resolve)
+    component: resolve => require(['../pages/agrimgr/'], resolve)
   },
   {
-    path: '/demo', 
-    component: resolve => require(['../pages/demo/'], resolve)
-  }, 
+    path: '/dataconsultation', 
+    component: resolve => require(['../pages/dataconsultation/'], resolve)
+  },
+  // {
+  //   path: '/demo', 
+  //   component: resolve => require(['../pages/demo/'], resolve)
+  // }, 
   {
     path: '*', 
     redirect: '/index'

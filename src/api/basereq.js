@@ -62,10 +62,11 @@ export default {
 }
 
 function requestError(response) {
-  if (typeof response.message === "string" && response.response.status !== 403) {
+  if (response && typeof response.message === "string" && response.response && response.response.status !== 403) {
     console.log(response.message)
-    
-  } else if (response.response.status === 403) {
+  }
+  
+  if (response && response.response && response.response.status === 403) {
     // is login
     store.dispatch('isLogin')
   }

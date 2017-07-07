@@ -1,30 +1,34 @@
 <template>
   <div class="crop-detail">
     
-    <div class="tb-detail">
+    <div class="tb-detail crop-detail-tb">
       <el-table v-if="tableData.length > 0"
         :stripe="true"
         :data="tableData"
         style="width: 100%">
-        <el-table-column label="作物" width="78">
+        <el-table-column label="作物" min-width="85" class="clear">
           <template  scope="scope">
-            <span class="iconfont crop-icon" :class="icons[scope.row.id]"></span>
-            {{scope.row.name}}
+            <span class="crop-icon fl">
+             <svg class="icon" aria-hidden="true">
+                <use :xlink:href="'#icon-crop-'+scope.row.id"></use>
+             </svg> 
+            </span>
+            <em class="fl">&nbsp;{{scope.row.name}}</em>
           </template>
         </el-table-column>
         <el-table-column
           prop="area"
-          label="种植面积"
-          width="135">
+          label="面积"
+         min-width="85">
         </el-table-column>
-        <el-table-column label="显示" width="72">
+        <el-table-column label="显示" min-width="60">
           <template  scope="scope">
             <span class="eye-ctl iconfont" :class="scope.row.open ? ' icon-eye' : ' icon-hide'"
               @click="setLayerVisible(scope.row)"></span>
               <i class="animated fadeInRight fade-animation hide-animation"  @click="setLayerVisible(scope.row)">{{scope.row.open ? '隐藏图层' : '显示图层'}}</i>
           </template>
         </el-table-column>
-        <el-table-column label="图例" width="76">
+        <el-table-column label="图例" min-width="60">
           <template  scope="scope">
             <span class="selcolor"
               :style="{background: scope.row.color}"
@@ -74,7 +78,7 @@
   </div>
 </template>
 <script>
-import configData from '../../../config/data.js'
+import {mapGetters} from 'vuex'
 
 export default {
   props: {
@@ -102,7 +106,6 @@ export default {
         value: 'h',
         label: '千公顷'
       }],
-      icons: configData.cropIcons,
 
       showColorpicker: false,
       popTop: '',
@@ -112,12 +115,18 @@ export default {
       value: 'm',
     }
   },
+  computed: {
+    ...mapGetters({
+        getScreenHeight: 'getScreenHeight',
+        menuWidth: 'menuWidth',
+      })
+  },
   methods: {
     changeColor(ev, index) {
       this.holdColorPicker()
 
       var oEvent = ev|| window.event;
-      var y = oEvent.clientY - 298
+      var y = oEvent.clientY - 20
       this.popTop = `${y}px`
       this.showColorpicker = true
       this.cropIndex = index
@@ -155,21 +164,26 @@ export default {
 
 </script>
 
-<style lang="less" scoped>
-@import '../../../assets/style/reset';
+<style 
+lang="less" scoped>
+@import '../../../assets/style/common';
   .crop-detail {
     .tb-detail {
-      background: #fff;
+      background: @assistant-bg;
       table {
         width: 100%;
         padding-left: 5px;
         tr {
+          .adv-font-small();
           height: 34px;
           text-align: center;
           color: #484848;
-          font-size: 12px;
           td:nth-child(1) {
             text-align: center !important;
+          }
+          .crop-icon {
+            display: inline-block;
+            padding-left: 8px;
           }
         }
       }
@@ -187,18 +201,18 @@ export default {
   }
   
   .eye-ctl {
+    .adv-font-normal();
     position: relative;
     cursor: pointer;
     left: 0px;
-    font-size: 14px;
     color: #8bbcf9;
   }
   .cell .icon-hide {
     color: #a1a8ae;
   }
   .color-picker {
-    position: absolute;
-    left: 370px;
+    position: fixed;
+    left: @list-width + @menu-width;
     border: 1px solid #d3d3d3;
     background: #fff;
     box-shadow: 2px 1px 8px #8a8a89;
@@ -240,7 +254,7 @@ export default {
       background: url(/static/assets/img/common/class-triangle.png) no-repeat;
     }
     h3 {
-      font-size: 14px;
+      .adv-font-normal();
       font-weight: normal;
       line-height: 26px;
       text-align: left;
@@ -251,6 +265,6 @@ export default {
     position: absolute;
     top: 7px;
     width: 72px;
-    left: 142px;
+    left: 42%;
   }
 </style>

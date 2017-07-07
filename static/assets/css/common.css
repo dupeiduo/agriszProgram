@@ -45,7 +45,17 @@
 .echart-common-settings canvas {
 	cursor: default;
 }
-
+.icon {
+   width: 1.2em; 
+   height: 1.2em;
+   vertical-align: -0.15em;
+   fill: currentColor;
+   overflow: hidden;
+}
+/* from valid login loading */ 
+#app {
+  height: 100%;
+}
 /*for map*/
 .monitor-map .ol-scale-line {
 	bottom: 60px;
@@ -56,6 +66,10 @@
 	bottom: 0;
 	width: 100%;
 	height: 100%;
+}
+.screen-map {
+	top: 48px;
+	left: 132px;
 }
 #bodyer, #map {
 	width: 100%;
@@ -68,7 +82,7 @@
 	position: fixed;
 }
 .ol-overlaycontainer-stopevent {
-	position: fixed;
+	// position: fixed;
 	z-index: 2;
 }
 .ol-overlaycontainer-stopevent .ol-zoom {
@@ -189,18 +203,6 @@
 	margin-bottom: 10px;
 	overflow: hidden;
 }
-.dialog-bg .report-alllist {
-	border: 10px solid rgba(227,246,184,.5);
-}
-.dialog-bg .targeter .help,.dialog-bg .targeter .close {
-	width: 18px;
-	height: 18px;
-	display: inline-block;
-	text-align: center;
-	border-radius: 50%;
-	border: 1px solid #9a9a9a;
-	color: #9a9a9a;
-}
 .dialog-bg .targeter .help {
 	line-height: 18px;
 	margin-left: 10px;
@@ -209,19 +211,6 @@
 	background: #8fc320;
 	border: 1px solid #8fc320;
 	color: #fff;
-}
-.dialog-bg .targeter .close {
-	top: 15px;
-	line-height: 18px;
-	font-size: 14px !important;
-	font-weight: bolder;
-}
-.photo-zoom .targeter .close { 
-	top: 10px;
-}
-.dialog-bg .targeter .close:hover {
-	color: #7fa432;
-	border: 1px solid #7fa432;
 }
 .n-left-tab .left-tab .detail-list-bg {
 	display: none;
@@ -237,10 +226,13 @@
 ::-webkit-scrollbar-thumb {
     background: #7a7c75;
     border-radius: 4px;
-
 }
 ::-webkit-scrollbar-track {
     background-color: #f1f1f1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-corner {
+    display: none;
 }
 .map-highlight-tip {
   color: green;
@@ -261,7 +253,7 @@
 	height: 38px;
 }
 .detail-container .weather-tool .weather-detail .real-time-wrap .real-time-right {
-	right: 50px;
+	right: 40px;
 }
 .detail-container .weather-tool .weather-detail .real-time-wrap {
 	margin-top: 25px;
@@ -288,8 +280,8 @@
 	 line-height: 20px;
 }
 .detail-container .weather-tool .weather-detail .real-time-wrap .real-time-introduce {
-	bottom: -38px;
 	width: 340px;
+    border-top: 1px solid #dbe2d8;
 }
 .icon-hetao- {
   color: #896320;
@@ -310,14 +302,51 @@
   color: #2aa515;
 }
 .fade-animation {
-	-webkit-animation-duration: .34s;
-	animation-duration: .34s;
+	-webkit-animation-duration: .34s !important;
+	animation-duration: .34s !important;
     cursor: pointer;
 }
 .photo-zoom .drag_container-bg {
-	height: 300px;
+	height: 97%;
+}
+.agri-mgr .weather-tool-common {
+	right: 135px !important;
 }
 /*======common style======*/
+.map-zIndex {
+  z-index: 800;
+}
+.bottom-pop-zIndex {
+	z-index: 900;
+}
+.lefttab-zIndex {
+	z-index: 1000;
+}
+.dropdown-zIndex {
+	z-index: 1100;
+}
+.expectdata-zIndex {
+	z-index: 1200;
+}
+.cover-zIndex {
+	z-index: 1300;
+}
+.pop-zIndex {
+	z-index: 1400;
+}
+.left-nav-zIndex {
+	z-index: 1500;
+}
+.loading-zIndex {
+	z-index: 16000;
+}
+.nav-zIndex {
+	z-index: 17000;
+}
+.login-zIndex {
+	z-index: 18000;
+}
+
 .border-common-radius {
 	border-radius: 4px;
 }
@@ -333,4 +362,33 @@
 	-webkit-transition:all 0.5s ease;
 	-ms-transition:all 0.5s ease;
 	-o-transition:all 0.5s ease;
+}
+.legend-con {
+      width: 32px;
+      height: 200px;
+      background: #fff;
+      padding: 4px 0;
+      border-radius: 4px;
+      text-align: center;
+}
+.legend-con p {
+	width: 14px;
+    margin: 3px 9px;
+}
+.legend-con .legend {
+	  display: block;
+	  height: 120px;
+	  background: linear-gradient(top,#076b0d,#298200,#93cc00,#cce600,#f3f600,#ffd000,#ff8a00,#ff7400,#ff3800,#ee2300,#de1f00,#9e1300);
+	  background: -o-linear-gradient(top, #076b0d,#298200,#93cc00,#cce600,#f3f600,#ffd000,#ff8a00,#ff7400,#ff3800,#ee2300,#de1f00,#9e1300);
+	  background: -moz-linear-gradient(top, #076b0d,#298200,#93cc00,#cce600,#f3f600,#ffd000,#ff8a00,#ff7400,#ff3800,#ee2300,#de1f00,#9e1300);
+	  background: -webkit-linear-gradient(top, #076b0d,#298200,#93cc00,#cce600,#f3f600,#ffd000,#ff8a00,#ff7400,#ff3800,#ee2300,#de1f00,#9e1300);
+}
+.legend-con .legend-bottom {
+	  display: block;
+	  height: 40px;
+	  background: linear-gradient(top,#dbdcde,#babcbe,#8f9194,#383838);
+	  background: -o-linear-gradient(top,#dbdcde,#babcbe,#8f9194,#383838);
+	  background: -moz-linear-gradient(top,#dbdcde,#babcbe,#8f9194,#383838);
+	  background: -webkit-linear-gradient(top,#dbdcde,#babcbe,#8f9194,#383838);
+
 }

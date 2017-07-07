@@ -80,7 +80,7 @@
 							</td>
 						</tr>
 					</tbody>
-					<tbody class="none-data" v-else>－暂无数据－</tbody>
+					<tbody class="none-data" v-else>－没有找到相关企业，请尝试切换搜索范围－</tbody>
 				</table>
 			</div>
 			<p class="down-data ps no-select" :style="{background: enterprise.length > 0 ? '#8ec51f' : '#e3e3e3'}" @click="downLoad"><b class="iconfont icon-xiazai1"></b>下载企业数据</p>
@@ -510,6 +510,7 @@ scoped>
 			.none-data {
 				position: relative;
 				top: 20px;
+				text-align: center;
 			}
 			tbody {
 				display: block;

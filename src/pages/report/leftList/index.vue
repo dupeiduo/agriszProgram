@@ -1,5 +1,7 @@
 <template>
-    <div class="left-container fl"  :style="{height: clientH + 'px'}" v-loading.lock="loading">
+    <div class="left-container fl pr"
+         v-loading.lock="loading"  
+         :style="{'height':getScreenHeight - 50 + 'px'}">
     <ul class="report-type" 
       v-if="leftList.length > 0">
       <li class="special-report" 
@@ -13,14 +15,17 @@
         </span>
       </li>
     </ul>
-    <div class="none-data" 
-      v-else-if="!loading"
-      :style="{height: clientH + 'px'}" 
-      >暂无数据</div>
+    <expect-data
+      v-else-if="leftList.length === 0 && !loading" 
+      :showSectionData="true"
+      :style="{height: clientH + 'px'}"
+      ></expect-data>
   </div>
 </template>
 
 <script>
+import expectData from 'components/expectData/'
+import {mapGetters} from 'vuex'
   export default {
     props: {
       leftList: {
@@ -35,15 +40,22 @@
     data() {
       return {
         clientH: -1,
-        curIndex: -1
+        curIndex: -1,
+        showSectionData: false,
       }
     },
     mounted() {
-      this.clientH = document.documentElement.clientHeight - 50 || document.body.clientHeight - 50
     },
-    computed: {},
+    computed: {
+     ...mapGetters({
+      menuWidth: 'menuWidth',
+      screenWidth: 'screenWidth',
+      getScreenHeight: 'getScreenHeight'
+    })},
     methods: {},
-    components: {},
+    components: {
+      expectData
+    },
     watch: {
       leftList: function(leftList) {
         if (leftList && leftList.length > 0) {
@@ -62,13 +74,12 @@
     lang="less"
     rel="stylesheet/less"
     scoped>
-    @import '../../../assets/style/reset';
+    @import '../../../assets/style/common';
     .left-container {
-      z-index: 1;
+      z-index: 3;
       height: 800px;
-      position: fixed;
-      top: @top;
       width: 176px;
+      margin-top: 47px;
       background: #ebf7e0;
       border-right: 1px solid #d0d0d0;
         .report-type {
@@ -76,9 +87,9 @@
           padding-top: 10px;
 
             .on,.on:hover {
-              .mixin-gradient-bg(#beea6a;#a0d13d);
+              .adv-gradient(#beea6a;#a0d13d);
                     a {
-                      font-size: 14px;
+                      .adv-font-small();
                       text-decoration: none;
                       color: #fff;
                     }
@@ -104,7 +115,7 @@
                   line-height: 42px;
                   display: inline-block;
                   color: #545252;
-                  .mixin-ellipsis(96px);
+                  .adv-ellipsis(96px);
                 }
               span {
                 position: absolute;
@@ -113,7 +124,7 @@
                 overflow: hidden;
                 margin-top: 12px;
                   i {
-                    font-size: 14px;
+                    .adv-font-normal();
                     float: left;
                     width: 14px;
                     height: 14px;
@@ -129,6 +140,7 @@
       .none-data {
         position: relative;
         top: 30px;
+        text-align: center;
       }
   }
 </style>

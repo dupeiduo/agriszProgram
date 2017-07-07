@@ -1,6 +1,6 @@
 <template>
   <div>
-   <div class="no-date ps" v-if="noLayer">暂无数据</div>
+   <div class="no-data ps expectdata-zIndex" v-if="noLayer">暂无数据</div>
   </div>
 </template>
 <script>
@@ -27,17 +27,14 @@ export default {
 <style 
 lang="less" 
 scoped>
-.no-date {
-    font-size: 14px;
+@import '../../assets/style/common';
+.no-data {
+    .adv-font-normal();
+    .adv-height(45px);
+    .adv-common-border-radius();
+    .adv-position-center();
     color: #fff;
-    z-index: 100010;
     padding: 0 10px;
-    top: 50%;
-    left: 50%;
-    height: 45px;
-    line-height: 45px;
-    transform: translate(-50%,-50%);
     background: rgba(0, 0, 0, 0.7);
-    border-radius: 4px;
   }
 </style>

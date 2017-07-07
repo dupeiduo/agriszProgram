@@ -108,7 +108,7 @@ import leftTab from 'components/leftTab'
 
 <style 
   lang="less">
-@import '../../../assets/style/reset';
+@import '../../../assets/style/common';
   .weath-prod {
     .product {
       .product-active {
@@ -138,7 +138,7 @@ import leftTab from 'components/leftTab'
         cursor: pointer;
         padding-left: 10px;
         border-radius: 4px;
-        .mixin-height(40px);
+        .adv-height(40px);
           .triangle-right {
             display: inline-block;
             width: 0;
@@ -153,8 +153,8 @@ import leftTab from 'components/leftTab'
             color: #fff;
             border-radius: 50%;
             background: #777;
-            .mixin-height(20px);
-            .mixin-width(20px);
+            .adv-height(20px);
+            .adv-horizontal-center(20px);
           }
         &:hover {
           background: #eee;
@@ -182,7 +182,7 @@ import leftTab from 'components/leftTab'
         }
       }
       p {
-        font-size: 14px;
+        .adv-font-normal();
         margin: 18px 0 10px 0;
         padding-left: 10px;
       }
@@ -208,7 +208,7 @@ import leftTab from 'components/leftTab'
       padding: 0 10px;
       overflow-x: hidden;
       p {
-        font-size: 12px;
+        .adv-font-small();
         line-height: 30px;
         overflow-y: auto;
         text-indent: 2em;
@@ -227,7 +227,7 @@ import leftTab from 'components/leftTab'
     }
   }
   .fade-expand {
-    .mixin-animation(expandme;0.2s;1;forwards);
+    .adv-animation(expandme;0.2s;1;forwards);
   }
   @keyframes shrinkme {
     0% {
@@ -238,7 +238,7 @@ import leftTab from 'components/leftTab'
     }
   }
   .fade-shrink {
-    .mixin-animation(shrinkme;0.2s;1;forwards);
+    .adv-animation(shrinkme;0.2s;1;forwards);
   }
   .product-slider .slider {
     width: 244px !important;

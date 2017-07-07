@@ -1,22 +1,35 @@
 <template>
-  <div>
-    <img class="occupation" src="/static/assets/img/temporary/occupy-large.png" width="100%" srcset="/static/assets/img/temporary/occupy-large.png 1920w, /static/assets/img/temporary/occupy-middle.png 1280w, /static/assets/img/temporary/occupy-small.png 800w" sizes="100vw"/>
+  <div :style="{position: 'relative',width:screenWidth - menuWidth - 10 + 'px',left:menuWidth + 'px'}" :class="animationClassName">
+    <img class="occupation" src="/static/assets/img/temporary/occupy-large.png" width="100%" />
     <p-footer></p-footer>
   </div>
 </template>
 
 <script>
   import pFooter from 'components/footer/';
+  import {mapGetters} from 'vuex'
   export default{
     data(){
-      return {}
+      return {
+        animationClassName: ''
+      }
     },
     computed: {
-
-    },
+      ...mapGetters({
+        menuWidth: 'menuWidth',
+        getScreenHeight: 'getScreenHeight',
+        screenWidth:'screenWidth'
+    })},
     methods: {
       initMap (map) {
         this.map = map;
+      }
+    },
+    watch: {
+      menuWidth(width){
+        if(width) {
+          this.animationClassName = 'menu-left-animation'
+        }
       }
     },
     components: {

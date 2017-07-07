@@ -6,46 +6,47 @@
       :top="97"
       borderRadius="4px"
       :centerCtl="{use: true, bounds: bounds}"
-      :addTileAreas="{code: code, areas: (showDcp ? dcpTree : tree), extent: bounds}"
-      :maxZoom="14" ref="map"
+      :maxZoom="18" ref="map"
       :useTools="true"></my-map>
-    <div class="c-left-tab" 
-      :style="{width: leftLoading ? '358px' : '0'}"
-      v-loading.lock="leftLoading">
-      <left-tab 
+    <div>
+      <left-tab
+        class="c-left-tab" 
         :showList="showList"
-        @toggleList="toggleListStatus"
         :leftTab="[]"
         :title="title"
         :backList="backList"
         :listTitle="'返回查看所有分布产品'"
+        @toggleList="toggleListStatus"
         @changeState="switchList">
 
-        <left-list slot="list" 
+        <left-list slot="list"
           :list="list" 
           :options="options"
           :curIndex="curIndex"
           @getChartData="getChartData"
           :showNoData="!leftLoading"
-          @listChange="changeIndex"></left-list>
+          @listChange="switchProduct"></left-list>
 
-        <div v-if="haveCpDetail" slot="detail" class="crop-product">
+        <div v-if="haveCpDetail || leftLoading" slot="detail" class="crop-product" v-loading.lock="leftLoading">
+          <div :style="{'max-height': getScreenHeight - 120 + 'px'}">
           <h3 class="tree-detail-title">{{productTitle}}</h3>
-          <div class="tree-classify-con pr" @click.stop="hidePop">
-            <div>
-              <input class="tree-input class-tree-input" type="text" readonly 
-                @click="toggleTree" 
-                :value="treeNodeName">
-              <el-tree class="tree" 
-                highlight-current
-                v-if="showTree" 
-                :data="tree" 
-                :props="defaultProps" 
-                @node-click="treeNodeClick">
-              </el-tree>
-              <div v-if="showTree" class="confirm-btn-con">
-                <span @click="toggleTree" class="confirm-btn">确&nbsp;&nbsp;定</span>
-              </div>
+          <div class="tree-classify-con pr dropdown-zIndex" @click.stop="hidePop">
+            
+            <div class="area-tree">
+              <tree 
+                :treeData="treeData" 
+                :showTree="showTree"
+                @getTreeNode="getTreeNode"
+                @changeShowTreeStatus="getTreeStatus">
+              </tree>
+            </div>
+            <div class="sub-area-tree">
+              <tree 
+                :treeData="filterTree" 
+                :showTree="subShowTree"
+                @getTreeNode="getFilterTreeNode" 
+                @changeShowTreeStatus="getSubTreeStatus"
+                ></tree>
             </div>
           </div>
             
@@ -57,8 +58,8 @@
               @changeOpacity="changeOpacity"
               ></opacity-ctl>
           </div>
-          <div class="classify-contrast  pr slider-container">
-            对比地图实况
+          <div class="classify-contrast  pr">
+            <span class="adv-test">对比地图实况</span>
             <el-switch class="contrast-switch ps"
               :width=56
               v-model="showImgZoomPoints"
@@ -76,21 +77,28 @@
               @changeUnit="changeUnit"
               @setLayerVisible="setLayerVisible"
               @setLayerColor="setLayerColor"></tb-detail>
-           
-            <div class="pie-chart">
-              <p class="pie-chart-title">作物分布统计图</p>
-              <my-echart
-              v-if="tableData.length > 0"
-              :options="pieChart"
-              class="pie-chart-body"
-              >
-              </my-echart>
+            <div class="pie-chart-container">
+              <div class="pie-chart">
+                <p class="pie-chart-title">作物分布统计图</p>
+                <my-echart
+                  v-if="hasCropArea"
+                  :options="pieChart"
+                  class="pie-chart-body">
+                </my-echart>
+                <div v-else class="none-crop">
+                  <p class="iconfont icon-chazhaopingmunei"></p>
+                  该地区未发现作物
+                </div>
+              </div>
             </div>
+            
           </div>
 
+          </div>
         </div>
         <div v-else-if="tableData.length == 0 && !leftLoading" slot="detail">
-          <h3>－暂无数据－</h3>
+          <expect-data class="list-nodata-bg pr" 
+            :showSectionData="true"></expect-data>
         </div>
 
       </left-tab>
@@ -112,12 +120,12 @@
     <no-data :noLayer="showNoData"></no-data>
 
     <pop-message :popTitle="popTitle" ref="popMessage"></pop-message>
-    <my-searchpoi right="134px" :map="map" @setCenter="setCenter"></my-searchpoi>
-    <my-photozoom  
-      :showPhoto="showImgZoomComponent"
-      :imageDate="imgDate"
-      :imageUrl="imgUrl" 
-      @hidePhotoZoom="showImgZoomComponent = false"></my-photozoom>
+
+    <imageviewer :showImgZoomComponent="showImgZoomComponent"
+      :imgDate="imgDate"
+      :imgUrl="imgUrl"
+      @hideImageViewer="showImgZoomComponent=false"></imageviewer>
+    <expect-data :showPageData="true" v-if="noMapData"></expect-data>
   </div>
 </template>
 
@@ -126,6 +134,7 @@ import leftTab from 'components/leftTab';
 import leftList from './list';
 import tbDetail from './tbdetail';
 import dcpControl from './dcp';
+import imageviewer from './imageviewer';
 import request from 'api/request.js'
 import model from 'api/model.js'
 import echart from './echart/index.js'
@@ -133,7 +142,11 @@ import configData from '../../config/data.js'
 import config from 'config/env/config.env.js'
 import noData from 'components/noData';
 import imgLayerCtl from 'agrisz-lib-piccluster'
-
+import {mapGetters} from 'vuex'
+import {elementUtil} from 'plugins/utils.js'
+import tree from '../../components/tree'
+import expectData from 'components/expectData/'
+import subFilter from '../monitor/subfilter'
 
 export default{
   data(){
@@ -142,25 +155,29 @@ export default{
       curIndex: -1,
       bounds: [],
       title: '',
-      backList: false,
+      backList: true,
       leftLoading: true,
+      firstLoad: true,
       haveCpDetail: false,
       list: [],
       tableData: [],
-      showNoData: false, 
+      showNoData: false,  
       pieChart: null,
+      hasCropArea: true,
       options: null,
-      showTree: false,
-      treeNodeName: '',
-      tree: [],
-      defaultProps: {
-        children: 'contain',
-        label: 'area_name'
-      },
+     
+      treeData: [],
+      showTree:false,
+      currentTreeNode: null,
+
+      filterTree: [],
+      subShowTree: false,
+      filteredCodes: [],
+
       code: null,
       opacity: 90,
-      layerName: '',
-      cpLayer: null,
+      layerNames: [],
+      cpLayers: [],
       dcpLayers: [],
       layerSld: {},
       cropColor: '',
@@ -189,7 +206,9 @@ export default{
       imgUrl: '',
       showImgZoomComponent: false,
 
-      showPhoto: false
+      showPhoto: false,
+      showPageData: false,
+      noMapData: false
     }
   },
   filters: {
@@ -197,67 +216,41 @@ export default{
       return value.replace(/-/g, "/")
     }
   },
+  computed: {
+    ...mapGetters({
+      menuWidth: 'menuWidth',
+      screenWidth: 'screenWidth',
+      getScreenHeight: 'getScreenHeight'
+    })
+  },
   mounted() {
     this.layerSld.normal = configData.sld.cfLayerColors
     this.layerSld.selected = configData.sld.cfSelLayerColors
-    this.leftLoading = true
-
-    request.distributeList().then((response) => {
-      if (response.status === 200 && response.data.length !== 0) {
-        this.list = model.formatCps(response.data)
-        this.curIndex = 0
-        this.leftLoading = false
-      } else {
-        this.list = []
-        this.leftLoading = false
-      }
-    })
+    this.fetchCpList()
   },
   methods: {
-    initMap (map) {
-      this.map = map;
-    },
-    fetchPictureList(code) {
-      var data = {
-        // area_codes: -1,
-        area_codes: [code],
-        img_type: this.imgType
-      }
-      request.geoImageList(data).then((response) => {
-        if (response && response.status === 200 && response.data.status === 0) {
-          this.imgList  = response.data.data
+    fetchCpList() {
+      this.showPopMsgUnAutoHide("图层加载中...")
+      this.leftLoading = true
+      this.changeLoadOpacity("rgba(255,255,255,1)")
+
+      request.distributeList().then((response) => {
+        if (response && response.status === 200 && response.data.status === 200) {
+          this.list = model.formatCps(response.data.data)
+        } 
+
+        if(this.list === 0) {
+          this.noMapData = true
+          this.hidePopMsg()
+
+        } else {
+          this.curIndex = 0
         }
+        this.leftLoading = false
       })
     },
-    addImgLayer(imgList) {
-
-      const  pictureClickCb = ({index, pid}) => {
-        this.loadImgZoomComponent(index, imgList)
-      }
-
-      if (imgList && imgList.length > 0) {
-        
-        imgLayerCtl.setDistance(50) 
-        imgLayerCtl.setRootAssertUrl(config.sharedAssetServer)
-        imgLayerCtl.addPicturesLayer(this.map, imgList, pictureClickCb)
-      }
-    },
-    loadImgZoomComponent(index, imgList) {
-      var image = this.getImgDetail(index, imgList)
-      
-      this.imgDate = image.date
-      this.imgUrl = image.url
-      this.showImgZoomComponent = true
-    },
-    getImgDetail(index, imgList) {
-      var detail = {}
-      detail.date = imgList[index].img_date.toString().split(' ')[0]
-      detail.url = `${config.sharedAssetServer}/${imgList[index].img_file}`
-      
-      return detail
-    },
-    setCenter() {
-      this.$refs['map'].setCenter()
+    initMap (map) {
+      this.map = map;
     },
     toggleListStatus(isShow) {
       this.showList = isShow;
@@ -272,6 +265,7 @@ export default{
       if (this.list.length === 0) {
         return
       }
+
       this.backList = !this.backList; 
       if (!this.backList) {
         this.title = "分布产品列表"
@@ -283,76 +277,179 @@ export default{
     },
     hidePop() {
       this.showTree = false
+      this.subShowTree = false
     },
-    treeNodeClick(data) {
+    getTreeStatus(status){
+      this.showTree = status
+    },
+    getSubTreeStatus(status){
+      this.subShowTree = status
+    },
+    getTreeNode(data){
+      this.currentTreeNode = data
+      this.code = data.area_id;
       this.bounds = model.formatBounds(data)
-      this.code = data.area_id
-      this.treeNodeName = data.area_name
+      
+      this.getFilterTree(data.grade, data.minGrade)
     },
-    toggleTree() {
-      event.stopPropagation()
-      this.showTree = !this.showTree
+    getFilterTree(grade, minGrade) {
+      this.filterTree = []
+      for(var g in subFilter[grade]) {
+        if (g <= minGrade) {
+          var item = {
+            value: g,
+            area_name:  subFilter[grade][g]
+          }
+          this.filterTree.push(item)
+        }
+      }
+      this.getFilterTreeNode(this.filterTree[0])
     },
-    changeIndex(index) {
+    getFilterTreeNode(data) {
+      var name = data.area_name
+      var grade = data.value
+
+      var codes = this.currentTreeNode[grade] 
+          ? [this.currentTreeNode.area_id].concat(this.currentTreeNode[grade])
+          : [this.currentTreeNode.area_id]
+
+      
+      this.filteredCodes = this.getCodes(grade, codes)
+      var areaCodes = this.filteredCodes.concat(this.currentTreeNode.area_id)
+
+      this.addAreaLayers(areaCodes)
+      this.addCpLayers(this.filteredCodes)
+    },
+    getCodes(grade, codes) {
+      var result = []
+      var rootNode = this.currentTreeNode
+      if (grade == rootNode.grade) {
+        // area self
+        result = [rootNode.area_id]
+
+      } else if (rootNode[grade]) {
+        // area son
+        for (var i = 0; i < rootNode.contain.length; i++) {
+          result.push(rootNode.contain[i].area_id)
+        }
+
+      } else if (rootNode.contain) {
+        // area grandson
+        for (var i = 0; i < rootNode.contain.length; i++) {
+          if (rootNode.contain[i][grade]) {
+            result = result.concat(rootNode.contain[i][grade])
+          }
+        }
+      }
+
+      return result
+    },
+    removeAreaLayers() {
+      if (this.areaLayer) {
+        this.map.removeLayer(this.areaLayer)
+        this.areaLayer = null
+      }
+    },
+    addAreaLayers(codes) {
+      this.removeAreaLayers()
+
+      this.areaLayer = this.$refs.map.getMultyAreaLayer(config.mapUrl, codes, this.bounds)
+      this.map.addLayer(this.areaLayer)
+    },
+    removeCpLayers() {
+      if (this.cpLayers.length > 0) {
+        for (var i = 0; i < this.cpLayers.length; i++) {
+          var layer = this.map.removeLayer(this.cpLayers[i])
+        }
+      }
+      
+      this.cpLayers = []
+      this.layerNames = []
+    },
+    addCpLayers(codes) {
+      this.removeCpLayers()
+      var cpId = this.list[this.curIndex].only_result
+      var vid = this.list[this.curIndex].id 
+      var notExist = 0
+
+      var areas = []
+      console.log(codes.length)
+      for (let i = 0; i < codes.length; i++) {
+        this.getCpData(cpId, vid, (result)=>  {
+          if (result) {
+            let layerName = "map:" + result.cp.id
+            let sld = this.getSld(cpId, null, 1, layerName)
+
+            this.cpLayers[i] = this.addLayer(layerName, sld)
+            this.layerNames[i] = layerName
+
+            areas.push(result.cp)
+
+          } else {
+            notExist++
+          } 
+
+          if (i === codes.length-1 && notExist === codes.length) {
+            this.addParentCpLayer(cpId, vid)
+          }
+          this.hidePopMsg()
+          
+          if (codes.length === areas.length) {
+            this.formatMutyArea(areas, cpId)
+          }
+          
+        }, false, codes[i])
+      }
+    },
+    addParentCpLayer(cpId, vid) {
+      this.getCpData(cpId, vid, (result)=>  {
+        if (result) {
+          let layerName = "map:" + result.cp.id
+          let sld = this.getSld(cpId, null, 1, layerName)
+
+          this.cpLayers[0] = this.addLayer(layerName, sld)
+          this.layerNames[0] = layerName
+
+          this.formatMutyArea([result.cp])
+
+        } else {
+          // 暂无分布数据
+          console.log("暂无分布数据")
+          this.showPopMsgUnAutoHide("暂无数据")
+        } 
+      }, false, this.currentTreeNode.area_id)
+    },
+    switchProduct(index) {
       this.backList = true
       this.curIndex = index
       this.productTitle = this.list[this.curIndex].title
     },
-    setLayerVisible({id, open, name}) {
-      var index = this.getIndexById(id)
-      this.tableData[index].open = open
-      
-      this.$refs['popMessage'].showDialog()
-      this.popTitle = open ? `已显示${name}分布图层` : `已隐藏${name}分布图层`
-      
-      var opacity = open ? 1 : 0,
-        curSld = this.getSld(id, null, opacity, this.layerName)
-
-      this.updateSld(curSld, this.cpLayer);
-    },
-    getIndexById(id) {
-      var index = -1
-      for (var i = 0; i < this.tableData.length; i++) {
-        if (this.tableData[i].id === id) {
-
-          index = i
-          break
-        }
-      }
-      return index
-    },
-    setLayerColor({id, color}) {
-      this.cropIndex = this.getIndexById(id)
-
-      var curSld = this.getSld(id, color, 1, this.layerName)
-
-      this.tableData[this.cropIndex].color = color
-      this.tableData[this.cropIndex].open = true
-      this.updateSld(curSld, this.cpLayer);
-      
-      this.freshChartColor()
-    },
-    getCpData(id, callback, unchangeColor) {
+    getCpData(id, vid, callback, unchangeColor, code) {
+      code = code ? code : this.code
       if (this.cpCacheData[id]) {
+        var formated = model.formatCpData(this.cpCacheData[id], code)
         if (!unchangeColor) {
-          this.setSldAttr(this.cpCacheData[id].cp, id)
+          this.setSldAttr(formated.cp, id)
         }
-        
-        callback(this.cpCacheData[id])
+        callback(formated)
+
       } else {
-        request.distributeById(id).then((response) => {
-          if (response.status !== 200 || response.data.status !== 0) {
+        request.distributeIAById(vid).then((response) => {
+          if (response.status !== 200 || response.data.status !== 200) {
             this.options = {noData: true}
             callback(null)
+            
           } else {
-            var formated = model.formatCpData(response.data, id, this.code)
+            this.cpCacheData[id] = response.data.data[id]
+            var formated = model.formatCpData(this.cpCacheData[id], code)
+            
             if (!formated) {
               this.options = {noData: true}
               this.tableData = []
               this.showNoData = true
               callback(null)
+
             } else {
-              this.cpCacheData[id] = formated
               this.setSldAttr(formated.cp, id)
               callback(formated)
               this.showNoData = false
@@ -363,13 +460,15 @@ export default{
     },
     getChartData(index) {
       var id = this.list[index].only_result,
-        title = this.list[index].title
+        title = this.list[index].title,
+        vid = this.list[index].id
 
-      this.getCpData(id, (formated) => {
+      this.getCpData(id, vid, (formated) => {
         if (!formated) {
           this.options = {noData: true}
         } else {
-          this.tableData = this.getCpCrops(formated)
+          // the bug after hover bar chart
+          // this.tableData = this.getCpCrops(formated)
           var chartData = this.getPieData(formated.cp, id)
           this.options = echart.getPie(chartData, title, 60, true); 
         }
@@ -384,7 +483,7 @@ export default{
           value: crops[i].a,
           itemStyle: {
             normal: {
-              color: this.tableData[i].color,
+              color: this.tableData[i] ? this.tableData[i].color : this.layerSld.normal[i],
             }
           }
         }
@@ -393,22 +492,19 @@ export default{
       return pieData
     },
     addLayer(layerName, sld) {
-      var extent = ol.extent.applyTransform(this.bounds, ol.proj.getTransform("EPSG:4326", "EPSG:3857")),
-        layerOptions = {
+      var extent = ol.extent.applyTransform(this.bounds, ol.proj.getTransform("EPSG:4326", "EPSG:3857"))
+      var layerOptions = {
           serverUrl: config.mapUrl,
-          visible: !this.showDcp,
-          extent: extent,
           layerName: layerName,
+          extent: extent,
+          visible: !this.showDcp,
           opacity: this.opacity/100,
           sld: sld
         }
-      return this.$refs['map'].addGeoLayer(layerOptions, this.map)
-    },
-    removeCPLayer() {
-      if (this.cpLayer) {
-        this.map.removeLayer(this.cpLayer)
-        this.cpLayer = null
-      }
+      var layer = this.$refs['map'].getTileLayer(layerOptions)
+      this.map.addLayer(layer)
+      
+      return layer
     },
     setSldAttr (data, id) {
       if (data) {
@@ -446,23 +542,61 @@ export default{
         <Name>${layerName}</Name><UserStyle><Title>SLD Cook Book: Discrete colors</Title><FeatureTypeStyle><Rule><RasterSymbolizer><ColorMap type="values"><ColorMapEntry color="#000000" quantity="0" label="no-data" opacity="0" />
         ${sldBody}</ColorMap></RasterSymbolizer></Rule></FeatureTypeStyle></UserStyle></NamedLayer></StyledLayerDescriptor>`;
     },
+    setLayerVisible({id, open, name}) {
+      var index = this.getCropIndex(id)
+      this.tableData[index].open = open
+      
+      this.$refs['popMessage'].showDialog()
+      this.popTitle = open ? `已显示${name}分布图层` : `已隐藏${name}分布图层`
+      
+      var opacity = open ? 1 : 0
+      
+      for (var i = 0; i < this.layerNames.length; i++) {
+        let curSld = this.getSld(id, null, opacity, this.layerNames[i])
+        this.updateSld(curSld, this.cpLayers[i]);
+      }
+    },
+    setLayerColor({id, color}) {
+      this.cropIndex = this.getCropIndex(id)
+
+      for (var i = 0; i < this.layerNames.length; i++) {
+        let curSld = this.getSld(id, color, 1, this.layerNames[i])
+
+        this.tableData[this.cropIndex].color = color
+        this.tableData[this.cropIndex].open = true
+        this.updateSld(curSld, this.cpLayers[i]);
+      }
+
+      this.freshChartColor()
+    },
+    getCropIndex(id) {
+      var index = -1
+      for (var i = 0; i < this.tableData.length; i++) {
+        if (this.tableData[i].id === id) {
+
+          index = i
+          break
+        }
+      }
+      return index
+    },
     updateSld(sld, layer) {
       layer.getSource().updateParams({SLD_BODY: sld});
     },
     initDcp() {
       request.dynamicDistributeId().then((response) => {
-        if (!response.data || response.data.length <= 0) {
+        if (!response || response.status !== 200 || response.data.status !== 200 || response.data.data.length <= 0) {
           return
         } else {
-          this.dcpTitle = response.data[0].title;
-          this.dcpId = response.data[0].only_result;
+          this.dcpTitle = response.data.data[0].title;
+          this.dcpId = response.data.data[0].only_result;
           this.getDcpById(this.dcpId)
         }
       })
     },
     getDcpById(id) {
       request.dynamicDistribute(id).then((response) => {
-        if (response.status !== 200 || response.data.status != 0 || response.data[id].length < 2) {
+        if (response.status !== 200 || response.data.status != 0 || !response.data[id] || response.data[id].length < 2) {
           return
         } else {
           this.dcpData = model.formatDcp(response.data, id, this.code);
@@ -544,34 +678,75 @@ export default{
       }
       return data.cp.crops
     },
-    renderCpDetail(id) {
+    renderCpDetail(id, vid) {
       this.leftLoading = true
-      this.removeCPLayer()
-      this.getCpData(id, (formated) => {
+      this.removeAreaLayers()
+      this.removeCpLayers()
+      this.showPopMsgUnAutoHide("图层加载中...")
+      
+      this.getCpData(id, vid, (formated) => {
         if (!formated) {
           this.options = {noData: true}
           this.haveCpDetail = false
+          this.tableData = []
+
         } else {
           this.tableData = this.getCpCrops(formated)
           var chartData = this.getPieData(formated.cp, id)
           this.pieChart = echart.getPie(chartData, '', 50, true);
+          
+          this.initTree(formated.areaList)
 
-          this.tree = formated.areaList
-          this.code = this.tree[0].area_id
-          this.treeNodeName = this.tree[0].area_name
-          this.bounds = model.formatBounds(this.tree[0])
-          this.layerName = 'map:' + formated.cp.id
-          var sld = this.getSld(id, null, 1, this.layerName)
-          this.cpLayer = this.addLayer(this.layerName, sld)
           this.haveCpDetail = true
+          this.hidePopMsg()
         }
         this.leftLoading = false
+        this.firstLoad = false
       })
     },
-    freshChartColor() {
-      var cpId = this.list[this.curIndex].only_result
+    formatMutyArea(cp, id) {
+      var formated = {
+        cp: {
+          crops: []
+        }
+      }
+      var total = 0
+      var area = []
+      var len = cp.length
+      
+      cp.forEach((current, index, arr)=> {
+        for (var i = 0; i < current.crops.length; i++) {
+          area[i] = area[i] ? area[i] : 0
+          area[i] += current.crops[i].a
+          if (index === len - 1) {
+            var item = {
+              a: area[i],
+              color: current.crops[i].color,
+              name: current.crops[i].name,
+              id: current.crops[i].id
+            }
+            formated.cp.crops.push(item)
+          }
+          total += area[i]
+        }
+      })
 
-      this.getCpData(cpId, (formated) => {
+      this.hasCropArea = total !== 0
+      this.tableData = this.getCpCrops(formated)
+      var chartData = this.getPieData(formated.cp, id)
+      this.pieChart = echart.getPie(chartData, '', 50, true);
+    },
+    initTree(areaList) {
+      this.treeData = model.formatMonitorTree(areaList).treeData
+      this.code = this.treeData[0].area_id
+      this.bounds = model.formatBounds(this.treeData[0])
+      this.getTreeNode(this.treeData[0])
+    },
+    freshChartColor() {
+      var cpId = this.list[this.curIndex].only_result,
+        vid = this.list[this.curIndex].id
+
+      this.getCpData(cpId, vid, (formated) => {
         if (!formated) {
           this.pieChart = {noData: true}
         } else {
@@ -590,24 +765,98 @@ export default{
           this.tableData[i].area = (Number(this.tableData[i].a) / 10000 / 10000 * 10).toFixed(2);
         }
       }
+    },
+    changeLoadOpacity(color) {
+      setTimeout(()=> {
+        var dom = document.getElementsByClassName('el-loading-mask')
+        elementUtil.setDomStyle(dom, 'backgroundColor', color)
+      })
+    },
+    fetchPictureList(code) {
+      var data = {
+        area_codes: -1,
+        // area_codes: [code],
+        img_type: this.imgType
+      }
+      request.geoImageList(data).then((response) => {
+        if (response && response.status === 200 && response.data.status === 0) {
+          this.imgList  = response.data.data
+        }
+      })
+    },
+    addImgLayer(imgList) {
+
+      const imgClickCb = ({index, pid}) => {
+        this.loadImgZoomComponent(index, imgList)
+      }
+      const imgHoverCb = (indexs) => {
+        // console.log(indexs)
+      }
+      if (imgList && imgList.length > 0) {
+        imgLayerCtl.openHoverStyle()
+        imgLayerCtl.setDistance(50) 
+        imgLayerCtl.openDeric() 
+        imgLayerCtl.setRootAssertUrl(config.sharedAssetServer)
+        imgLayerCtl.addPicturesLayer(this.map, imgList, imgClickCb, imgHoverCb)
+
+      }
+    },
+    loadImgZoomComponent(index, imgList) {
+      var image = this.getImgDetail(index, imgList)
+      
+      this.imgDate = image.date
+      this.imgUrl = image.url
+      this.showImgZoomComponent = true
+    },
+    getImgDetail(index, imgList) {
+      var detail = {}
+      detail.date = imgList[index].img_date.toString().split(' ')[0]
+      detail.url = `${config.sharedAssetServer}/${imgList[index].img_file}`
+      
+      return detail
+    },
+    showPopMsgUnAutoHide(msg) {
+      this.$refs['popMessage'].showUnAutoHideDialog()
+      this.popTitle = msg
+    },
+    hidePopMsg() {
+      this.$refs['popMessage'].hidePopMsgImmediate()
+    },
+    getMapViewExtent(bounds) {
+      var minX = this.menuWidth + 358 + 10
+      var minY = 48
+      var maxX = this.screenWidth
+      var maxY = this.getScreenHeight
+
+      var viewPixel = [minX, minY, maxX, maxY]
+      var mapPixel = [0,0, this.screenWidth, this.getScreenHeight]
+
+      var fitedExtent = this.$refs.map.getFitExtent(viewPixel, mapPixel)
+
+      return fitedExtent
+    },
+    fitToView(bounds) {
+      setTimeout(()=> {
+        var extent = this.getMapViewExtent(bounds)
+        this.map.getView().fit(extent)
+      }, 100)
     }
   },
   watch: {
     curIndex: function (index) {
       if (this.list.length === 0) {
+        this.hidePopMsg()
         return
       }
       this.backList = true
       this.title = this.list[index].title
       this.productTitle = this.title
 
-      var id = this.list[index].only_result
-      this.renderCpDetail(id)
+      var id = this.list[index].only_result,
+        vid = this.list[index].id
+      this.renderCpDetail(id, vid)
     },
     code: function (code) {
-      var id = this.list[this.curIndex].only_result
-      this.renderCpDetail(id)
-      
       if (!this.loadedDcp && code) {
         this.loadedDcp = true
         this.initDcp()
@@ -620,12 +869,17 @@ export default{
     cropColor: function (color) {
       var id = this.tableData[this.cropIndex].id
       this.tableData[this.cropIndex].color = color
-      var curSld = this.getSld(id, color, 1, this.layerName)
-      this.updateSld(curSld, this.cpLayer);
-      // change chart color
-      var cpId = this.list[this.curIndex].only_result
+      
+      for (var i = 0; i < this.layerNames.length; i++) {
+        let curSld = this.getSld(id, color, 1, this.layerNames[i])
+        this.updateSld(curSld, this.cpLayers[i]);
+      }
 
-      this.getCpData(cpId, (formated) => {
+      // change chart color
+      var cpId = this.list[this.curIndex].only_result,
+        vid = this.list[this.curIndex].id
+
+      this.getCpData(cpId, vid, (formated) => {
         if (!formated) {
           this.pieChart = {noData: true}
         } else {
@@ -638,7 +892,11 @@ export default{
       if (this.showDcp && this.dcpData && this.dcpDates.length === 0) {
         this.dcpDates = (() => this.dcpData.dates)()
       }
-      this.cpLayer.setVisible(!showDcp);
+
+      for (var i = 0; i < this.cpLayers.length; i++) {
+        this.cpLayers[i].setVisible(!showDcp);
+      }
+
       for (var i = 0; i < this.dcpLayers.length; i++) {
         this.dcpLayers[i].setVisible(showDcp);
       }
@@ -650,7 +908,11 @@ export default{
           this.dcpLayers[i].setOpacity(oldOpc * this.opacity / 100)
         }
       }
-      this.cpLayer.setOpacity(opacity/100);
+
+      for (var i = 0; i < this.cpLayers.length; i++) {
+        this.cpLayers[i].setOpacity(opacity/100);
+      }
+      
     },
     imgList(list) {
       this.showImgZoomPoints && this.addImgLayer(list) 
@@ -662,65 +924,79 @@ export default{
         this.showImgZoomComponent = false
         imgLayerCtl.removeLayer()
       } 
+    },
+    bounds(bounds) {
+      this.fitToView(bounds)
+    },
+    leftLoading(loading) {
+      if (loading && this.firstLoad) {
+        this.changeLoadOpacity("rgba(255,255,255,1)")
+      }
+    },
+    firstLoad(loading) {
+      if (!loading) {
+        this.changeLoadOpacity("rgba(255,255,255,.9)")
+      }
     }
   },
   beforeDestroy(){
-    this.removeCPLayer()
-    imgLayerCtl.destroy()
+    
   },
   components: {
     leftTab,
     leftList,
     tbDetail,
     dcpControl,
-    noData
+    noData,
+    imageviewer,
+    tree,
+    expectData
   }
 }
 </script>
-<style lang="less" rel="stylesheet/less" scoped>
-@import '../../assets/style/reset';
+<style
+ lang="less" rel="stylesheet/less" scoped>
+@import '../../assets/style/common';
 .c-left-tab {
-    position: fixed;
-    min-height: 580px;
-    left: 10px;
-    top: 58px;
-
+    width:358px;
 }
   .detail-container {
     position: relative;
     background: #fff;
-    width: 358px;
+    width: 100%;
     padding-bottom: 10px;
-    .mixin-border-radius-bottom();
+    .adv-border-bottom-radius();
   }
 
-  .pie-chart {
-    width: 330px;
-    height: 230px;
-    margin: 10px auto;
-    border: 1px #d6d6d6 solid;
-    background: #f9f9f9;
-    .mixin-common-border();
-    .pie-chart-title {
+  .pie-chart-container{
+    padding: 10px 14px;
+    box-sizing: border-box;
+    .pie-chart {
       position: relative;
-      line-height: 36px;
-      padding-left: 20px;
-      &:before {
-        position: absolute;
-        left: 10px;
-        top: 10px;
-        width: 4px;
-        height: 15px;
-        content: '';
-        display: inline-block;
-        background: #9ed132;
+      border: 1px #d6d6d6 solid;
+      background: #f9f9f9;
+      .adv-common-border-radius();
+      .pie-chart-title {
+        .adv-title-after-vertical-line-small();
+        line-height: 36px;
+      }
+      .pie-chart-body {
+        margin: auto;
+        width: 330px;
+        height: 170px;
       }
     }
-    .pie-chart-body {
-      width: 330px;
-      height: 170px;
+    .none-crop {
+      color: #b1aaa2;
+      text-align: center;
+      height: 120px;
+      padding-top: 50px;
+      p {
+        font-size: 30px;
+      }
     }
   }
+  
   
   .dcp-toggle {
     position: absolute;
@@ -745,7 +1021,9 @@ export default{
   }
   .crop-product {
     background: #f3fbeb;
-    .mixin-border-radius-bottom();
+    overflow-y: auto;
+    overflow-x: hidden;
+    .adv-border-bottom-radius();
     .tree-detail-title {
       line-height: 40px;
       background: #9ed132;
@@ -753,33 +1031,49 @@ export default{
       font-size: 16px;
       color: #fff;
     }
-    .class-tree-input {
-      margin: 18px 12px 0;
-    }
-    .confirm-btn-con {
-      position: absolute;
-      width: 328px;
-      height: 50px;
-      background: #fff;
-      top: 222px;
-      left: 13px;
-      z-index: 10002;
-      
-      .mixin-boxshadow();
+    .tree-classify-con {
+      padding: 18px 14px 0;
+      box-sizing: border-box;
+
+      .area-tree {
+        width: 180px;
+      }
+      .sub-area-tree {
+        width: 134px;
+        float: right;
+        margin-top: -34px;
+        margin-right: 0px;
+      }
     }
     .slider-container {
       margin: 0 12px;
     }
   }
+
+  .list-nodata-bg {
+    width: 358px;
+    min-height: 300px; 
+    overflow-y: auto;
+    .adv-border-bottom-radius();
+  }
   .classify-contrast {
-     width: 96%;
-     position: relative;
-     left: -10px;
-     border-top: 1px solid #d8d8d8;
-     padding-left: 10px;
-    .contrast-switch {
+    position: relative;
+     width: 290px;
+     padding: 17px 14px; 
+     line-height: 12px;
+     &:before {
       position: absolute;
-      right: 14px;
+      content: '';
+      width: 358px;
+      height: 1px;
+      background: #d8d8d8;
+      left: 0;
+      top: 0;
+     }
+    .contrast-switch {
+      font-size: 12px;
+      position: absolute;
+      right: -24px;
       top: 10px;
     }
   }

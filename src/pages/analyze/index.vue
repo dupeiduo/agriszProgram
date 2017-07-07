@@ -1,29 +1,23 @@
 <template>
-  <div class="analyze clear"  @click="hideTree">
+  <div class="analyze clear"  
+        @click="hideTree" 
+        :style="{'margin-left': menuWidth + 'px'}"
+        :class="animationClassName"
+        >
     <leftlist :leftList="leftList" @changeState="clickListItem"></leftlist>
-    <div class="al-content pr" :style="{'height':clientH + 'px'}">
-      <div class="al-filter" :style="{'width':clientW - 32 + 'px'}">
+    
+    <div class="al-content pr " :style="{'height':getScreenHeight + 'px',width: screenWidth - menuWidth - 180 + 'px'}">
+      <div class="al-filter" :style="{'width':screenWidth - menuWidth - 60 - 180 + 'px'}">
         <div class="al-filter-date clear pr">
           <div class="tree-container clear ps">
             <span class="select-tree-txt fl">选择市级</span>
             <div class="analyze-tree fl pr">
-              <div>
-                <input class="tree-input" type="text" readonly 
-                    @click.stop="hideTree" 
-                    @click="showTree = !showTree" 
-                    :value="treeNodeName">
-                <el-tree class="tree" 
-                  v-if="showTree" 
-                  highlight-current
-                  @click.stop="hideTree"
-                  :data="tree" 
-                  :props="defaultProps"
-                  @node-click="treeNodeClick">
-                </el-tree>
-                <div v-if="showTree" class="confirm-btn-con">
-                  <span @click="showTree = !showTree" class="confirm-btn">确&nbsp;&nbsp;定</span>
-                </div>
-              </div>
+              <tree 
+              :treeData="treeData"
+              :showTree="areaShowTree"
+              @getTreeNode="treeNodeClick"
+              @changeShowTreeStatus="getAreaShowTreeStatus">
+              </tree> 
             </div>
           </div>
             <el-date-picker
@@ -39,9 +33,10 @@
             </el-date-picker>
         </div>
       </div>
-      <div class="analyze-content-all" :style="{'width':clientW -32  + 'px','height':clientH - 250  + 'px'}">
+      <div class="analyze-content-all" :style="{'width':screenWidth - menuWidth - 60 -180 + 'px','height':getScreenHeight - 250  + 'px'}">
         <div class="al-tb-content pr">
           <div class="al-tb-wrap">
+            
             <div class="al-title">
               <div class="al-title-p clear">
                 <i class="al-title-txt fl">{{tabTitle}}</i>
@@ -50,21 +45,23 @@
                 </span>
               </div>
             </div>
+
             <analyzetab v-loading.lock="loading"
-            :tabData="tabData" 
-            :options="options" 
-            :type="type"
-            :showNoData="!loading"
-            ></analyzetab>
+              :tabData="tabData" 
+              :options="options" 
+              :type="type"
+              :showNoData="!loading">
+            </analyzetab>
+
             <el-pagination
-            class="pages"
-            layout="prev, pager, next"
-            :page-count="totalPage"
-            :current-page="pageIndex"
-            :page-size="pageSize"
-            @current-change ="currentChange"
-            >
-          </el-pagination>
+              v-if="tabData.length > 0"
+              class="pages"
+              layout="prev, pager, next"
+              :page-count="totalPage"
+              :current-page="pageIndex"
+              :page-size="pageSize"
+              @current-change ="currentChange">
+            </el-pagination>
         </div>
       </div>
         <div class="footer-width">
@@ -85,6 +82,8 @@
   import analyzetab from 'pages/analyze/analyzeTab/';
   import {dateUtil} from 'plugins/utils.js';
   import footerlite from 'components/footerlite/'
+  import tree from '../../components/tree'
+  import {mapGetters} from 'vuex'
   
   export default{
     data(){
@@ -99,20 +98,17 @@
         pageIndex: 1,
         sum: -1,
         totalPage: -1,
-        tree: [],
+        treeData: [],
         defaultProps: {
           children: 'contain',
           label: 'area_name'
         },
-        treeNodeName: '',
-        showTree: false,
+        
         type: null,
         code: null,
         tabTitle:'',
         options: null,
         loading: true,
-        clientH: 0,
-        clientW: 200,
         pickerOptions: {
           disabledDate: (time)=> {
             var  oldDate = new Date(2010,1,1,0,0,0).getTime(),  
@@ -123,15 +119,18 @@
               return true
             }
           }
-        }
+        },
+        animationClassName: '',
+        areaShowTree:false
       }
     },
     computed: {
-
-    },
+      ...mapGetters({
+        menuWidth: 'menuWidth',
+        screenWidth: 'screenWidth',
+        getScreenHeight: 'getScreenHeight'
+      })},
     mounted() {
-      this.clientH = document.documentElement.clientHeight || document.body.clientHeight;
-     this.clientW = (document.documentElement.clientWidth || document.body.clientWidth) - 244;
       this.leftList = [
         {
           name:'长势统计信息',
@@ -142,20 +141,33 @@
         }
       ]
       
-      request.cantonTree().then((treeData) => {
-        this.tree = treeData.data;
-        this.code = treeData.data[0].area_id
-        this.treeNodeName = treeData.data[0].area_name
+      request.cantonTree().then((response) => {
+        if (response && response.status === 200 && response.data.status === 200) {
+          if (response.data.data.length > 0) {
+            this.treeData = response.data.data;
+            this.code = response.data.data[0].area_id
+            
+          } else {
+            // 无政区
+            this.loading = false
+          } 
+
+        } else {
+          // 无政区
+          this.loading = false
+        } 
       })
     },
     methods: {
+      getAreaShowTreeStatus(status){
+        this.areaShowTree = status
+      },
       hideTree() {
-        this.showTree = false
+        this.areaShowTree = false
       },
       treeNodeClick(data) {
         this.bounds = model.formatBounds(data)
         this.code = data.area_id
-        this.treeNodeName = data.area_name
       },
       clickListItem(index){
         this.tabData = []
@@ -211,6 +223,11 @@
       }
     },
     watch: {
+      menuWidth(width){
+        if(width) {
+          this.animationClassName = 'menu-left-animation'
+        }
+      },
       code: function (code) {
         this.getAnalzeTab()
       }
@@ -218,7 +235,8 @@
     components: {
       leftlist,
       analyzetab,
-      footerlite
+      footerlite,
+      tree
     }
   }
 </script>
@@ -227,7 +245,7 @@
     rel="stylesheet/less"
     scoped>
 
-    @import '../../assets/style/reset';
+    @import '../../assets/style/common';
   .map {
     position: absolute;
     width: 100%;
@@ -235,21 +253,19 @@
   }
   .analyze {
     overflow: hidden;
-    width: 100%;
     height: 100%;
 }
 .el-date-editor--daterange.el-input {
     left: 446px;
 }
 .al-content {
-    width: 100%;
+    margin-left: 176px;
     background: #e3eaef;
       .al-filter {
           z-index: 1;
-          position: fixed;
+          position: absolute;
           top: 80px;
-          left: 210px;
-          width: 85%;
+          left: 30px;
           border-bottom: 1px solid #eee;
           border-radius: 2px;
           background: #fff;
@@ -257,6 +273,7 @@
               position: relative;
               width: 100%;
               padding: 15px;
+              height: 30px;
               border-bottom: 1px solid #eee;
               
                 span {
@@ -269,23 +286,6 @@
                         margin: 8px 6px 0 30px;
                         color: #666;
                     }
-                    .tree-input {
-                      top: 0px;
-                    }
-                    .confirm-btn-con {
-                      position: absolute;
-                      width: 328px;
-                      height: 50px;
-                      background: #fff;
-                      top: 204px;
-                      left: 1px;
-                      z-index: 10002;
-                      .mixin-boxshadow();
-                      
-                      .confirm-btn {
-                        right: 7px;
-                      }
-                    }
                 }
             }
       }
@@ -293,8 +293,8 @@
 .analyze-content-all {
   position: absolute;
   top: 175px;
-  left: 210px;
-  background: #fff;
+  left: 30px;
+  background: @assistant-bg;
   z-index: 0;
 }
 .al-tb-content {
@@ -302,7 +302,7 @@
     top: 0px;
     left: 0px;
     padding: 14px 16px;
-    background: #fff;
+    background: @assistant-bg;
     overflow-x: hidden;
       .al-tb-wrap {
         height: 600px;
@@ -311,7 +311,7 @@
           height: 34px;
           background: #daf7ce;
             .al-title-p {
-              font-size: 14px;
+              .adv-font-normal();
               line-height: 34px;
               padding-left: 12px;
                 span:hover {
@@ -324,7 +324,7 @@
                     text-align: center;
                     background: #bae0a7;
                 }
-          }
+            }
         }
       }
 }

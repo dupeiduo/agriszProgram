@@ -1,43 +1,46 @@
 <template>
   <div class="market-echart-detail ps">
-    <div class="market-echart-wrap pl80">
+    <div class="market-echart-wrap">
       <div class="pop-detail">
         <div class="market-crop-title clear">
-        <span class="fl font16 detail-title">{{eTableData.farm_product_name}}行情. {{eTableData.market_name}}</span>
+        <span class="detail-title">{{eTableData.farm_product_name}}行情. {{eTableData.market_name}}</span>
         <div class="market-button fr">
           <span class="no-select export-excel" @click="exportExcel">导出表格&nbsp;&nbsp;<i class="iconfont icon-xiazai1 re-bj"></i></span>
         </div>
       </div>
-      <table class="market-table tb-detail">
-        <tbody>
-          <tr>
-            <td class="market-td-bg" width="20%">
-              <p class="market-big-title">{{eTableData.market_name}}</p>
-            </td>
-            <td width="15%">
-              <h3 class="font14">{{eTableData.farm_product_name}}</h3>
-            </td>
-            <td width="25%">
-              <h3 class="market-table-price">最新价格
-                <i>
-                  <b>{{eTableData.price}}</b>
-                  元/kg
-                </i>
-              </h3>
-            </td>
-            <td width="40%" class="market-table-compare">
-              <h3>相比于{{eTableData.rateFlag}}
-                <span class="market-compare">
-                  <i :class="eTableData.color" class="font24">{{eTableData.delta}}</i>
-                  <i class="rate-unit" :class="eTableData.color">元/kg</i>
-                  <span id="priceIcon" class="iconfont" :class="eTableData.image"></span>
-                  <span class="change-percent" :class="eTableData.color">{{eTableData.desc}}</span>
-                </span>
-              </h3>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-content" :style="{'width': screenWidth - 180 - menuWidth + 'px'}">
+        <table class="market-table tb-detail">
+          <tbody>
+            <tr>
+              <td class="market-td-bg" width="20%">
+                <p class="market-table-title">{{eTableData.market_name}}</p>
+              </td>
+              <td width="15%">
+                <h3 class="market-table-crop">{{eTableData.farm_product_name}}</h3>
+              </td>
+              <td width="25%">
+                <h3 class="market-table-price">最新价格
+                  <i>
+                    <b>{{eTableData.price}}</b>
+                    元/kg
+                  </i>
+                </h3>
+              </td>
+              <td width="40%" class="market-table-compare">
+                <h3>
+                  <span class="market-table-compare-title">相比于{{eTableData.rateFlag}}</span>
+                  <span class="market-compare">
+                    <i :class="eTableData.color" style="font-size:24px;">{{eTableData.delta}}</i>
+                    <i class="rate-unit" :class="eTableData.color">元/kg</i>
+                    <span id="priceIcon" class="iconfont" :class="eTableData.image"></span>
+                    <span class="change-percent" :class="eTableData.color">{{eTableData.desc}}</span>
+                  </span>
+                </h3>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       </div>
       <div class="detail-echart">
         <div class="line-deatil-echart pr">
@@ -45,7 +48,7 @@
           <my-echart 
             class="price-detail-chart"
             :options="options"
-            :style="{'width': echartWidth,'height': echartHeight - 370 +'px','min-height': '400px'}">
+            :style="{'width': screenWidth - 167 - menuWidth + 'px','height': '400px'}">
           </my-echart>
         </div>
       </div>
@@ -54,6 +57,7 @@
 </template>
 
 <script>
+ import {mapGetters} from 'vuex'
   export default{
     props: {
       eTableData: {
@@ -79,16 +83,18 @@
       }
     },
     mounted(){
-      var eWidth = document.documentElement.clientWidth || document.body.clientWidth;
-      this.echartWidth = eWidth - 160 + 'px';
+      this.echartWidth = document.documentElement.clientWidth || document.body.clientWidth;
       var eHeight = document.documentElement.clientHeight || document.body.clientHeight;
       this.echartHeight = eHeight;
       var sT = document.body.scrollTop || document.documentElement.scrollTop;
         sT = 0;
     },
     computed: {
-
-    },
+    ...mapGetters({
+        menuWidth: 'menuWidth',
+        screenWidth: 'screenWidth',
+        getScreenHeight: 'getScreenHeight'
+    })},
     methods: {
     },
     components: {
@@ -99,70 +105,60 @@
   lang="less" 
   rel="stylesheet/less" 
   scoped>
+  @import '../../../assets/style/common';
   .pl80 {
     padding-left: 80px;
     padding-right: 80px;
   }
+  .table-content {
+    margin: 0 auto;
+  }
   .market-echart-detail {
-    left: 0;
-    width: 100%;
     background: #f0f0f0;
     .pop-detail {
+      .adv-common-border-radius();
       padding-bottom: 14px;
-      border-radius: 4px;
-      background: #fff;
+      background: @assistant-bg;
     }
     .detail-echart {
+      .adv-common-border-radius();
       margin: 8px 0 36px;
-      background: #fff;
-      border-radius: 4px;
+      background: @assistant-bg;
       .line-deatil-echart {
         padding-bottom: 8px;
         border-bottom: 1px solid #eee;
       }
     }
     .market-crop-title {
-      position: relative;
+      .adv-title-after-vertical-line-normal();
+      font-weight: normal;
       line-height: 52px;
       height: 44px;
-      padding-left: 28px;
+      padding-left: 13px;
+        .detail-title{
+          .adv-font-big();
+        }
         .market-button {
-          margin-right: 26px;
+          margin-right: 20px;
           .export-excel {
-            line-height: 28px;
-            display: inline-block;
-            width: 90px;
-            height: 28px;
-            margin-top: 20px;
-            cursor: pointer;
-            text-align: center;
+            .adv-fixed-big-primary-btn();
+            .adv-font-small();
             background: #92c42c;
             color: #fff;
-            border-radius: 4px;
+            height: 29px;
               i {
-                  font-size: 16px;
+                  .adv-font-big();
               }
               &:hover {
                 background: #7bab12;
               }
           }
-      }
-      &:before {
-        position: absolute;
-        left: 14px;
-        top: 14px;
-        width: 5px;
-        height: 26px;
-        content: '';
-        display: inline-block; 
-        background: #9ed132;
-      }
+        }
     }
     .market-table {
-        width: 96%;
-        margin: 0 20px 0px;
+        .adv-common-border-radius();
+        width: 100%;
         background: #f3fbeb;
-        border-radius: 4px;
         overflow: hidden;
           tr {
             position: relative;
@@ -177,7 +173,16 @@
                           }
                     }
               }
+              .market-table-crop{
+                .adv-font-normal();
+                font-weight: bold;
+              }
+              .market-table-price{
+                .adv-font-small();
+                font-weight: bold;
+              }
               .market-td-bg {
+                .adv-font-small();
                 padding-right: 20px;
                 padding-left: 20px;
                 text-align: left;
@@ -186,13 +191,17 @@
               .market-table-compare {
                 text-align: left;
                 padding-left: 60px;
-                  .market-compare {
-                    margin-left: 10px;
+                .market-table-compare-title {
+                  .adv-font-small();
+                  font-weight: bold;
+                }
+                .market-compare {
+                  margin-left: 10px;
                 }
                 .market-green {
                       color: #6cbe7e;
                         .rate-unit {
-                          font-size: 12px;
+                          .adv-font-small();
                       }
                   }
                    .market-red {
@@ -205,12 +214,12 @@
         }
     }
     .market-legend {
-      z-index: 3;
-      font-size: 12px;
+      .adv-font-small();
       top: 24px;
       right: 42px;
+      z-index: 3;
       i {
-        font-size: 12px;
+        .adv-font-small();
         margin-right: 6px;
         color: #6688da;
       }

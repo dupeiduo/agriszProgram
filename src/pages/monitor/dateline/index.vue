@@ -1,17 +1,23 @@
 <template>
   <div class="date-line">
     <span class="pre el-icon-arrow-left fl" 
-      @click="changePeriod(-1)"></span>
-    <div class="dl-header">
+      @click="changePeriod(-1)" 
+      :class="dateClassName"></span>
+    <div class="dl-header" :class="dateClassName">
       <i>{{curYear}}</i>
     </div>
-    <t-line class="dl-body"
+    <t-line class="dl-body pr"
       :curIndex="curIndex"
       :dlData="dateLineData"
+      :changeTimeHeight="showChangeHeight"
+      :atmosLoading="atmosLoading"
+      :forecastLoading="forecastLoading"
       @change="change"
       @setCurYear="setCurYear"></t-line>
     <span class="next el-icon-arrow-right fr"
-       @click="changePeriod(1)"></span>
+       @click="changePeriod(1)" 
+       :class="dateClassName"
+       ></span>
   </div>
 </template>
 
@@ -35,14 +41,28 @@ import tLine from './tline'
       date: {
         type: Date,
         default: new Date()
-      }
+      },
+      showWeather: {
+        type: Boolean,
+        default: false
+      },
+      atmosLoading: {
+        type: Boolean,
+        default: false
+      },
+      forecastLoading: {
+        type: Boolean,
+        default: false
+      },
     },
     data(){
       return {
         expand: false,
         curIndex: 0,
         dateLineData: [],
-        curYear: ''
+        curYear: '',
+        showChangeHeight: false,
+        dateClassName: ''
       }
     },
     mounted() {
@@ -79,14 +99,18 @@ import tLine from './tline'
       },
       setCurYear(year) {
         this.curYear = year
+        this.$emit("currentYearChange", year)
       }
     },
     watch: {
-      dlData: function (dlData) {
-        this.expandCtl(this.dlData !== null && this.dlData.index !== 0)
-        this.curIndex = dlData.index
-        this.dateLineData = dlData.data
-        this.curYear = this.dateLineData[this.curIndex].date.toString().substr(0, 4)
+      dlData: {
+        handler: function (dlData) {
+          this.expandCtl(this.dlData !== null && this.dlData.index !== 0)
+          this.curIndex = dlData.index
+          this.dateLineData = dlData.data
+          this.curYear = this.dateLineData[this.curIndex].date.toString().substr(0, 4)
+        },
+        deep: true
       },
       date: function (date) {
         var dateStr = dateUtil.formatDate(date)
@@ -97,6 +121,15 @@ import tLine from './tline'
             this.curYear = this.dateLineData[i].date.toString().substr(0, 4)
             return
           }
+        }
+      },
+      showWeather(show) {
+        if (show) {
+          this.showChangeHeight = true
+          this.dateClassName = 'animation-button-top'
+        } else {
+          this.showChangeHeight = false
+          this.dateClassName = 'animation-button-bottom'  
         }
       }
     },
@@ -109,16 +142,13 @@ import tLine from './tline'
 <style 
 lang="less" 
 scoped>
-@import '../../../../assets/style/reset';
+@import '../../../assets/style/common';
 .date-line {
-  position: relative;
-  overflow: hidden;
-  height: 42px;
-
   .dl-header {
     position: absolute;
     background: #fff;
-    height: 42px;
+    height: 34px;
+    line-height: 34px;
     padding: 0 9px;
     color: #000;
     left: 20px;
@@ -126,28 +156,24 @@ scoped>
     text-align: center;
     z-index: 3;
     box-shadow: 2px 3px 4px #b1b4b4;
-    i {
-      position: relative;
-      top: 14px;
-    }
   }
   .dl-body {
+  	height: 176px;
     background: #fff;
     z-index: 0;
-    height: 42px;
     position: absolute;
     left: 0;
     background-color: #fff;
     border: 1px solid #d0d0d0;
-    .box-bottom;
+    box-shadow: 0 1px 6px #aeaeae;
   }
   .dl-footer {
     position: absolute;
     right: 0;
     top: 0;
     width: 20px;
-    height: 42px;
-    line-height: 42px;
+    height: 176px;
+    line-height: 176px;
     text-align: center;
     font-size: 20px;
     color: #949494;
@@ -161,14 +187,41 @@ scoped>
     z-index: 20;
     position: relative;
     width: 20px;
-    height: 42px;
-    line-height: 42px;
+    height: 34px;
+    line-height: 34px;
     background: #d6d6d3;
     cursor: pointer;
     text-align: center;
+    transition: all ease-in 0.35s;
     &:hover {
       background: #c4e48a;
     }
   }
 }
+.animation-button-bottom {
+      .adv-animation(button-bottom;.5s;1;forwards);
+  }
+  @keyframes button-bottom {
+    0% {
+        height: 176px;
+        line-height: 176px;
+    }
+    100% {
+        height: 34px;
+        line-height: 34px;
+    }
+  }
+  .animation-button-top {
+      .adv-animation(button-top;.5s;1;forwards);
+  }
+  @keyframes button-top {
+    100% {
+        height: 176px;
+        line-height: 176px;
+    }
+    0% {
+        height: 34px;
+        line-height: 34px;
+    }
+  }
 </style>

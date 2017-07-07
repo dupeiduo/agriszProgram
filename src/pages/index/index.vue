@@ -241,7 +241,7 @@
       var _this = this;
       axios.all([request.homeCarousel(), request.homeReport()])
       .then(axios.spread(function(carousel, report) {
-        var formated = format.formatHomeData(carousel.data, report.data);
+        var formated = format.formatHomeData(carousel.data.data, report.data);
         _this.bottomReport = report.data.data;
         _this.allTitle = formated.carousel.BannerTitle;
         _this.carousel_img = formated.carousel.carousel_img

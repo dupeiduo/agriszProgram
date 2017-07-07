@@ -5,7 +5,7 @@ import request from '../api/request.js'
 import store from '../store'
 window.vueBus = new Vue()
 
-import header from './header'
+import header from './newheader'
 import opacity from 'agrisz-opactl'
 var opacityCtl = Vue.component(opacity().name, opacity().prop)
 
@@ -14,7 +14,8 @@ var myechart = Vue.component(echart().name, echart().prop)
 
 import popmsg from 'agrisz-popmsg'
 import 'agrisz-popmsg/index.less'
-var mypopmsg = Vue.component(popmsg().name, popmsg().prop)
+var _popmsg = popmsg(store)
+var mypopmsg = Vue.component(_popmsg.name, _popmsg.prop)
 
 import weather from 'agrisz-weather'
 import 'agrisz-weather/index.less'
@@ -23,7 +24,7 @@ var myweather = Vue.component(_weather.name, _weather.prop)
 
 import map from 'agrisz-map'
 import 'agrisz-map/index.less'
-var _map = map(config, configData, request, vueBus)
+var _map = map(config, configData, request, vueBus, store)
 var mymap = Vue.component(_map.name, _map.prop)
 
 import button from 'agrisz-button'

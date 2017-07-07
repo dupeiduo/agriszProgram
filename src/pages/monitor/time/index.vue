@@ -1,11 +1,9 @@
 <template>
   <div>
     <p class="crop-test-time fr clear" @click="togglePanel">
-      <span>{{current[0]}}</span>
-      <span>{{current[1]}}</span>
-      <span>{{current[2]}}&nbsp;<i class="el-icon-arrow-down"></i></span>
+    <span>{{current[0]}} - {{current[1]}} - {{current[2]}}</span>
     </p>
-    <div v-if="showDatepicker" class="tb-container">
+    <div v-if="showDatepicker" class="tb-container pop-zIndex">
       <div class="date-control no-select no-select">
         <span v-if="!hidePre" class="pre fl">
           <i class="pre-year el-icon-d-arrow-left" @click="jumpYear(-1)"></i>
@@ -242,28 +240,18 @@ import configData from '../../../config/data.js'
 
 </script>
 
-<style lang="less" scoped>
-  @import '../../../assets/style/reset';
+<style 
+lang="less" scoped>
+  @import '../../../assets/style/common';
   .crop-test-time {
-      width: 132px;
+      .adv-common-border-radius();
+      width: 105px;
+      text-align: center;
       background: #fff;
-      border-radius: 4px;
-      margin: 14px 0 10px 0;
-      .mixin-height(28px);
+      margin: 14px 21px 10px 0;
+      .adv-height(24px);
       span {
-        float: left;
         cursor: pointer;
-      }
-      span:nth-child(1) {
-        border-right: 1px solid #cacaca;
-        .mixin-width(50px);
-      }
-      span:nth-child(2) {
-        border-right: 1px solid #cacaca;
-        .mixin-width(28px);
-      }
-      span:nth-child(3) {
-        .mixin-width(52px);
       }
     &:hover {
         span {
@@ -272,19 +260,23 @@ import configData from '../../../config/data.js'
         }
     }
   .tb-container {
+    .adv-common-border-radius();
     position: absolute;
-    top: 86px;
-    left: 212px;
+    top: 52px;
+    left: 130px;
     width: 220px;
     padding: 6px 18px;
     background: #fff;
-    border-radius: 4px;
-    z-index: 10002;
     overflow: hidden;
-    .mixin-boxshadow();
+    .adv-boxshadow();
       span {
         color: #c7cdda;
         cursor: pointer;
+        i {
+          &:hover {
+            color: #939393;
+          }
+        }
       }
       .time-title {
         width: 164px;
@@ -299,9 +291,9 @@ import configData from '../../../config/data.js'
       tbody {
         width: 100%;
         tr {
+          .adv-common-border-radius();
           width: 100%;
           cursor: pointer;
-          border-radius: 4px;
           .period-hover {
             background: #eeeeee;
           }
@@ -313,12 +305,12 @@ import configData from '../../../config/data.js'
       }
     }
     .date-tip {
+      .adv-horizontal-center(78px);
+      .adv-common-border-radius();
       position: fixed;
-      .mixin-width(78px);
       line-height: 32px;
       background: url("/static/assets/img/monitor/tip.png") no-repeat;
       color: #333;
-      border-radius: 4px;
     }
   }
 </style>
